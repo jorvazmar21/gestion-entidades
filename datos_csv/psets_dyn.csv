@@ -1,0 +1,3 @@
+id_record;id_entity;id_pset;timestamp;data
+PDN-161a365c-2dc1-4d72-afd0-ffcab1f696ba;2d6bde60-57ce-4eaa-9ee4-cc91e0dcae28;PST-ccb30a8a-3ea6-4fdd-98b7-606073b88569;2026-03-13T20:36:10.084Z;"{""Fecha de Presentación"":""2026-05-12"",""Importe Certificado"":""10251"",""Aprobada?"":false,""Abonada?"":false,""Num.Certif."":""1""}"
+PDN-ce9d6f57-0cfd-4d9c-9f61-d1ec6f36f45b;2d6bde60-57ce-4eaa-9ee4-cc91e0dcae28;PST-ccb30a8a-3ea6-4fdd-98b7-606073b88569;2026-03-13T20:36:29.830Z;"{""Fecha de Presentación"":""2026-05-12"",""Importe Certificado"":""10251"",""Aprobada?"":true,""Abonada?"":true,""Num.Certif."":""1""}"

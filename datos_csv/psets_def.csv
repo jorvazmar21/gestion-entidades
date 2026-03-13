@@ -1,0 +1,5 @@
+id_pset;behavior;appliesTo;properties
+PST-81aacb28-288a-4a58-84c6-a39eb094b779;ESTATICO;"[""OBR""]";"[{""name"":""Nombre del Proyecto"",""type"":""TEXTO""},{""name"":""Emplazamiento"",""type"":""TEXTO""}]"
+PST-713be116-b14d-4b1b-bf68-36ec98686635;ESTATICO;"[""OBR""]";"[{""name"":""Fecha de Adjudicación"",""type"":""FECHA""},{""name"":""Importe de Adjudicación"",""type"":""DECIMAL""}]"
+PST-29b254e1-4bc5-4aca-ab80-cc7aed4f6277;DINAMICO;"[""BPM"",""CRZ"",""CEL"",""RGU""]";"[{""name"":""Lectura del Horómetro"",""type"":""ENTERO""},{""name"":""Estado General Correcto?"",""type"":""SINO""}]"
+PST-ccb30a8a-3ea6-4fdd-98b7-606073b88569;DINAMICO;"[""OBR""]";"[{""name"":""Fecha de Presentación"",""type"":""FECHA""},{""name"":""Importe Certificado"",""type"":""DECIMAL""},{""name"":""Aprobada?"",""type"":""SINO""},{""name"":""Abonada?"",""type"":""SINO""},{""name"":""Num.Certif."",""type"":""ENTERO""}]"
