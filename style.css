@@ -1,17 +1,25 @@
 :root {
-    --bg-color: #f0f2f5;
+    --bg-color: #f8f9fa; /* Very light gray background */
     --card-bg: #ffffff;
-    --text-main: #202124;
-    --text-muted: #5f6368;
-    --primary: #1a73e8;
-    --primary-hover: #174ea6;
-    --border-color: #dadce0;
-    --danger: #d93025;
-    --success: #188038;
-    --warning: #f29900;
-    --table-header-bg: #f8f9fa;
-    --readonly-bg: #f1f3f4;
-    --font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --text-main: #333333;
+    --text-muted: #666666;
+    
+    /* STITCH UI Colors */
+    --primary: #8c1d18; /* Deep burgundy/red from sidebar */
+    --primary-hover: #b71c1c; 
+    --sidebar-dark: #2c3e50; /* Dark slate for right panel header */
+    --sidebar-light: #f4f5f7; /* Very light gray for panels */
+    
+    --border-color: #e0e0e0;
+    --danger: #d32f2f; /* Alert red */
+    --success: #2e7d32;
+    --warning: #f57c00;
+    
+    --table-header-bg: #e2e8f0; /* Light slate/gray for table headers */
+    --table-header-text: #4a5568; 
+    
+    --readonly-bg: #f9f9f9;
+    --font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,6 +32,7 @@ body {
     justify-content: center;
     min-height: 100vh;
     font-size: 13px; /* Smaller, professional font */
+    letter-spacing: 0.2px;
 }
 
 /* CONTENEDORES Y LAYOUT PRINCIPAL */
@@ -37,7 +46,7 @@ body {
 .screen.left-aligned {
     max-width: 100%;
     margin: 0;
-    padding: 1.5rem 2rem;
+    padding: 0;
 }
 
 .hidden { display: none !important; }
@@ -101,7 +110,15 @@ input[type="text"]:focus, input[type="password"]:focus {
 .login-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
 
 /* HEADER */
-.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--card-bg); padding: 0.8rem 1rem; border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 1px 2px rgba(60,64,67,0.1);}
+.app-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #ffffff; 
+    padding: 1rem 2rem; 
+    border-bottom: 2px solid var(--border-color);
+    width: 100%;
+}
 .header-left { display: flex; align-items: center; gap: 1rem; }
 
 /* MENU PRINCIPAL (FICHAS) */
@@ -129,6 +146,7 @@ input[type="text"]:focus, input[type="password"]:focus {
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
+    padding: 1.5rem 2rem;
 }
 .entity-main { 
     flex-grow: 1; 
@@ -140,12 +158,11 @@ input[type="text"]:focus, input[type="password"]:focus {
 .entity-sidebar { 
     width: 350px; 
     flex-shrink: 0;
-    background: var(--card-bg); 
-    border: 1px solid var(--border-color); 
-    border-radius: 4px; 
-    padding: 1rem; 
+    background: var(--sidebar-light); 
+    border-left: 1px solid var(--border-color); 
     min-height: calc(100vh - 120px); 
     display: none; 
+    flex-direction: column;
 }
 .entity-container.has-sidebar .entity-sidebar { display: block; }
 
@@ -166,10 +183,11 @@ table.advanced-table th, table.advanced-table td {
     white-space: nowrap;
 }
 table.advanced-table th { 
-    font-size: 11px; 
+    font-size: 10px; 
     text-transform: uppercase; 
-    color: var(--text-muted); 
-    font-weight: 600; 
+    color: var(--table-header-text); 
+    font-weight: 700; 
+    letter-spacing: 0.5px;
     background: var(--table-header-bg); 
     border-top: 1px solid var(--border-color); 
     position: relative;
@@ -338,7 +356,7 @@ th.sort-desc .sort-btn { color: var(--primary); font-weight: bold; }
 .sub-table tr:hover { background: #f1f8ff; }
 
 .badge { 
-    background: #e8f0fe; 
+    background: #fdebda; /* Light orange/red mix for badge */
     color: var(--primary); 
     padding: 2px 6px; 
     border-radius: 4px; 
@@ -347,9 +365,9 @@ th.sort-desc .sort-btn { color: var(--primary); font-weight: bold; }
     display: inline-block;
 }
 
-.selected-row { background-color: #e8f0fe !important; }
+.selected-row { background-color: #ffebee !important; border-left: 4px solid var(--primary) !important; }
 .master-row { cursor: pointer; transition: background 0.1s; }
-.master-row:hover { background-color: #f1f3f4 !important; }
+.master-row:hover { background-color: #f5f5f5 !important; }
 
 .btn-icon-sm { 
     background: none; 
@@ -361,3 +379,81 @@ th.sort-desc .sort-btn { color: var(--primary); font-weight: bold; }
     transition: all 0.1s;
 }
 .btn-icon-sm:hover { border-color: var(--primary); background: #fff; }
+
+/* PALETA PSETS ESTILO STITCH (REGISTRY INSPECTOR) */
+.acad-palette {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    margin-bottom: 1rem;
+}
+.acad-category {
+    background: var(--sidebar-light); 
+    color: var(--text-main);
+    padding: 8px 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px;
+    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.acad-category::before {
+    content: "■";
+    color: var(--primary);
+    font-size: 12px;
+}
+.acad-palette .acad-category:first-child {
+    border-top: none;
+}
+.acad-row {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    align-items: stretch;
+}
+.acad-row:last-child {
+    border-bottom: none;
+}
+.acad-label {
+    width: 35%;
+    background: #ffffff;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-right: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.acad-value {
+    width: 65%;
+    background: #fff;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.acad-value > input, .acad-value > select {
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 6px 8px;
+    background: transparent;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text-main);
+}
+.acad-value > input:focus, .acad-value > select:focus {
+    background: #fafafa;
+    box-shadow: inset 2px 0 0 0 var(--primary);
+}

@@ -104,8 +104,17 @@
         <div class="entity-container has-sidebar" id="entity-layout-wrapper">
             <!-- Columna Principal Izquierda -->
             <div class="entity-main">
-                <div class="toolbar card">
-                    <div class="toolbar-left">
+                
+                <!-- STITCH Title & Breadcrumbs -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem;">
+                        MANAGEMENT &nbsp;&rsaquo;&nbsp; <span style="color: var(--primary);">PROJECT ARCHITECTURE</span>
+                    </div>
+                    <h2 style="font-size: 24px; font-weight: 800; color: var(--sidebar-dark); letter-spacing: -0.5px; border-bottom: none; padding-bottom: 0; margin-bottom: 0; text-transform: uppercase;">MASTER<br>CONTROL</h2>
+                </div>
+
+                <div class="toolbar card" style="background: transparent; border: none; padding: 0; margin-bottom: 1rem; box-shadow: none;">
+                    <div class="toolbar-left" style="background: #fff; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <input type="text" id="search-input" placeholder="Buscar por código o nombre..."
                             onkeyup="app.filterTable()">
 
@@ -197,6 +206,53 @@
                             </table>
                             <div id="child-empty-state" class="hidden" style="text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic;">
                                 Seleccione un elemento superior para ver sus delegaciones.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STITCH: ANALYTICAL LEDGER SNAPSHOT (KPI Cards) -->
+                    <div style="margin-top: 2rem;">
+                        <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-main); font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;">
+                            <span style="display:inline-block; width:12px; height:12px; background:var(--sidebar-dark); border-radius:2px;"></span> ANALYTICAL LEDGER SNAPSHOT
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <!-- CARD 1 -->
+                            <div class="card" style="border-left: 3px solid var(--border-color); min-height: 120px; display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">PROJECT YIELD MARGIN</div>
+                                <div style="display: flex; align-items: baseline; gap: 10px;">
+                                    <span style="font-size: 28px; font-weight: 800; color: var(--sidebar-dark);">24.8%</span>
+                                    <span style="color: var(--success); font-weight: 600; font-size: 12px;">~+1.2</span>
+                                </div>
+                                <div style="font-size: 9px; color: var(--text-muted); font-style: italic; margin-top: 10px;">FY24 BASELINE REFERENCE</div>
+                            </div>
+                            <!-- CARD 2 -->
+                            <div class="card" style="border-left: 3px solid var(--danger); min-height: 120px; display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">ACTIVE ALERTS</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px; font-weight: 800; color: var(--danger);">08</span>
+                                    <span style="color: var(--danger); font-weight: 700; font-size: 10px; padding: 2px 4px; background: #ffebee;">▲ CRITICAL</span>
+                                </div>
+                                <div style="font-size: 9px; color: var(--danger); font-style: italic; margin-top: 10px; text-transform: uppercase;">PENDING MANAGEMENT REVIEW</div>
+                            </div>
+                            <!-- CARD 3 -->
+                            <div class="card" style="border-left: 3px solid transparent; min-height: 120px; display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">RESOURCE LOAD</div>
+                                <div style="display: flex; align-items: baseline; gap: 10px;">
+                                    <span style="font-size: 24px; font-weight: 800; color: var(--sidebar-dark);">92.4%</span>
+                                    <span style="color: var(--primary); font-weight: 700; font-size: 10px;">OPTIMAL</span>
+                                </div>
+                                <div style="width: 100%; height: 4px; background: var(--border-color); margin-top: 10px; border-radius: 2px;">
+                                    <div style="width: 92.4%; height: 100%; background: var(--primary); border-radius: 2px;"></div>
+                                </div>
+                            </div>
+                            <!-- CARD 4 -->
+                            <div class="card" style="border-left: 3px solid transparent; min-height: 120px; display: flex; flex-direction: column; justify-content: center;">
+                                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">COMPLIANCE RATING</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px; font-weight: 800; color: var(--sidebar-dark);">100%</span>
+                                    <span style="color: var(--primary); font-size: 14px;">✔</span>
+                                </div>
+                                <div style="font-size: 9px; color: var(--text-muted); font-style: italic; margin-top: 10px; text-transform: uppercase;">TIER-1 SLA VALIDATED</div>
                             </div>
                         </div>
                     </div>
