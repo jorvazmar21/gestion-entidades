@@ -109,7 +109,119 @@ input[type="text"]:focus, input[type="password"]:focus {
 .login-box { width: 100%; max-width: 320px; }
 .login-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
 
-/* HEADER */
+/* HEADER (STITCH GLOBAL) */
+.stitch-global-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    height: 60px;
+    background: #ffffff;
+    padding: 0 1.5rem;
+    width: 100%;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stitch-global-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.stitch-logo {
+    width: 28px;
+    height: 28px;
+    background-color: var(--primary);
+    position: relative;
+    border-radius: 2px;
+}
+.stitch-logo .cube {
+    position: absolute;
+    background: #ffffff;
+}
+.stitch-logo .cube1 { top: 4px; left: 4px; width: 8px; height: 8px; }
+.stitch-logo .cube2 { top: 4px; right: 4px; width: 8px; height: 8px; }
+.stitch-logo .cube3 { bottom: 4px; right: 4px; width: 8px; height: 8px; }
+
+.stitch-system-name {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.stitch-global-header .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-grow: 1;
+    margin-left: 2.5rem;
+}
+
+.stitch-global-header .nav-btn {
+    background: transparent;
+    border: none;
+    height: 100%;
+    padding: 0 0.5rem;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4a5568;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+    font-family: var(--font-family);
+}
+.stitch-global-header .nav-btn:hover {
+    color: var(--primary);
+}
+.stitch-global-header .nav-btn.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+.stitch-global-header .nav-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary);
+}
+
+.stitch-global-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.stitch-global-header .icon-btn {
+    background: transparent;
+    border: none;
+    color: #4a5568;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.stitch-global-header .icon-btn:hover {
+    color: var(--primary);
+}
+
+.stitch-global-header .user-avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background-color: #f1ebd9;
+    border: 1px solid #e0d5c1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+/* Antiguo header para compatibilidad con otras pantallas no migradas aún */
 .app-header { 
     display: flex; 
     justify-content: space-between; 
