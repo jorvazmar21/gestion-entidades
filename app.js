@@ -937,19 +937,7 @@ const app = {
     },
 
     // -- IMPORT / EXPORT CSV LOCALIZADO (MÓDULO) --
-    downloadTemplateCSV() {
-        if (!this.currentModule) return;
-        // Plantilla solo con campos humanos separada por punto y coma
-        const fields = ['code', 'name', 'isActive'];
-        const header = fields.join(';');
-        const blob = new Blob([header + '\n'], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `plantilla_carga_${MODULES[this.currentModule].prefix}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-    },
+    // (downloadTemplateCSV original removido por estar obsoleto)
 
     exportModuleCSV(behavior = null) { // behavior solo para PST
         const targetType = this.currentModule;
@@ -1003,98 +991,7 @@ const app = {
         window.URL.revokeObjectURL(url);
     },
 
-    importModuleCSV(e) {
-        if (!this.currentModule) return;
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const text = evt.target.result;
-            const lines = text.split(/\r?\n/);
-
-            if (lines.length < 1) return;
-
-            // Extraer y mapear cabeceras. Split por punto y coma.
-            const headers = lines[0].split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.toLowerCase().trim().replace(/(^"|"$)/g, ''));
-            const idxCode = headers.indexOf('code');
-            const idxName = headers.indexOf('name');
-            const idxId = headers.indexOf('id');
-            const idxType = headers.indexOf('type');
-            const idxIsActive = headers.indexOf('isactive');
-            const idxDeletedAt = headers.indexOf('deletedat');
-            const idxCreatedAt = headers.indexOf('createdat');
-            const idxUpdatedAt = headers.indexOf('updatedat');
-
-            if (idxCode === -1) {
-                alert("Error: El archivo CSV debe contener al menos la columna 'code' en la cabecera.");
-                return;
-            }
-
-            let added = 0;
-            let updated = 0;
-            let skipped = 0;
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                // Parse CSV simple por punto y coma
-                const vals = lines[i].split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, ''));
-
-                const code = vals[idxCode] ? vals[idxCode].trim() : '';
-                if (!code) { skipped++; continue; } // Código es estricto
-
-                // Extraer resto basándonos en si la columna existe en el CSV
-                const csvId = idxId > -1 ? (vals[idxId] || '').trim() : '';
-                const type = (idxType > -1 && vals[idxType]) ? vals[idxType].trim() : this.currentModule;
-                const name = (idxName > -1 && vals[idxName]) ? vals[idxName].trim() : 'Sin Nombre';
-
-                if (type !== this.currentModule) { skipped++; continue; } // Ignorar de otros módulos
-
-                let isActive = true;
-                if (idxIsActive > -1 && vals[idxIsActive] !== undefined) {
-                    const actVal = vals[idxIsActive].trim().toLowerCase();
-                    isActive = (actVal === 'true' || actVal === '1' || actVal === 'activo' || actVal === 'si' || actVal === 'sí');
-                }
-
-                const deletedAt = (idxDeletedAt > -1 && vals[idxDeletedAt] && vals[idxDeletedAt].trim() !== 'null') ? vals[idxDeletedAt].trim() : null;
-                const createdAt = (idxCreatedAt > -1 && vals[idxCreatedAt]) ? vals[idxCreatedAt].trim() : new Date().toISOString();
-                const updatedAt = (idxUpdatedAt > -1 && vals[idxUpdatedAt]) ? vals[idxUpdatedAt].trim() : new Date().toISOString();
-
-                // Buscar si ya existe por CODE
-                const existingRecordMsg = this.db.find(r => r.code === code && r.type === this.currentModule);
-
-                if (existingRecordMsg) {
-                    // Existe -> Actualizar (Upsert) ignorando lo que no venga en el excel
-                    if (idxName > -1) existingRecordMsg.name = name;
-                    if (idxIsActive > -1) existingRecordMsg.isActive = isActive;
-                    if (idxDeletedAt > -1) existingRecordMsg.deletedAt = deletedAt;
-                    existingRecordMsg.updatedAt = new Date().toISOString();
-                    updated++;
-                } else {
-                    // No existe -> Crear Nuevo (auto-generar IDs si faltan)
-                    const newId = csvId || (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random());
-                    this.db.push({
-                        id: newId,
-                        type,
-                        code,
-                        name,
-                        isActive,
-                        deletedAt,
-                        createdAt,
-                        updatedAt
-                    });
-                    added++;
-                }
-            }
-
-            this.saveDb();
-            this.filterTable();
-            document.getElementById('module-csv-upload').value = ''; // Reset file input
-
-            alert(`Carga Masiva Procesada:\n\n- Registros Nuevos: ${added}\n- Registros Actualizados: ${updated}\n- Filas Omitidas/Error: ${skipped}`);
-        };
-        reader.readAsText(file);
-    },
+    // (importModuleCSV original removido por estar obsoleto)
 
     // -- MODALES (CREAR/EDITAR ENTIDAD) --
     openModal(id = null, fixedType = null) {
@@ -1596,18 +1493,49 @@ const app = {
     downloadTemplateCSV(pstType = null) {
         let header = "";
         let fileName = "";
+        let csvContent = "";
         
         if (!pstType) { 
-            // Formato exigido para lugares/entidades (El "Tipo" es implícito por la pantalla actual)
+            // Formato exigido para lugares/entidades
             header = "Codigo;Nombre;Ubicacion;Canal;Activo";
             fileName = `plantilla_${app.currentModule.toLowerCase()}.csv`;
+            csvContent = header + "\n";
+            
+            // INCORPORAR DATOS EXISTENTES PARA REFERENCIA Y EDICIÓN
+            const targetType = app.currentModule;
+            const masterMap = new Map();
+            app.db.forEach(r => {
+                if (r.type !== targetType) return;
+                const existing = masterMap.get(r.code);
+                if (!existing || r.createdAt > existing.createdAt) {
+                    masterMap.set(r.code, r);
+                }
+            });
+            
+            const escapeCSV = (str) => {
+                if (str === null || str === undefined) return '""';
+                const s = String(str);
+                if (s.includes(';') || s.includes('"') || s.includes('\n')) {
+                    return `"${s.replace(/"/g, '""')}"`;
+                }
+                return s;
+            };
+
+            Array.from(masterMap.values()).forEach(r => {
+                if (r.deletedAt !== null) return; // Omitir activos borrados
+                const activoStr = r.isActive ? "1" : "0";
+                const line = [ r.code, r.name, r.location || "", r.canal || "", activoStr ].map(escapeCSV).join(';');
+                csvContent += line + "\n";
+            });
         } else {
             // Reservado para futura iteración PSet
             header = "Entidad_Code;PSet_Code;Propiedad;Valor";
             fileName = `plantilla_psets_${pstType.toLowerCase()}.csv`;
+            csvContent = header + "\n";
         }
         
-        const blob = new Blob([header], { type: 'text/csv;charset=utf-8;' });
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1635,15 +1563,16 @@ const app = {
             if (!pstType) {
                 // Validación Estricta de la Cabecera
                 const headerLine = lines[0];
-                const expectedHeader = "Codigo;Nombre;Ubicacion;Canal;Activo";
-                if (headerLine !== expectedHeader) {
+                // Permitir BOM al principio
+                if (!headerLine.endsWith("Codigo;Nombre;Ubicacion;Canal;Activo")) {
                     alert("Datos facilitados sin formato de importación válido. Por favor, descargue la plantilla.");
                     e.target.value = '';
                     return;
                 }
 
                 let newCount = 0;
-                let autoPrlCount = 0;
+                let updateCount = 0;
+                let autoPrinCount = 0;
                 const activeModCode = app.currentModule;
                 const modDef = MODULES[activeModCode];
                 if (!modDef) {
@@ -1658,7 +1587,6 @@ const app = {
                     // Split por ; explícitamente y limpieza de comillas si hay
                     const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, ''));
                     
-                    // Validación Estricta del número de columnas del separador ";"
                     if (vals.length !== 5) {
                         console.warn(`Fila ${i+1} omitida: El número de columnas no coincide con la plantilla.`);
                         continue;
@@ -1671,52 +1599,59 @@ const app = {
                     const activoRaw = vals[4].trim().toLowerCase();
                     const activo = activoRaw === '1' || activoRaw === 'true' || activoRaw === 'sí' || activoRaw === 'si';
 
-                    // Regla de Oro: Si el código ya existe, omitir y no actualizar
-                    if (this.db.some(r => r.code === code)) {
-                        console.warn(`Código ${code} ya existe. Fila omitida según reglas del sistema.`);
-                        continue;
-                    }
-
-                    // Crear nueva Entidad (L1 sin padre asumiendo bulk import global de base)
-                    const newId = crypto.randomUUID();
-                    const newEntity = {
-                        id: newId,
-                        level: modDef.level,
-                        category: modDef.category,
-                        subCategory: modDef.subCategory,
-                        type: activeModCode,
-                        code: code,
-                        name: name,
-                        location: ubicacion,
-                        canal: canal,
-                        parentId: null, // Los importados bulk en este stage son nodos semilla L1
-                        isActive: activo,
-                        deletedAt: null,
-                        deletedBy: null,
-                        createdAt: new Date().toISOString(),
-                        createdBy: 'BULK_IMPORT_CSV',
-                        updatedAt: new Date().toISOString(),
-                        updatedBy: 'BULK_IMPORT_CSV'
-                    };
+                    // Modificación: Actualizar si existe, Crear si no existe.
+                    const existingRecord = this.db.find(r => r.code === code && r.type === activeModCode);
                     
-                    this.db.push(newEntity);
-                    newCount++;
+                    if (existingRecord) {
+                        existingRecord.name = name;
+                        existingRecord.location = ubicacion;
+                        existingRecord.canal = canal;
+                        existingRecord.isActive = activo;
+                        existingRecord.updatedAt = new Date().toISOString();
+                        existingRecord.updatedBy = 'BULK_IMPORT_CSV';
+                        // Rescatamos si estaba borrado
+                        if (existingRecord.deletedAt !== null) {
+                            existingRecord.deletedAt = null;
+                            existingRecord.deletedBy = null;
+                        }
+                        updateCount++;
+                    } else {
+                        // Crear nueva Entidad
+                        const newId = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random();
+                        const newEntity = {
+                            id: newId,
+                            level: modDef.level,
+                            category: modDef.category,
+                            subCategory: modDef.subCategory,
+                            type: activeModCode,
+                            code: code,
+                            name: name,
+                            location: ubicacion,
+                            canal: canal,
+                            parentId: null,
+                            isActive: activo,
+                            deletedAt: null,
+                            deletedBy: null,
+                            createdAt: new Date().toISOString(),
+                            createdBy: 'BULK_IMPORT_CSV',
+                            updatedAt: new Date().toISOString(),
+                            updatedBy: 'BULK_IMPORT_CSV'
+                        };
+                        
+                        this.db.push(newEntity);
+                        newCount++;
 
-                    // Regla de Auto-Creación de PRL si la entidad de categoría LUGAR permite PRL
-                    if (modDef.category === 'LUGAR' && modDef.tipos_hijo_permitidos && modDef.tipos_hijo_permitidos.includes('PRL')) {
-                        const prlCode = code + '-PRL';
-                        // Validamos adicionalmente que este código hermano no exista
-                        if (!this.db.some(r => r.code === prlCode)) {
-                            // Extraemos las métricas del tipo PRL (Principal) desde tiposEntidadDb
-                            const prlDef = MODULES['PRL'];
+                        // Auto-Crear Delegación PRINCIPAL vinculada
+                        const prinCode = code + '-PRIN';
+                        if (!this.db.some(r => r.code === prinCode)) {
                             this.db.push({
-                                id: crypto.randomUUID(),
-                                level: prlDef ? prlDef.level : 'L2',
-                                category: prlDef ? prlDef.category : 'DELEGACION',
-                                subCategory: prlDef ? prlDef.subCategory : 'ALMACEN',
-                                type: 'PRL',
-                                code: prlCode,
-                                name: `${name} (Almacén Principal)`,
+                                id: crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random(),
+                                level: 'L2',
+                                category: 'DELEGACION',
+                                subCategory: 'PRINCIPAL',
+                                type: 'PRINCIPAL',
+                                code: prinCode,
+                                name: `${name} (Delegación Principal)`,
                                 location: ubicacion,
                                 canal: canal,
                                 parentId: newId,
@@ -1728,17 +1663,17 @@ const app = {
                                 updatedAt: new Date().toISOString(),
                                 updatedBy: 'SYSTEM_AUTOGEN'
                             });
-                            autoPrlCount++;
+                            autoPrinCount++;
                         }
                     }
                 }
 
-                if (newCount > 0) {
+                if (newCount > 0 || updateCount > 0) {
                     this.saveDb();
                     this.filterTable(); // refrescar UI
-                    alert(`Importación completada con éxito:\n- ${newCount} nuevos registros maestros.\n- ${autoPrlCount} sub-delegaciones (PRL) auto-generadas.`);
+                    alert(`Importación completada:\n- Nuevos registros: ${newCount}\n- Registros actualizados: ${updateCount}\n- Delegaciones PRINCIPAL generadas: ${autoPrinCount}`);
                 } else {
-                    alert("No se importó ningún registro nuevo. O bien los códigos ya existían en la base de datos, o las filas contenían errores de formato.");
+                    alert("No se importó ni actualizó ningún registro.");
                 }
 
             } else {
