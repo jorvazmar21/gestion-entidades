@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { usePermissionsStore } from '../../store/usePermissionsStore';
-import { Save, ArrowLeft, ShieldCheck, Database, LayoutTemplate } from 'lucide-react';
+import { Save, ShieldCheck, Database, LayoutTemplate } from 'lucide-react';
 import clsx from 'clsx';
+import { SafeImage } from '../SafeImage';
 
 interface Props {
   onBack: () => void;
@@ -37,21 +38,28 @@ export function PermissionMatrixScreen({ onBack }: Props) {
   return (
     <div className="flex flex-col h-full bg-[#f8f9ff] text-[#2a333f] font-sans">
       {/* HEADER */}
-      <div className="flex-none h-16 bg-[#27313f] text-[#f8f9ff] flex items-center justify-between px-6 shadow-md z-10">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-[#3b4758] rounded-md transition-colors">
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold font-['Manrope'] tracking-wide">MESA DE CRUCE L/E/A</h1>
-            <p className="text-xs text-[#aab3c1]">Asignación táctica de privilegios por Arquetipo</p>
-          </div>
-        </div>
-        
-        <button className="flex items-center gap-2 bg-gradient-to-br from-[#5f030a] to-[#7f1d1d] px-6 py-2 rounded-md font-semibold text-sm hover:opacity-90 transition-opacity whitespace-nowrap">
-          <Save size={16} /> CONFIRMAR MATRIZ
-        </button>
-      </div>
+      <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-10">
+         <div className="flex items-center gap-3">
+           <SafeImage src="/icons/sys_matrix.svg" fallbackType="svg" wrapperClassName="w-8 h-8" className="w-full h-full object-contain" />
+           <div>
+             <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
+               Mesa de Cruce L/E/A
+             </h1>
+             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">Asignación táctica de privilegios por Arquetipo</span>
+           </div>
+         </div>
+         <div className="flex items-center gap-4">
+           <button className="bg-[#7f1d1d] text-white hover:bg-red-800 px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center gap-2">
+             <Save size={14} /> Confirmar Matriz
+           </button>
+           <button 
+             onClick={onBack}
+             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+           >
+             Volver al Inicio
+           </button>
+         </div>
+       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT SIDEBAR - PROFILE LIST (Thin) */}

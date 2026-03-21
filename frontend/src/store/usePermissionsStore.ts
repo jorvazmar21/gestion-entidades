@@ -58,7 +58,7 @@ const MOCK_PROFILES: BaseProfile[] = [
     name: 'Jefe de Producción',
     description: 'Responsable táctico a pie de obra.',
     isAdmin: false,
-    adn: { phases: ['EJECUCIÓN'], departments: ['PRODUCCIÓN'], entities: ['OBRAS', 'PARQUE'] }
+    adn: { phases: ['EJECUCIÓN'], departments: ['PRODUCCIÓN'], entities: ['OBRAS', 'PARQUES'] }
   },
   {
     id: 'prof_2',

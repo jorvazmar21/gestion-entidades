@@ -19,6 +19,13 @@ interface LayoutState {
   anchoBotonera: number;
   mostrarTabiques: boolean;
 
+  // Variables proporcionales ZONA 5 (Breadcrumbs + Toolbar)
+  z5_ratio_top: number;
+  z5_ratio_bottom: number;
+  z5_toolbar_left: number;
+  z5_toolbar_mid: number;
+  z5_toolbar_right: number;
+
   // Función maestra para alterar cualquier medida en el futuro (desde el WYSIWYG)
   updateLayoutParam: (key: keyof Omit<LayoutState, 'updateLayoutParam' | 'toggleTabiques'>, value: string | number | boolean) => void;
   toggleTabiques: () => void;
@@ -37,6 +44,12 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   altoZonasInferiores: 150,
   anchoBotonera: 350,
   mostrarTabiques: false,
+
+  z5_ratio_top: 25,
+  z5_ratio_bottom: 75,
+  z5_toolbar_left: 40,
+  z5_toolbar_mid: 30,
+  z5_toolbar_right: 30,
 
   // Setter universal
   updateLayoutParam: (key, value) => 

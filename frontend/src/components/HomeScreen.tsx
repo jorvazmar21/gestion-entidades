@@ -2,14 +2,12 @@ import React from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useUiStore } from '../store/useUiStore';
-import { useLayoutStore } from '../store/useLayoutStore';
 import { SafeImage } from './SafeImage';
 
 export const HomeScreen: React.FC = () => {
   const { tiposEntidadDb, loading, error } = useDataStore();
   const { activeUser, userRole, logout } = useAuthStore();
   const { navigateToModule, setScreen } = useUiStore();
-  const { mostrarTabiques, toggleTabiques } = useLayoutStore();
 
   const handleLogout = () => {
     logout();
@@ -126,17 +124,25 @@ export const HomeScreen: React.FC = () => {
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                      
-                     <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
+                     <button 
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
                         <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Gestión de Tipos</span>
                      </button>
 
-                     <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
+                     <button 
+                       onClick={() => setScreen('DATA_DICTIONARY')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
                         <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Diccionario Dts.</span>
                      </button>
 
-                     <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
+                     <button 
+                       onClick={() => setScreen('EXCEL_VIEWER')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
                         <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Visor Tablas Raw</span>
                      </button>
@@ -179,16 +185,6 @@ export const HomeScreen: React.FC = () => {
                      >
                        <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                        <span className="font-semibold text-sm uppercase tracking-wide text-white">Taller WYSIWYG</span>
-                     </button>
-                     
-                     <button
-                       onClick={toggleTabiques}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
-                     >
-                       <SafeImage src="/icons/sys_tabiques.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                       <span className="font-semibold text-sm uppercase tracking-wide text-white">
-                         {mostrarTabiques ? 'Ocultar Tabiques' : 'Mostrar Tabiques'}
-                       </span>
                      </button>
                   </div>
                </div>

@@ -9,10 +9,12 @@ import { MediaManagerScreen } from './components/MediaManagerScreen'
 import { ProfileForgeScreen } from './components/admin/ProfileForgeScreen'
 import { InventoryCatalogScreen } from './components/admin/InventoryCatalogScreen'
 import { PermissionMatrixScreen } from './components/admin/PermissionMatrixScreen'
+import { DataDictionaryScreen } from './components/admin/DataDictionaryScreen'
+import { ExcelViewerScreen } from './components/admin/ExcelViewerScreen'
 
 function App() {
   // El "Mundo" Visual / Navegación (Pilar 2)
-  const { currentScreen, activeModuleId, setScreen } = useUiStore();
+  const { currentScreen, setScreen } = useUiStore();
   
   // El "Mundo" de la Seguridad (Pilar 1)
   const { login, loginError } = useAuthStore();
@@ -37,10 +39,7 @@ function App() {
   // 3. Pantalla Modular (El Layout Ledger de Trabajo 3-Columnas)
   if (currentScreen === 'MODULE_VIEW') {
     return (
-      <MainLayout 
-        activeModuleId={activeModuleId} 
-        onNavigateHome={() => setScreen('HOME')}
-      />
+      <MainLayout />
     );
   }
 
@@ -58,6 +57,8 @@ function App() {
   if (currentScreen === 'PROFILE_FORGE') return <ProfileForgeScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'INVENTORY_CATALOG') return <InventoryCatalogScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'PERMISSION_MATRIX') return <PermissionMatrixScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'DATA_DICTIONARY') return <DataDictionaryScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'EXCEL_VIEWER') return <ExcelViewerScreen onBack={() => setScreen('HOME')} />;
 
   return null;
 }

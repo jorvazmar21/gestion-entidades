@@ -42,26 +42,39 @@ export function LayoutConfigScreen() {
   const LAYOUT = useLayoutStore();
   const updateLayoutParam = useLayoutStore(state => state.updateLayoutParam);
   const setScreen = useUiStore(state => state.setScreen);
+  const mostrarTabiques = useLayoutStore(state => state.mostrarTabiques);
+  const toggleTabiques = useLayoutStore(state => state.toggleTabiques);
 
   return (
     <div className="flex flex-col bg-[#242424] font-['Inter'] absolute inset-0 w-full h-full overflow-hidden">
       
-      {/* HEADER MODO EDICIÓN (No manipulable) */}
-      <div className="w-full h-[60px] shrink-0 bg-yellow-400 z-50 flex items-center justify-between px-6 shadow-xl border-b-[4px] border-yellow-600">
-        <div className="flex items-center gap-4">
-          <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8 animate-pulse" className="w-full h-full object-contain" />
-          <div>
-            <h1 className="text-yellow-900 font-bold text-lg tracking-widest uppercase">Modo Edición Geométrica</h1>
-            <p className="text-yellow-800 text-xs font-semibold">Taller WYSIWYG - Arrastra los Tabiques grises para redimensionar las 10 zonas</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => setScreen('HOME')}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-md transition-colors border border-red-800"
-        >
-          Guardar y Salir
-        </button>
-      </div>
+      {/* HEADER MODO EDICIÓN (Estandarizado) */}
+      <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-50 w-full">
+         <div className="flex items-center gap-3">
+           <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8" className="w-full h-full object-contain" />
+           <div>
+             <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
+               Taller WYSIWYG
+             </h1>
+             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">EDICIÓN GEOMÉTRICA (ARRASTRA LOS TABIQUES PARA REDIMENSIONAR)</span>
+           </div>
+         </div>
+         <div className="flex items-center gap-4">
+           <button 
+             onClick={toggleTabiques}
+             className="flex items-center gap-2 bg-[#27313f] text-white border border-[#3b4758] hover:bg-[#1f2937] px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+           >
+             <SafeImage src="/icons/sys_tabiques.svg" fallbackType="svg" wrapperClassName="w-4 h-4" className="w-full h-full invert brightness-0" />
+             {mostrarTabiques ? 'Ocultar Tabiques' : 'Mostrar Tabiques'}
+           </button>
+           <button 
+             onClick={() => setScreen('HOME')}
+             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+           >
+             Volver al Inicio
+           </button>
+         </div>
+       </header>
 
       {/* CLON VISUAL DEL LAYOUT FUNCIONAL CON TABIQUES FÍSICOS (TECHO A SUELO) */}
       <div className="flex-1 flex w-full h-full bg-slate-100 overflow-hidden relative">

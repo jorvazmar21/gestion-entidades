@@ -116,8 +116,28 @@ export function MediaManagerScreen() {
                 <MediaCard title="Email Usuario" filename="icons/ui_email.svg" accept=".svg" />
                 <MediaCard title="Borrar (Papelera)" filename="icons/ui_trash.svg" accept=".svg" desc="Acciones eliminar" />
                 <MediaCard title="Alerta Admin (Escudo)" filename="icons/ui_shield.svg" accept=".svg" desc="Modo Bypass Permisos" />
-                <MediaCard title="Filtros" filename="icons/ui_filter.svg" accept=".svg" desc="Filtros de inventario/datos" />
                 <MediaCard title="Buscador (Lupa)" filename="icons/ui_search.svg" accept=".svg" desc="Lupa de texto" />
+                <MediaCard title="Centro de Alertas" filename="icons/ui_alert.svg" accept=".svg" desc="Campana de notificaciones (Botonera Usuario)" />
+                <MediaCard title="Centro de Ayuda" filename="icons/ui_info.svg" accept=".svg" desc="Circulo de ayuda / documentación" />
+                <MediaCard title="Configuración Usuario" filename="icons/ui_settings.svg" accept=".svg" desc="Tuerca de ajustes (Botonera Usuario)" />
+              </div>
+          </section>
+
+          <section className="mb-12">
+             <div className="flex items-center gap-3 mb-6">
+               <h3 className="text-[#121c2a] font-bold text-[16px] tracking-wide font-['Manrope']">Iconografía de Departamentos</h3>
+               <div className="h-[1px] bg-slate-200 flex-1"></div>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <MediaCard title="Departamento Estudios" filename="icons/dept_estudios.svg" accept=".svg" />
+                <MediaCard title="Departamento Administración" filename="icons/dept_administracion.svg" accept=".svg" />
+                <MediaCard title="Departamento RRHH" filename="icons/dept_rrhh.svg" accept=".svg" />
+                <MediaCard title="Departamento PRL" filename="icons/dept_prl.svg" accept=".svg" />
+                <MediaCard title="Departamento Calidad" filename="icons/dept_calidad.svg" accept=".svg" />
+                <MediaCard title="Departamento Medioambiente" filename="icons/dept_medioambiente.svg" accept=".svg" />
+                <MediaCard title="Departamento Oficina Técnica" filename="icons/dept_of_tecnica.svg" accept=".svg" />
+                <MediaCard title="Departamento Producción" filename="icons/dept_produccion.svg" accept=".svg" />
+                <MediaCard title="Departamento Dirección" filename="icons/dept_direccion.svg" accept=".svg" />
              </div>
           </section>
 

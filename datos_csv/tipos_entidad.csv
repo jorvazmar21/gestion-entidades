@@ -2,7 +2,7 @@ id_tipo;nombre;categoria;subCategoria;nivel;icono;tipos_hijo_permitidos;max_coun
 OBR;Obras;LUGAR;;L1;#icon-build;"[""PRL"",""SEC""]";""
 PRV;Proveedores;LUGAR;;L1;#icon-handshake;"[""PRL"",""SEC""]";""
 SED;Sedes;LUGAR;;L1;#icon-office;"[""PRL"",""SEC""]";""
-PAR;Parque;LUGAR;;L1;#icon-tractor;"[""PRL"",""BHO"",""BIN"",""BPM"",""CRZ"",""CEL"",""CPH"",""CPN"",""CDI"",""DAR"",""RET"",""GDI"",""J2B"",""J3B"",""MTE"",""MPI"",""MHI"",""NAG"",""CCO"",""CPB"",""PIL"",""PEL"",""RGU"",""TIL"",""VEN""]";""
+PAR;Parques;LUGAR;;L1;#icon-tractor;"[""PRL"",""BHO"",""BIN"",""BPM"",""CRZ"",""CEL"",""CPH"",""CPN"",""CDI"",""DAR"",""RET"",""GDI"",""J2B"",""J3B"",""MTE"",""MPI"",""MHI"",""NAG"",""CCO"",""CPB"",""PIL"",""PEL"",""RGU"",""TIL"",""VEN""]";""
 CLI;Clientes;LUGAR;;L1;#icon-handshake;"[""PRL"",""SEC""]";""
 PRL;Principal;DELEGACION;ALMACEN;L2;;[];1
 SEC;Secundario;DELEGACION;ALMACEN;L2;;[];""

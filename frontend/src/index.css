@@ -2,3 +2,63 @@
 
 /* Custom global styles for NORTUNEL ERP can be added here if needed, 
    but we rely on Tailwind utility classes for layout control. */
+
+/* =========================================
+   AG-GRID THEME OVERRIDES (EXCEL STYLE)
+   ========================================= */
+
+/* MAXIMUM SPECIFICITY - Override AG-Grid internal stylesheets */
+.ag-theme-quartz.excel-grid-style {
+    --ag-font-size: 8px !important;
+    --ag-row-height: 16px !important;
+    --ag-header-height: 22px !important;
+    --ag-wrapper-border-radius: 0 !important;
+    --ag-borders: solid 1px #94a3b8 !important;
+    --ag-row-border-style: solid !important;
+    --ag-row-border-color: #cbd5e1 !important;
+    --ag-row-border-width: 1px !important;
+    --ag-cell-horizontal-padding: 6px !important;
+    --ag-header-background-color: #f1f5f9 !important;
+}
+
+.ag-theme-quartz.excel-grid-style .ag-header {
+    border-bottom: 2px solid #7f1d1d !important;
+    background-color: #f1f5f9 !important;
+}
+
+/* Force vertical lines and text centering perfectly */
+.ag-theme-quartz.excel-grid-style .ag-cell,
+.ag-theme-quartz.excel-grid-style .ag-header-cell {
+    border-right: 1px solid #cbd5e1 !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: normal !important;
+}
+
+/* Fix text size explicitly inside cells just in case the variable fails */
+.ag-theme-quartz.excel-grid-style .ag-cell-value {
+    font-size: 8px !important;
+    line-height: 1 !important;
+}
+
+/* Pagination Footer shrink */
+.ag-theme-quartz.excel-grid-style .ag-paging-panel {
+    height: 25px !important;
+    min-height: 25px !important;
+    border-top: 1px solid #cbd5e1 !important;
+}
+.ag-theme-quartz.excel-grid-style .ag-paging-panel * {
+    font-size: 9px !important;
+}
+.ag-theme-quartz.excel-grid-style .ag-paging-panel .ag-icon {
+    font-size: 10px !important;
+}
+
+.ag-theme-quartz.excel-grid-style .ag-header-cell-text {
+    font-size: 9px !important;
+}
+
+/* Ensure the absolute container spans full height */
+.ag-theme-quartz.excel-grid-style .ag-root-wrapper {
+    height: 100% !important;
+}

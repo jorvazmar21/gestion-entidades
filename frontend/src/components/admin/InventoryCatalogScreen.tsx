@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { usePermissionsStore } from '../../store/usePermissionsStore';
 import type { ADNTags } from '../../store/usePermissionsStore';
-import { Search, Save, ArrowLeft, Filter } from 'lucide-react';
+import { Search, Save, Filter } from 'lucide-react';
 import clsx from 'clsx';
+import { SafeImage } from '../SafeImage';
 
 const FASES = ['ESTUDIO', 'LICITACIÓN', 'EJECUCIÓN', 'GARANTÍA'];
 const DPTOS = ['PRODUCCIÓN', 'COMPRAS', 'RRHH', 'TOPOGRAFÍA', 'CALIDAD', 'ADMINISTRACIÓN'];
@@ -35,33 +36,40 @@ export function InventoryCatalogScreen({ onBack }: Props) {
   return (
     <div className="flex flex-col h-full bg-[#f8f9ff] text-[#2a333f] font-sans">
       {/* HEADER */}
-      <div className="flex-none h-16 bg-[#27313f] text-[#f8f9ff] flex items-center justify-between px-6 shadow-md z-10">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-[#3b4758] rounded-md transition-colors">
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold font-['Manrope'] tracking-wide">ADN DE INVENTARIO</h1>
-            <p className="text-xs text-[#aab3c1]">Catalogación Estructural (PSets, Informes)</p>
-          </div>
-        </div>
-        
-        {/* BARRA BÚSQUEDA STITCH PROPOSAL */}
-        <div className="relative w-96 hidden md:block">
-          <input
-            type="text"
-            className="w-full bg-[#1f2937] text-sm text-white placeholder-[#727b89] rounded-md pl-10 pr-4 py-2 border border-[#3b4758] focus:border-[#aab3c1] focus:outline-none transition-colors"
-            placeholder="Buscar PSets o informes por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Search className="absolute left-3 top-2.5 text-[#727b89]" size={16} />
-        </div>
-
-        <button className="flex items-center gap-2 bg-gradient-to-br from-[#5f030a] to-[#7f1d1d] px-6 py-2 rounded-md font-semibold text-sm hover:opacity-90 transition-opacity whitespace-nowrap hidden sm:flex">
-          <Save size={16} /> GUARDAR CAMBIOS
-        </button>
-      </div>
+      <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-10">
+         <div className="flex items-center gap-3">
+           <SafeImage src="/icons/sys_inventory.svg" fallbackType="svg" wrapperClassName="w-8 h-8" className="w-full h-full object-contain" />
+           <div>
+             <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
+               Catálogo Inventario
+             </h1>
+             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">Catalogación Estructural (PSets, Informes)</span>
+           </div>
+         </div>
+         <div className="flex items-center gap-6">
+           {/* BARRA BÚSQUEDA STITCH PROPOSAL */}
+           <div className="relative w-96 hidden md:block">
+             <input
+               type="text"
+               className="w-full bg-gray-50 text-sm text-gray-800 placeholder-gray-400 rounded-md pl-10 pr-4 py-2 border border-gray-200 focus:border-gray-400 focus:outline-none transition-colors"
+               placeholder="Buscar PSets o informes por nombre..."
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             />
+             <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
+           </div>
+           
+           <button className="bg-[#7f1d1d] text-white hover:bg-red-800 px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center gap-2">
+             <Save size={14} /> Guardar Cambios
+           </button>
+           <button 
+             onClick={onBack}
+             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+           >
+             Volver al Inicio
+           </button>
+         </div>
+       </header>
 
       {/* CORE TABLE */}
       <div className="flex-1 overflow-auto p-8">
