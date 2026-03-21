@@ -1,8 +1,15 @@
+/**
+ * @module useDataStore
+ * @description Almacén central asíncrono y decodificador de datos del sistema (Maestros, PSets y Árbol de Tipología).
+ * @inputs Respuestas HTTP JSON desde el proxy de Node (`/api/load`).
+ * @actions Interpreta los archivos CSV crudos y los transfiere a vectores relacionales en memoria RAM para consumo UI.
+ * @files src/store/useDataStore.ts
+ */
 import { create } from 'zustand';
 import type { Entity, PSetDef, EntityType, ModuleConfig, PSetHistoryRecord } from '../types';
 
-interface AppState {
-  // Data
+interface DataState {
+  // Base de Datos en Memoria
   db: Entity[];
   psets_def: PSetDef[];
   psetValuesDb: Record<string, any>;
@@ -10,22 +17,21 @@ interface AppState {
   tiposEntidadDb: EntityType[];
   MODULES: Record<string, ModuleConfig>;
 
-  // UI State
+  // Estado de red y filtrado tabular
   filters: { active: boolean; inactive: boolean; deleted: boolean };
   sortCol: string;
   sortAsc: boolean;
-  currentModule: string | null;
   loading: boolean;
   error: string | null;
 
-  // Actions
+  // Acciones
   init: () => Promise<void>;
   setFilter: (filterKey: 'active' | 'inactive' | 'deleted') => void;
-  setModule: (moduleId: string | null) => void;
   saveDb: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+// "useDataStore": La Biblioteca (Almacén de Entidades y CSVs)
+export const useDataStore = create<DataState>((set, get) => ({
   db: [],
   psets_def: [],
   psetValuesDb: {},
@@ -36,7 +42,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   filters: { active: true, inactive: false, deleted: false },
   sortCol: 'name',
   sortAsc: true,
-  currentModule: null,
   loading: false,
   error: null,
 
@@ -84,10 +89,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   setFilter: (key) => {
     const { filters } = get();
     set({ filters: { ...filters, [key]: !filters[key] } });
-  },
-
-  setModule: (moduleId) => {
-    set({ currentModule: moduleId });
   },
 
   saveDb: async () => {

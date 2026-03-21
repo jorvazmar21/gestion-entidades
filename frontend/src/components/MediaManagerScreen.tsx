@@ -1,0 +1,181 @@
+/**
+ * @module MediaManagerScreen
+ * @description Centro de Control Visual de la aplicación (Branding e Iconografía).
+ * @inputs Archivos seleccionados localmente en formato multimedia (.svg, .png, .jpg).
+ * @actions Convierte imágenes a Base64, las envía al backend proxy, dispara recarga de variables y consolida UI.
+ * @files src/components/MediaManagerScreen.tsx
+ */
+import React, { useState } from 'react';
+import { useUiStore } from '../store/useUiStore';
+import { useDataStore } from '../store/useDataStore';
+import { SafeImage } from './SafeImage';
+
+export function MediaManagerScreen() {
+  const setScreen = useUiStore(state => state.setScreen);
+  const { tiposEntidadDb } = useDataStore();
+  const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, filename: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const targetInput = e.target;
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Data = event.target?.result as string;
+      try {
+        const res = await fetch('/api/upload-media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, base64Data })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setRefreshKey(prev => prev + 1);
+        } else {
+          alert('Error de servidor: ' + data.error);
+        }
+      } catch (err) {
+        alert('Error conectando al servidor.');
+      } finally {
+        targetInput.value = ''; // Limpiar el input para permitir elegir el mismo archivo otra vez
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const MediaCard = ({ title, filename, accept, desc }: { title: string, filename: string, accept: string, desc?: string }) => (
+    <div className="flex flex-col items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative hover:border-blue-400 hover:shadow-md transition-all h-full">
+       <div className="h-20 w-full flex items-center justify-center bg-[#f8f9ff] rounded mb-3 overflow-hidden border border-[#cbd5e1] p-2">
+         <img 
+           key={`${filename}-${refreshKey}`}
+           src={`/${filename}?v=${refreshKey}`} 
+           className="max-h-full max-w-full object-contain"
+           alt={title}
+           onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+         />
+         <span className="text-3xl opacity-20 hidden">❌</span>
+       </div>
+       <div className="text-center w-full mb-3 flex-1 flex flex-col justify-start">
+         <span className="text-[11px] font-bold text-gray-800 uppercase leading-tight block">{title}</span>
+         {desc && <span className="text-[9px] text-gray-400 mt-1 block leading-tight">{desc}</span>}
+         <span className="text-[9px] font-mono text-blue-500 mt-2 block bg-blue-50 px-1 py-1 rounded truncate w-full" title={filename}>{filename}</span>
+       </div>
+       <label className="cursor-pointer bg-[#edf2fc] text-[#475569] hover:bg-blue-600 hover:text-white px-3 py-2 rounded text-[10px] font-bold uppercase tracking-widest border border-[#cbd5e1] w-full text-center transition-colors shadow-sm">
+          Cargar {accept.replace(/\./g, '').toUpperCase()}
+          <input type="file" accept={accept} className="hidden" onChange={(e) => handleUpload(e, filename)} />
+       </label>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#f8f9ff] flex flex-col font-['Inter'] relative w-full overflow-hidden">
+       {/* CABECERA */}
+       <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-10">
+         <div className="flex items-center gap-3">
+           <SafeImage src="/icons/sys_media.svg" fallbackType="svg" wrapperClassName="w-8 h-8" className="w-full h-full object-contain" />
+           <div>
+             <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
+               Gestor de Media Global
+             </h1>
+             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">Centro de Control Visual Avanzado</span>
+           </div>
+         </div>
+         <button 
+           onClick={() => setScreen('HOME')}
+           className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+         >
+           Volver al Inicio
+         </button>
+       </header>
+
+       <main className="flex-1 p-8 overflow-y-auto w-full max-w-[1400px] mx-auto space-y-12 relative z-10">
+          
+          {/* SECCIÓN 1 */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
+                <span className="w-3 h-3 bg-purple-600 rounded-sm block shadow-sm"></span>
+                Branding Global & Fondos
+             </h2>
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                <MediaCard title="Favicon (Pestaña navegador)" filename="media/favicon.svg" accept=".svg,.png" desc="Icono vectorial del navegador" />
+                <MediaCard title="Logo Principal App" filename="media/logo-fractales.svg" accept=".svg" desc="Logo visible en Login y menús superiores" />
+                <MediaCard title="Fondo Pantalla Login" filename="media/Fondo Logueo 01.jpg" accept=".jpg,.jpeg" desc="Imagen fotográfica a pantalla completa" />
+             </div>
+          </section>
+
+          {/* SECCIÓN 2 */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
+                <span className="w-3 h-3 bg-amber-500 rounded-sm block shadow-sm"></span>
+                Iconos Útiles de Interfaz (UI)
+             </h2>
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                <MediaCard title="Candado Contraseña" filename="icons/ui_candado.svg" accept=".svg" />
+                <MediaCard title="Email Usuario" filename="icons/ui_email.svg" accept=".svg" />
+                <MediaCard title="Borrar (Papelera)" filename="icons/ui_trash.svg" accept=".svg" desc="Acciones eliminar" />
+                <MediaCard title="Alerta Admin (Escudo)" filename="icons/ui_shield.svg" accept=".svg" desc="Modo Bypass Permisos" />
+                <MediaCard title="Filtros" filename="icons/ui_filter.svg" accept=".svg" desc="Filtros de inventario/datos" />
+                <MediaCard title="Buscador (Lupa)" filename="icons/ui_search.svg" accept=".svg" desc="Lupa de texto" />
+             </div>
+          </section>
+
+          {/* SECCIÓN 2.5 ARQUITECTURA Y SISTEMA */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
+                <span className="w-3 h-3 bg-[#7f1d1d] rounded-sm block shadow-sm"></span>
+                Iconos Arquitectura y Sistemas
+             </h2>
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                <MediaCard title="Gestión Tipos" filename="icons/sys_tipos.svg" accept=".svg" />
+                <MediaCard title="Diccionario Dts" filename="icons/sys_diccionario.svg" accept=".svg" />
+                <MediaCard title="Tablas Raw" filename="icons/sys_raw.svg" accept=".svg" />
+                <MediaCard title="Gestor Media" filename="icons/sys_media.svg" accept=".svg" />
+                <MediaCard title="WYSIWYG Layout" filename="icons/sys_wysiwyg.svg" accept=".svg" />
+                <MediaCard title="Mostrar Tabiques" filename="icons/sys_tabiques.svg" accept=".svg" />
+                <MediaCard title="Fragua Arquetipos" filename="icons/sys_forge.svg" accept=".svg" />
+                <MediaCard title="Catálogo Inv." filename="icons/sys_inventory.svg" accept=".svg" />
+                <MediaCard title="Mesa de Cruce" filename="icons/sys_matrix.svg" accept=".svg" />
+             </div>
+          </section>
+
+          {/* SECCIÓN 3 */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
+                <span className="w-3 h-3 bg-green-600 rounded-sm block shadow-sm"></span>
+                Entornos Operativos (Módulos Sistema)
+             </h2>
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                {l1Modules.map(mod => (
+                  <MediaCard 
+                    key={mod.id_tipo} 
+                    title={mod.nombre} 
+                    filename={`icons/mod_${mod.id_tipo}.svg`} 
+                    accept=".svg" 
+                    desc={`Icono Módulo L1`}
+                  />
+                ))}
+                {l1Modules.length === 0 && (
+                   <span className="col-span-full text-xs text-gray-400 italic">No hay módulos cargados en base de datos.</span>
+                )}
+             </div>
+          </section>
+
+          {/* SECCIÓN 4: RESPALDO GENÉRICOS */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
+                <span className="w-3 h-3 bg-[#1e293b] rounded-sm block shadow-sm"></span>
+                Válvulas de Seguridad y Respaldo (Generics)
+             </h2>
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                <MediaCard title="SVG Genérico" filename="generics/SVG_Generico.svg" accept=".svg" desc="Escudo/Respaldo ante iconos borrados" />
+                <MediaCard title="JPG Genérico" filename="generics/JPG_Generico.jpg" accept=".jpg,.jpeg" desc="Respaldo fotográfico plano" />
+                <MediaCard title="PNG Genérico" filename="generics/PNG_Generico.png" accept=".png" desc="Respaldo de avatares/transparencias" />
+             </div>
+          </section>
+
+       </main>
+    </div>
+  );
+}

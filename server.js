@@ -16,7 +16,8 @@ const CSV_FILES = {
     psets_def: path.join(DATA_DIR, 'psets_def.csv'),
     psets_val: path.join(DATA_DIR, 'psets_val.csv'),
     psets_dyn: path.join(DATA_DIR, 'psets_dyn.csv'),
-    tipos_entidad: path.join(DATA_DIR, 'tipos_entidad.csv')
+    tipos_entidad: path.join(DATA_DIR, 'tipos_entidad.csv'),
+    usuarios: path.join(DATA_DIR, 'usuarios.csv')
 };
 
 // 1. Asegurar Infraestructura
@@ -24,12 +25,15 @@ if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR);
     console.log(`📁 Carpeta de base de datos creada: ${DATA_DIR}`);
 }
+const MEDIA_DIR = path.join(DATA_DIR, 'media');
+if (!fs.existsSync(MEDIA_DIR)) fs.mkdirSync(MEDIA_DIR);
 
 // Crear archivos en blanco si no existen con sus cabeceras (excepto tipos_entidad que es crítico)
 if (!fs.existsSync(CSV_FILES.master)) fs.writeFileSync(CSV_FILES.master, "id;level;category;subCategory;type;code;name;location;canal;parentId;isActive;deletedAt;deletedBy;createdAt;createdBy;updatedAt;updatedBy\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.psets_def)) fs.writeFileSync(CSV_FILES.psets_def, "id_pset;behavior;appliesTo;properties\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.psets_val)) fs.writeFileSync(CSV_FILES.psets_val, "id_entity;id_pset;data\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.psets_dyn)) fs.writeFileSync(CSV_FILES.psets_dyn, "id_record;id_entity;id_pset;timestamp;data\n", 'utf8');
+if (!fs.existsSync(CSV_FILES.usuarios)) fs.writeFileSync(CSV_FILES.usuarios, "usuario;password;rol\nadmin;admin;admin\nzeus;zeus;zeus\n", 'utf8');
 
 // --- SISTEMA DE BLOQUEO DE ESCRITURA (CONCURRENCIA) ---
 let isWriting = false;
@@ -127,6 +131,44 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // A2. API: LOGIN SEGURO
+    if (req.url === '/api/login' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const { username, password } = JSON.parse(body);
+                const rawUsers = fs.readFileSync(CSV_FILES.usuarios, 'utf8').split('\n').filter(l => l.trim() !== '');
+                
+                let authSuccess = false;
+                let userRole = null;
+                
+                // Empezamos en i=1 para saltar cabeceras: usuario;password;rol
+                for (let i = 1; i < rawUsers.length; i++) {
+                    const cols = rawUsers[i].split(';');
+                    if (cols.length >= 3 && cols[0].trim() === username && cols[1].trim() === password) {
+                        authSuccess = true;
+                        userRole = cols[2].trim();
+                        break;
+                    }
+                }
+                
+                if (authSuccess) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, user: username, role: userRole }));
+                } else {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Credenciales inválidas o no autorizadas.' }));
+                }
+            } catch (e) {
+                console.error("Login Error:", e);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: 'Error del servidor al validar credenciales.' }));
+            }
+        });
+        return;
+    }
+
     // B. API: GUARDAR DATOS (TRANSACCIÓN COMPLETA)
     if (req.url === '/api/save' && req.method === 'POST') {
         let body = '';
@@ -191,7 +233,69 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // D. API: UPLOAD BASE64 MEDIA
+    if (req.url === '/api/upload-media' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                const { filename, base64Data } = payload;
+                if (!filename || !base64Data || filename.includes('..') || filename.includes('server.js')) {
+                    throw new Error("Datos de subida inválidos o inseguros");
+                }
+
+                // Determinar la carpeta destino absoluta bajo datos_csv/
+                // (el filename que viene es 'media/xxx.ext')
+                const targetPath = path.join(DATA_DIR, filename);
+                const dirPath = path.dirname(targetPath);
+                
+                if (!fs.existsSync(dirPath)) {
+                    fs.mkdirSync(dirPath, { recursive: true });
+                }
+
+                // Parsear el base64
+                const matches = base64Data.match(/^data:(.*?);base64,(.+)$/);
+                if (!matches || matches.length !== 3) {
+                    throw new Error("String base64 inválida");
+                }
+                const imageBuffer = Buffer.from(matches[2], 'base64');
+
+                // Sobrescribir el archivo brutalmente
+                fs.writeFileSync(targetPath, imageBuffer);
+                
+                console.log(`✅ Archivo Media actualizado: ${targetPath}`);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: 'Archivo actualizado' }));
+            } catch (err) {
+                console.error("❌ Error subiendo media:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // C. SERVIDOR ESTÁTICO WEB
+    
+    // STATIC: MEDIA (Sirviendo desde datos_csv/media)
+    if (req.url.startsWith('/media/')) {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+        const decodePath = decodeURIComponent(parsedUrl.pathname);
+        const filePath = path.join(DATA_DIR, decodePath);
+        if (fs.existsSync(filePath)) {
+            const ext = path.extname(filePath).toLowerCase();
+            let contentType = 'application/octet-stream';
+            if (ext === '.svg') contentType = 'image/svg+xml';
+            else if (ext === '.png') contentType = 'image/png';
+            else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+            else if (ext === '.ico') contentType = 'image/x-icon';
+            res.writeHead(200, { 'Content-Type': contentType });
+            fs.createReadStream(filePath).pipe(res);
+            return;
+        }
+    }
+
     // Si la ruta no es /api/* comprobamos si están pidiendo HTML, CSS o JS
     let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url);
 

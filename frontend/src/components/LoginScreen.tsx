@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-
-interface LoginScreenProps {
+/**
+ * @module LoginScreen
+ * @description Pantalla de autenticación y puerta de entrada al sistema Fractal Core.
+ * @inputs Función onLogin, mensajes de error (errorMsg).
+ * @actions Captura credenciales del usuario, expone interfaz gráfica de validación y bloquea el paso hasta autenticación.
+ * @files src/components/LoginScreen.tsx
+ */
+import React, { useState } from 'react';interface LoginScreenProps {
   onLogin: (username: string, pass: string) => void;
   errorMsg?: string;
 }
@@ -28,7 +32,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
       <div 
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: "url('/Fondo Logueo 01.jpg')",
+          backgroundImage: "url('/media/Fondo Logueo 01.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -42,19 +46,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
         {/* Cabecera con Logo Topográfico al 75% sobre logo previo (70px) */}
         <div className="flex flex-col items-center justify-center" style={{ marginBottom: '40px' }}>
           <img 
-            src="/logo-fractales.svg" 
+            src="/media/logo-fractales.svg" 
             alt="Logo Fractales" 
             className="w-[70px] h-[70px] mb-2 object-contain"
             onError={(e) => { 
               // Fallback automático por si el usuario lo guarda como PNG en vez de SVG
               const target = e.target as HTMLImageElement;
               if (!target.src.endsWith('.png')) {
-                target.src = '/logo-fractales.png';
+                target.src = '/media/logo-fractales.png';
               }
             }}
           />
           <div className="text-center text-[25px] font-bold text-[#7f1d1d] font-['Manrope'] tracking-widest uppercase mt-0 sm:mt-1 leading-none">
-            FRACTALES 1.0
+            FRACTAL CORE 1.0
           </div>
           <p className="text-[14px] font-semibold text-[#8a716f] tracking-[0.1em] uppercase mt-1">
             By NORTUNEL, S.A.
@@ -74,12 +78,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
               type="text"
               autoComplete="off"
               className="w-full bg-[#edf2fc] px-3 py-2 outline-none text-gray-800 text-[11px] placeholder-[#94a3b8]"
-              placeholder="jvazquez@nortunel.com"
+              placeholder="tuUsuario@nortunel.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <div className="bg-white flex items-center justify-center px-3 border-l border-[#cbd5e1]">
-              <Mail className="w-3.5 h-3.5 text-gray-500" strokeWidth={2} />
+            <div className="bg-white flex items-center justify-center border-l border-[#cbd5e1] w-[32px] shrink-0">
+              <img src="/icons/ui_email.svg" className="w-[14px] h-[14px] opacity-60" alt="email" />
             </div>
           </div>
 
@@ -92,34 +96,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button 
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="bg-[#edf2fc] flex items-center justify-center px-2 text-gray-400 hover:text-gray-600 focus:outline-none"
-              title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-            >
-              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            </button>
-            <div className="bg-white flex items-center justify-center px-3 border-l border-[#cbd5e1]">
-              <Lock className="w-3.5 h-3.5 text-gray-500" strokeWidth={2} />
+            <div className="bg-white flex items-center justify-center border-l border-[#cbd5e1] w-[32px] shrink-0">
+              <img src="/icons/ui_candado.svg" className="w-[14px] h-[14px] opacity-60" alt="lock" />
             </div>
           </div>
 
           {/* Controles de Formulario */}
           <div className="flex flex-col gap-4 pt-1 pb-1">
             
-            {/* Checkbox flotante arriba */}
-            <label className="flex items-center gap-1.5 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                className="w-3 h-3 border-gray-300 rounded-sm text-[#7f1d1d] focus:ring-[#7f1d1d] cursor-pointer" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span className="text-[#4b5563] text-[10px] font-medium group-hover:text-[#1f2937] transition-colors">
-                Recordarme
-              </span>
-            </label>
+            {/* Opciones de acceso: Checkboxes a ambos lados */}
+            <div className="flex justify-between items-center w-full px-1">
+               <label className="flex items-center gap-1.5 cursor-pointer group">
+                 <input 
+                   type="checkbox" 
+                   className="w-3 h-3 border-gray-300 rounded-sm text-[#7f1d1d] focus:ring-[#7f1d1d] cursor-pointer" 
+                   checked={rememberMe}
+                   onChange={(e) => setRememberMe(e.target.checked)}
+                 />
+                 <span className="text-[#4b5563] text-[10px] font-medium group-hover:text-[#1f2937] transition-colors">
+                   Recordarme
+                 </span>
+               </label>
+
+               <label className="flex items-center gap-1.5 cursor-pointer group">
+                 <input 
+                   type="checkbox" 
+                   className="w-3 h-3 border-gray-300 rounded-sm text-[#7f1d1d] focus:ring-[#7f1d1d] cursor-pointer" 
+                   checked={showPassword}
+                   onChange={(e) => setShowPassword(e.target.checked)}
+                 />
+                 <span className="text-[#4b5563] text-[10px] font-medium group-hover:text-[#1f2937] transition-colors">
+                   Mostrar Contraseña
+                 </span>
+               </label>
+            </div>
             
             {/* Fila de Botones Centrados */}
             <div className="flex items-center justify-center gap-3 w-full">

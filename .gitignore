@@ -1,0 +1,21 @@
+# Dependencias Node
+node_modules/
+frontend/node_modules/
+
+# Archivos compilados en Producción
+dist/
+frontend/dist/
+
+# Archivos de Sistema Operativo e IDE
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Cajas Fuertes del Backend (Norma 8)
+datos_csv/usuarios.csv
+datos_csv/media/
+
+# Variables de Entorno (Si aplicaran)
+.env
+.env.*

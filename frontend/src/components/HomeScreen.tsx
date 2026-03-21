@@ -1,15 +1,20 @@
 import React from 'react';
-import { useAppStore } from '../store/useAppStore';
+import { useDataStore } from '../store/useDataStore';
+import { useAuthStore } from '../store/useAuthStore';
+import { useUiStore } from '../store/useUiStore';
+import { useLayoutStore } from '../store/useLayoutStore';
+import { SafeImage } from './SafeImage';
 
-interface HomeScreenProps {
-  activeUser: string | null;
-  userRole: 'ADMIN' | 'ZEUS' | null;
-  onLogout: () => void;
-  onNavigate: (screen: 'HOME' | 'MODULE_VIEW', moduleId?: string) => void;
-}
+export const HomeScreen: React.FC = () => {
+  const { tiposEntidadDb, loading, error } = useDataStore();
+  const { activeUser, userRole, logout } = useAuthStore();
+  const { navigateToModule, setScreen } = useUiStore();
+  const { mostrarTabiques, toggleTabiques } = useLayoutStore();
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ activeUser, userRole, onLogout, onNavigate }) => {
-  const { tiposEntidadDb, loading, error } = useAppStore();
+  const handleLogout = () => {
+    logout();
+    setScreen('LOGIN');
+  };
 
   // Los Entornos Operativos (Módulos) son los niveles 'L1' del CSV de tipos
   const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1');
@@ -19,10 +24,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ activeUser, userRole, on
       {/* HEADER GLOBAL DEL DASHBOARD INICIO */}
       <header className="h-[60px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 relative z-10 shadow-sm">
         <div className="flex items-center gap-3">
-           <img src="/logo-fractales.svg" alt="NORTUNEL ERP" className="w-[30px] h-[30px] object-contain" 
-                onError={(e) => { (e.target as HTMLImageElement).src = '/logo-fractales.png'; }} />
+           <SafeImage 
+             src="/branding/logo-fractales.svg" 
+             alt="NORTUNEL ERP" 
+             wrapperClassName="w-[30px] h-[30px]"
+             className="w-full h-full object-contain" 
+             fallbackType="svg"
+           />
            <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] hidden sm:block">
-             FRACTALES 1.0 <span className="text-gray-400 font-normal">| SISTEMA MAESTRO</span>
+             FRACTAL CORE 1.0 <span className="text-gray-400 font-normal">| SISTEMA MAESTRO</span>
            </h1>
         </div>
         <div className="flex items-center gap-6">
@@ -32,14 +42,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ activeUser, userRole, on
              </span>
              <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-800">{activeUser}</span>
-                <span className="text-[10px] uppercase text-gray-500 tracking-wider" title={userRole === 'ZEUS' ? 'Poderes Globales Operativos' : 'Modo Estructural'}>
-                  {userRole} MODE
+                <span className="text-[10px] uppercase text-gray-500 tracking-wider" title={userRole === 'ADMIN' ? 'Gestión Estructural y Configuración' : 'Modo Operacional'}>
+                  {userRole}
+
                 </span>
              </div>
            </div>
            <div className="w-[1px] h-6 bg-gray-200 hidden sm:block"></div>
            <button 
-             onClick={onLogout} 
+             onClick={handleLogout} 
              className="text-xs font-semibold text-gray-500 hover:text-[#7f1d1d] uppercase tracking-wider transition-colors"
            >
              Cerrar Sesión
@@ -72,13 +83,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ activeUser, userRole, on
                      {l1Modules.map(mod => (
                         <button 
                           key={mod.id_tipo} 
-                          onClick={() => onNavigate('MODULE_VIEW', mod.id_tipo)}
+                          onClick={() => navigateToModule(mod.id_tipo)}
                           className="flex flex-col items-start justify-center bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-[#7f1d1d]/40 transition-all group min-h-[130px] relative overflow-hidden"
                         >
                            <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-red-50 transition-colors"></div>
-                           <span className="text-2xl mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform relative z-10 text-[#7f1d1d]">
+                           
+                           <img 
+                             src={`/icons/mod_${mod.id_tipo}.svg?v=${Date.now()}`} 
+                             className="w-10 h-10 mb-3 object-contain relative z-10 transition-transform group-hover:scale-110"
+                             alt={mod.nombre}
+                             onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                             }}
+                           />
+                           <span className="text-2xl mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform relative z-10 text-[#7f1d1d] hidden">
                              {mod.icono || '📁'}
                            </span>
+                           
                            <span className="font-bold text-gray-800 group-hover:text-[#7f1d1d] transition-colors text-sm uppercase tracking-wide relative z-10">
                              {mod.nombre}
                            </span>
@@ -103,17 +125,70 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ activeUser, userRole, on
                     Arquitectura y Sistemas
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                     
                      <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
-                        <span className="text-xl mb-2 opacity-80">⚙️</span>
+                        <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Gestión de Tipos</span>
                      </button>
+
                      <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
-                        <span className="text-xl mb-2 opacity-80">📖</span>
+                        <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Diccionario Dts.</span>
                      </button>
+
                      <button className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]">
-                        <span className="text-xl mb-2 opacity-80">📊</span>
+                        <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Visor Tablas Raw</span>
+                     </button>
+
+                     <button 
+                       onClick={() => setScreen('MEDIA_MANAGER')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
+                        <SafeImage src="/icons/sys_media.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                        <span className="font-semibold text-sm uppercase tracking-wide text-white">Gestor de Media</span>
+                     </button>
+                     
+                     <button
+                       onClick={() => setScreen('PROFILE_FORGE')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
+                     >
+                       <SafeImage src="/icons/sys_forge.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Fragua Arquetipos</span>
+                     </button>
+
+                     <button
+                       onClick={() => setScreen('INVENTORY_CATALOG')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
+                     >
+                       <SafeImage src="/icons/sys_inventory.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Catálogo Inventario</span>
+                     </button>
+
+                     <button
+                       onClick={() => setScreen('PERMISSION_MATRIX')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
+                     >
+                       <SafeImage src="/icons/sys_matrix.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Mesa de Cruce</span>
+                     </button>
+                     
+                     <button
+                       onClick={() => setScreen('LAYOUT_CONFIG')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
+                       <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                       <span className="font-semibold text-sm uppercase tracking-wide text-white">Taller WYSIWYG</span>
+                     </button>
+                     
+                     <button
+                       onClick={toggleTabiques}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                     >
+                       <SafeImage src="/icons/sys_tabiques.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                       <span className="font-semibold text-sm uppercase tracking-wide text-white">
+                         {mostrarTabiques ? 'Ocultar Tabiques' : 'Mostrar Tabiques'}
+                       </span>
                      </button>
                   </div>
                </div>
