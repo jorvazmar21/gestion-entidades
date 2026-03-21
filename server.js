@@ -17,7 +17,8 @@ const CSV_FILES = {
     psets_val: path.join(DATA_DIR, 'psets_val.csv'),
     psets_dyn: path.join(DATA_DIR, 'psets_dyn.csv'),
     tipos_entidad: path.join(DATA_DIR, 'tipos_entidad.csv'),
-    usuarios: path.join(DATA_DIR, 'usuarios.csv')
+    usuarios: path.join(DATA_DIR, 'usuarios.csv'),
+    app_config: path.join(DATA_DIR, 'app_config.json')
 };
 
 // 1. Asegurar Infraestructura
@@ -34,6 +35,7 @@ if (!fs.existsSync(CSV_FILES.psets_def)) fs.writeFileSync(CSV_FILES.psets_def, "
 if (!fs.existsSync(CSV_FILES.psets_val)) fs.writeFileSync(CSV_FILES.psets_val, "id_entity;id_pset;data\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.psets_dyn)) fs.writeFileSync(CSV_FILES.psets_dyn, "id_record;id_entity;id_pset;timestamp;data\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.usuarios)) fs.writeFileSync(CSV_FILES.usuarios, "usuario;password;rol\nadmin;admin;admin\nzeus;zeus;zeus\n", 'utf8');
+if (!fs.existsSync(CSV_FILES.app_config)) fs.writeFileSync(CSV_FILES.app_config, "{}\n", 'utf8');
 
 // --- SISTEMA DE BLOQUEO DE ESCRITURA (CONCURRENCIA) ---
 let isWriting = false;
@@ -112,9 +114,18 @@ const server = http.createServer(async (req, res) => {
             const rawDyns = fs.readFileSync(CSV_FILES.psets_dyn, 'utf8').split('\n').filter(l => l.trim() !== '');
             const rawTipos = fs.readFileSync(CSV_FILES.tipos_entidad, 'utf8').split('\n').filter(l => l.trim() !== '');
 
+            let appConfig = {};
+            if (fs.existsSync(CSV_FILES.app_config)) {
+                try {
+                   const txt = fs.readFileSync(CSV_FILES.app_config, 'utf8');
+                   if (txt) appConfig = JSON.parse(txt);
+                } catch(e) {}
+            }
+
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 success: true,
+                appConfig: appConfig,
                 csvData: {
                     master: rawMaster.slice(1),
                     psets_def: rawDefs.slice(1),
@@ -226,6 +237,27 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify(result));
 
             } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // E. API: GUARDAR CONFIGURACION
+    if (req.url === '/api/config' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+                const result = await queueWriteTransaction(() => {
+                    fs.writeFileSync(CSV_FILES.app_config, JSON.stringify(payload, null, 2), 'utf8');
+                });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error("Config save error:", err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }

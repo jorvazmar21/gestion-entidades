@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { BaseProfile } from '../../store/usePermissionsStore';
 import { usePermissionsStore } from '../../store/usePermissionsStore';
-import { Plus, Save } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { SafeImage } from '../SafeImage';
 
-const FASES = ['ESTUDIO', 'LICITACIÓN', 'EJECUCIÓN', 'GARANTÍA'];
-const DPTOS = ['PRODUCCIÓN', 'COMPRAS', 'RRHH', 'TOPOGRAFÍA', 'CALIDAD', 'ADMINISTRACIÓN'];
+const FASES = ['ESTUDIO', 'LICITACIÓN', 'EJECUCIÃ“N', 'GARANTÃA'];
+const DPTOS = ['PRODUCCIÓN', 'COMPRAS', 'RRHH', 'TOPOGRAFÃA', 'CALIDAD', 'ADMINISTRACIÓN'];
 
 
 interface Props {
@@ -76,14 +76,14 @@ export function ProfileForgeScreen({ onBack }: Props) {
            </div>
          </div>
          <div className="flex items-center gap-4">
-           <button onClick={handleSave} className="bg-[#7f1d1d] text-white hover:bg-red-800 px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center gap-2">
-             <Save size={14} /> Guardar Configuración
+           <button onClick={handleSave} className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] border border-[#7f1d1d] bg-white hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors">
+             GUARDAR<br/>CONFIG.
            </button>
            <button 
              onClick={onBack}
-             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+             className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
            >
-             Volver al Inicio
+             VOLVER AL<br/>INICIO
            </button>
          </div>
        </header>

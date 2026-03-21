@@ -45,12 +45,12 @@ export const AGCheckboxFilter = ({ model, onModelChange, api, column }: CustomFi
     const clearAll = () => onModelChange({ values: [] });
 
     return (
-        <div className="p-1.5 w-40 max-h-[250px] flex flex-col font-sans text-[9px] bg-white text-gray-800 border-t-[3px] border-[#7f1d1d] shadow-2xl rounded-b-sm">
+        <div className="p-1.5 w-40 max-h-[250px] flex flex-col font-sans text-[10px] bg-white text-gray-800 border-t-[3px] border-[#7f1d1d] shadow-2xl rounded-b-sm">
            <div className="flex justify-between border-b border-gray-200 pb-1 mb-1 font-semibold">
-              <button onClick={selectAll} className="text-blue-600 hover:text-blue-800 transition-colors text-[8px] uppercase tracking-wide">
+              <button onClick={selectAll} className="text-blue-600 hover:text-blue-800 transition-colors text-[10px] uppercase tracking-wide">
                 Sel. Todo
               </button>
-              <button onClick={clearAll} className="text-red-600 hover:text-red-800 transition-colors text-[8px] uppercase tracking-wide">
+              <button onClick={clearAll} className="text-red-600 hover:text-red-800 transition-colors text-[10px] uppercase tracking-wide">
                 Limpiar
               </button>
            </div>

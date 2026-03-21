@@ -1,14 +1,8 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDataStore } from '../../store/useDataStore';
 import { SafeImage } from '../SafeImage';
-import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
 import type { ColDef } from 'ag-grid-community';
-import { AGCheckboxFilter } from './AGCheckboxFilter';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
+import { SystemDataGrid } from './SystemDataGrid';
 
 interface Props {
   onBack: () => void;
@@ -29,46 +23,9 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   
   const [activeTabIdx, setActiveTabIdx] = useState<number>(0);
   const activeTab = TABLE_TABS[activeTabIdx].id;
-  const [showColMenu, setShowColMenu] = useState(false);
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
-  const colMenuRef = useRef<HTMLDivElement>(null);
-  
-  const SYSTEM_FIELDS = useMemo(() => new Set(['id', 'id_tipo', 'id_pset', 'id_entity', 'id_record', 'timestamp', 'createdAt', 'updatedAt', 'deletedAt', 'isActive', 'parentId', 'nivel', 'canal', 'behavior', 'appliesTo']), []);
-  const [showSystemFields, setShowSystemFields] = useState(false);
 
-  useEffect(() => {
-    setHiddenColumns(prev => {
-      const next = new Set(prev);
-      if (!showSystemFields) {
-        SYSTEM_FIELDS.forEach(f => next.add(f));
-      } else {
-        SYSTEM_FIELDS.forEach(f => next.delete(f));
-      }
-      return next;
-    });
-  }, [activeTab, showSystemFields, SYSTEM_FIELDS]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (colMenuRef.current && !colMenuRef.current.contains(event.target as Node)) {
-        setShowColMenu(false);
-      }
-    }
-    if (showColMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showColMenu]);
-
-  const handlePrev = () => {
-     setActiveTabIdx(prev => prev > 0 ? prev - 1 : TABLE_TABS.length - 1);
-  };
-
-  const handleNext = () => {
-     setActiveTabIdx(prev => prev < TABLE_TABS.length - 1 ? prev + 1 : 0);
-  };
+  const handlePrev = () => setActiveTabIdx(p => p > 0 ? p - 1 : TABLE_TABS.length - 1);
+  const handleNext = () => setActiveTabIdx(p => p < TABLE_TABS.length - 1 ? p + 1 : 0);
 
   // Compute table data and headers based on active tab
   const { headers, rawRows } = useMemo(() => {
@@ -125,27 +82,20 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   }, [rawRows, headers]);
 
   const columnDefs = useMemo<ColDef[]>(() => {
-      return headers.map(h => ({
-          field: h,
-          headerName: h,
-          filter: AGCheckboxFilter,
-          sortable: true,
-          resizable: true,
-          floatingFilter: false, // We disable floating filters because our custom checkbox dropdown filter is more than enough
-          hide: hiddenColumns.has(h)
-      }));
-  }, [headers, hiddenColumns]);
-
-  const handleExportMock = () => {
-    alert("Función de exportación CSV crudo temporalmente desactivada en este visor. Use las plantillas del módulo principal.");
-  };
-
-  // El autoajuste se lanza cada vez que cambian los datos, con un ligero retraso para asegurar que el DOM real de React ya está pintado y las letras se pueden medir
-  const onRowDataUpdated = useCallback((params: any) => {
-      setTimeout(() => {
-          params.api.autoSizeAllColumns();
-      }, 50);
-  }, []);
+    if (rowData.length === 0) return [];
+    
+    // Auto-detect columns from the first object
+    const fields = Object.keys(rowData[0]);
+    
+    return fields.map(field => {
+      return {
+        field,
+        headerName: field.toUpperCase(),
+        minWidth: 10,
+        cellClass: "font-mono text-xs text-gray-700"
+      };
+    });
+  }, [rowData]);
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] flex flex-col font-['Inter']">
@@ -157,98 +107,46 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
              <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
                Visor de Tablas Raw
              </h1>
-             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">DATAGRID DE AUDITORÍA (AG-GRID)</span>
+             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">DATAGRID DE AUDITORÃA (AG-GRID)</span>
            </div>
          </div>
-         <div className="flex items-center gap-3">
-            {/* Toggle System Fields */}
-            <button 
-              onClick={() => setShowSystemFields(!showSystemFields)}
-              className="w-[85px] h-[28px] flex items-center justify-center text-[8px] leading-[10px] text-center font-bold text-[#7f1d1d] border border-[#7f1d1d] hover:bg-slate-50 transition-colors uppercase cursor-pointer rounded-sm shadow-sm"
-            >
-              {showSystemFields ? <>OCULTAR C.<br/>SISTEMA</> : <>VER CAMPOS<br/>SISTEMA</>}
-            </button>
-
-            {/* Selec Campos Visibles */}
-            <div className="relative" ref={colMenuRef}>
-              <button 
-                onClick={() => setShowColMenu(!showColMenu)}
-                className="w-[85px] h-[28px] flex items-center justify-center text-[8px] leading-[10px] text-center font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors uppercase cursor-pointer rounded-sm shadow-sm"
-              >
-                SELEC. CAMPOS<br/>VISIBLES
-              </button>
-              
-              {showColMenu && (
-                <div className="absolute top-full right-0 mt-1 w-36 max-h-[70vh] overflow-y-auto bg-white border border-slate-200 rounded shadow-xl z-[60] p-1 flex flex-col gap-0 font-['Inter'] text-left pb-1.5">
-                  <div className="font-semibold text-[8px] text-slate-400 uppercase mb-1 px-1.5 pt-1 cursor-default tracking-wider">Mostrar / Ocultar</div>
-                  {columnDefs.map(col => (
-                    <label key={col.field} className="flex items-center gap-1.5 py-0.5 px-1.5 hover:bg-slate-50 rounded cursor-pointer text-[8px] text-slate-700 select-none">
-                      <input 
-                        type="checkbox" 
-                        className="w-2.5 h-2.5 accent-slate-600 rounded-sm cursor-pointer flex-shrink-0"
-                        checked={!hiddenColumns.has(col.field!)}
-                        onChange={(e) => {
-                          setHiddenColumns(prev => {
-                            const next = new Set(prev);
-                            if (e.target.checked) next.delete(col.field!);
-                            else next.add(col.field!);
-                            return next;
-                          });
-                        }}
-                      />
-                      <span className="truncate">{col.headerName}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button onClick={handleExportMock} className="w-[80px] h-[28px] flex items-center justify-center text-[8px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-transparent border border-[#7f1d1d] hover:bg-gray-50 rounded-sm uppercase tracking-wide shadow-sm transition-colors">
-                📥 EXPORTAR<br/>CSV
-            </button>
-            <button onClick={handleExportMock} className="w-[80px] h-[28px] flex items-center justify-center text-[8px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-transparent border border-[#7f1d1d] hover:bg-gray-50 rounded-sm uppercase tracking-wide shadow-sm transition-colors">
-                📤 IMPORTAR<br/>CSV
-            </button>
+         <div className="flex items-center gap-2">
+           {/* GRUPO 4: NAVEGACIÓN */}
            <button 
              onClick={onBack}
-             className="w-[80px] h-[28px] flex items-center justify-center text-[8px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
+             className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
            >
              VOLVER AL<br/>INICIO
            </button>
          </div>
        </header>
 
-       {/* EXCEL TOOLBAR (Legacy Style) */}
-       <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between shrink-0 shadow-sm z-10 w-full">
+       {/* EXCEL TOOLBAR */}
+       <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between shrink-0 shadow-sm z-10 w-full border-t-4 border-t-gray-50">
          <div className="flex items-center gap-4">
-            <button onClick={handlePrev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-xs font-bold text-gray-700 transition-colors uppercase">
+            <button onClick={handlePrev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[10px] font-bold text-gray-700 transition-colors uppercase cursor-pointer">
                ◀ Anterior
             </button>
             <h3 className="font-bold text-sm w-48 text-center text-[#7f1d1d] uppercase tracking-wider">
                {TABLE_TABS[activeTabIdx].label}
             </h3>
-            <button onClick={handleNext} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-xs font-bold text-gray-700 transition-colors uppercase">
+            <button onClick={handleNext} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[10px] font-bold text-gray-700 transition-colors uppercase cursor-pointer">
                Siguiente ▶
             </button>
          </div>
-         <div className="text-xs text-gray-500 font-mono">
-             {rowData.length} registros
+         <div className="text-[10px] text-gray-500 font-mono font-bold uppercase tracking-widest bg-gray-100 px-3 py-1 rounded">
+             {rowData.length} registros en total
          </div>
        </div>
 
        {/* CONTENT DATAGRID */}
-       <main className="p-4 bg-gray-200" style={{ height: 'calc(100vh - 120px)' }}>
-          <div className="ag-theme-quartz excel-grid-style w-full h-full shadow-lg">
-            <AgGridReact
-                rowData={rowData}
-                columnDefs={columnDefs}
-                defaultColDef={{ minWidth: 50, resizable: true, filter: AGCheckboxFilter, sortable: true }}
-                autoSizeStrategy={{ type: 'fitCellContents' }}
-                onRowDataUpdated={onRowDataUpdated}
-                pagination={true}
-                paginationPageSize={100}
-                rowHeight={16}
-                headerHeight={22}
+       <main className="p-4 bg-gray-200 shadow-inner flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+          <div className="flex-1 w-full h-full shadow-lg rounded-t-lg overflow-hidden border border-[#d0dbec] flex flex-col min-w-0 min-h-0">
+            <SystemDataGrid 
+              moduleId={activeTab}
+              rowData={rowData}
+              columnDefs={columnDefs}
+              toolbarTitle={TABLE_TABS[activeTabIdx].label}
             />
           </div>
        </main>

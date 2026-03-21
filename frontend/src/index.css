@@ -9,9 +9,9 @@
 
 /* MAXIMUM SPECIFICITY - Override AG-Grid internal stylesheets */
 .ag-theme-quartz.excel-grid-style {
-    --ag-font-size: 8px !important;
+    --ag-font-size: 10px !important;
     --ag-row-height: 16px !important;
-    --ag-header-height: 22px !important;
+    --ag-header-height: 24px !important;
     --ag-wrapper-border-radius: 0 !important;
     --ag-borders: solid 1px #94a3b8 !important;
     --ag-row-border-style: solid !important;
@@ -37,7 +37,7 @@
 
 /* Fix text size explicitly inside cells just in case the variable fails */
 .ag-theme-quartz.excel-grid-style .ag-cell-value {
-    font-size: 8px !important;
+    font-size: 10px !important;
     line-height: 1 !important;
 }
 
@@ -48,14 +48,15 @@
     border-top: 1px solid #cbd5e1 !important;
 }
 .ag-theme-quartz.excel-grid-style .ag-paging-panel * {
-    font-size: 9px !important;
+    font-size: 10px !important;
 }
 .ag-theme-quartz.excel-grid-style .ag-paging-panel .ag-icon {
-    font-size: 10px !important;
+    font-size: 12px !important;
 }
 
 .ag-theme-quartz.excel-grid-style .ag-header-cell-text {
-    font-size: 9px !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
 }
 
 /* Ensure the absolute container spans full height */

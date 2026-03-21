@@ -5,8 +5,10 @@
  * @actions Renderiza tarjetas documentativas para cada tabla del sistema.
  * @files src/components/admin/DataDictionaryScreen.tsx
  */
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { SafeImage } from '../SafeImage';
+import type { ColDef } from 'ag-grid-community';
+import { SystemDataGrid } from './SystemDataGrid';
 
 interface Props {
   onBack: () => void;
@@ -83,10 +85,35 @@ const SCHEMA_TABLES = [
 ];
 
 export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
+  const [activeTabIdx, setActiveTabIdx] = useState(0);
+  const activeTable = SCHEMA_TABLES[activeTabIdx];
+
+  const handlePrev = () => setActiveTabIdx(p => p > 0 ? p - 1 : SCHEMA_TABLES.length - 1);
+  const handleNext = () => setActiveTabIdx(p => p < SCHEMA_TABLES.length - 1 ? p + 1 : 0);
+
+  const rowData = activeTable.fields;
+
+  const columnDefs = useMemo<ColDef[]>(() => {
+     return [
+       { 
+         field: 'name', headerName: 'CAMPO', minWidth: 10, 
+         cellRenderer: (params: any) => <span className="font-mono text-gray-800 font-semibold text-[11px] leading-3">{params.value}</span>
+       },
+       { 
+         field: 'type', headerName: 'TIPO DE DATO', minWidth: 10,
+         cellRenderer: (params: any) => <span className="bg-blue-50 text-blue-700 font-mono text-[10px] px-2 py-0.5 rounded border border-blue-100">{params.value}</span>
+       },
+       { 
+         field: 'desc', headerName: 'DESCRIPCIÓN', minWidth: 10,
+         cellClass: "text-gray-600 text-xs"
+       }
+     ];
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] flex flex-col font-['Inter']">
       {/* HEADER */}
-      <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-10 w-full">
+      <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-50 w-full">
          <div className="flex items-center gap-3">
            <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8" className="w-full h-full object-contain" />
            <div>
@@ -99,55 +126,56 @@ export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
          <div className="flex items-center gap-4">
            <button 
              onClick={onBack}
-             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+             className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
            >
-             Volver al Inicio
+             VOLVER AL<br/>INICIO
            </button>
          </div>
-       </header>
+      </header>
 
-      {/* CONTENT */}
-      <main className="flex-1 overflow-auto p-8 relative z-10 w-full max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            {SCHEMA_TABLES.map((table, idx) => (
-                <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-                    <div className="bg-[#7f1d1d] text-white px-5 py-3 flex items-center gap-2 rounded-t-lg">
-                        <span className="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded text-white font-bold">TABLA</span>
-                        <h3 className="font-bold text-[14px] tracking-wide">{table.name}</h3>
-                    </div>
-                    <div className="p-0 overflow-x-auto flex-1">
-                        <table className="w-full text-left text-xs whitespace-nowrap">
-                            <thead className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
-                                <tr>
-                                    <th className="px-5 py-3 uppercase tracking-wider w-1/3">Campo</th>
-                                    <th className="px-5 py-3 uppercase tracking-wider w-1/4">Tipo</th>
-                                    <th className="px-5 py-3 uppercase tracking-wider w-auto">Descripción</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {table.fields.map((f, i) => (
-                                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-5 py-2.5 font-semibold text-gray-800 font-mono text-[11px]">{f.name}</td>
-                                        <td className="px-5 py-2.5">
-                                            <span className="bg-blue-50 text-blue-700 font-mono text-[10px] px-2 py-0.5 rounded border border-blue-100">
-                                                {f.type}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-2.5 text-gray-600">{f.desc}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="bg-[#fff8e1] border-l-4 border-orange-500 p-4 shrink-0 rounded-b-lg">
-                        <h4 className="text-[10px] uppercase tracking-wider font-bold text-orange-800 mb-1">Restricciones de Integridad / Constraints</h4>
-                        <div className="font-mono text-[11px] text-gray-700 whitespace-pre-line leading-relaxed">
-                            {table.constraints}
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
+      {/* TOOLBAR */}
+      <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between shrink-0 shadow-sm z-10 w-full">
+         <div className="flex items-center gap-4">
+            <button onClick={handlePrev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[10px] font-bold text-gray-700 transition-colors uppercase cursor-pointer">
+               ◀ Anterior
+            </button>
+            <h3 className="font-bold text-sm w-48 text-center text-[#7f1d1d] uppercase tracking-wider">
+               {activeTable.name.replace(/_/g, ' ')}
+            </h3>
+            <button onClick={handleNext} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[10px] font-bold text-gray-700 transition-colors uppercase cursor-pointer">
+               Siguiente ▶
+            </button>
+         </div>
+         <div className="text-[10px] text-gray-500 font-mono font-bold bg-[#f1f3fc] px-3 py-1 rounded border border-[#d0dbec] uppercase tracking-widest">
+             {rowData.length} Campos Registrados
+         </div>
+      </div>
+
+      {/* CONTENT DATAGRID */}
+      <main className="flex-1 flex w-full p-6 bg-gray-200 overflow-hidden relative">
+          <div className="max-w-[1600px] mx-auto w-full flex flex-1 gap-6 min-w-0 min-h-0">
+              {/* LEFT: AG-Grid (60%) */}
+              <div className="w-[60%] flex flex-col flex-1 shadow-lg relative bg-gray-50 border border-[#d0dbec] rounded-md overflow-hidden min-w-0 min-h-0">
+                <SystemDataGrid 
+                  moduleId={`DIC_${activeTable.name}`}
+                  rowData={rowData}
+                  columnDefs={columnDefs}
+                  heightClass="flex-1 w-full"
+                  toolbarTitle={activeTable.name.replace(/_/g, ' ')}
+                />
+              </div>
+
+              {/* RIGHT: Constraints Panel (40%) */}
+              <div className="w-[40%] h-full bg-[#fff8e1] border-l-4 border-l-orange-500 border border-[#d0dbec] p-6 rounded-md shadow-lg relative overflow-y-auto">
+                  <h4 className="text-[11px] uppercase tracking-widest font-extrabold text-[#7f1d1d] mb-4 flex items-center gap-2 border-b border-orange-200 pb-3">
+                     <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                     Restricciones de Integridad (Constraints)
+                  </h4>
+                  <div className="font-mono text-xs text-orange-950 whitespace-pre-line leading-relaxed pl-3 font-semibold border-l-2 border-orange-400">
+                      {activeTable.constraints}
+                  </div>
+              </div>
+          </div>
       </main>
     </div>
   );

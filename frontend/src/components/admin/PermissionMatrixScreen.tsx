@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePermissionsStore } from '../../store/usePermissionsStore';
-import { Save, ShieldCheck, Database, LayoutTemplate } from 'lucide-react';
+import { ShieldCheck, Database, LayoutTemplate } from 'lucide-react';
 import clsx from 'clsx';
 import { SafeImage } from '../SafeImage';
 
@@ -49,14 +49,14 @@ export function PermissionMatrixScreen({ onBack }: Props) {
            </div>
          </div>
          <div className="flex items-center gap-4">
-           <button className="bg-[#7f1d1d] text-white hover:bg-red-800 px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center gap-2">
-             <Save size={14} /> Confirmar Matriz
+           <button className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] border border-[#7f1d1d] bg-white hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors">
+             CONFIRMAR<br/>MATRIZ
            </button>
            <button 
              onClick={onBack}
-             className="bg-white text-[#7f1d1d] border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white px-6 py-2 rounded font-bold text-xs uppercase tracking-widest shadow-sm transition-colors"
+             className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] border border-[#7f1d1d] bg-white hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
            >
-             Volver al Inicio
+             VOLVER AL<br/>INICIO
            </button>
          </div>
        </header>
@@ -82,7 +82,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
                 <div className="flex flex-col truncate">
                   <span className="font-semibold text-sm">{p.name}</span>
                   <span className="text-[10px] uppercase tracking-wider text-[#727b89]">
-                    {p.isAdmin ? 'ZEUS / ADMIN' : 'PERFIL ESTÁNDAR'}
+                    {p.isAdmin ? 'ZEUS / ADMIN' : 'PERFIL ESTÃNDAR'}
                   </span>
                 </div>
               </button>
@@ -104,7 +104,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
               <div className="flex flex-col border-b-2 border-[#5f030a] pb-4">
                 <h2 className="text-3xl font-[Manrope] font-bold text-[#121c2a]">{selectedProfile.name}</h2>
                 <div className="flex items-center gap-4 mt-2">
-                  <span className="text-sm text-[#57606d]">{selectedProfile.description || 'Sin descripción'}</span>
+                  <span className="text-sm text-[#57606d]">{selectedProfile.description || 'Sin descripciÃ³n'}</span>
                   {selectedProfile.isAdmin && (
                     <span className="bg-[#fe8983] text-[#752121] px-2 py-0.5 text-xs font-bold rounded-sm tracking-wider uppercase">
                       Admin Global (Bypass L/E/A activo)
@@ -121,7 +121,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
                     CANDIDATOS RECOMENDADOS (MATCH DE ADN)
                   </h3>
                   <p className="text-xs text-[#727b89] mt-1 ml-4">
-                    Estos objetos comparten Fase o Departamento con el perfil. Suelen requerir asignación directa.
+                    Estos objetos comparten Fase o Departamento con el perfil. Suelen requerir asignaciÃ³n directa.
                   </p>
                 </div>
                 
@@ -131,7 +131,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
                       <th className="py-2 px-4 border-b border-[#d0dbec] w-12"></th>
                       <th className="py-2 px-4 border-b border-[#d0dbec]">Objeto de Datos</th>
                       <th className="py-2 px-4 border-b border-[#d0dbec] w-24 text-center">TIPO</th>
-                      <th className="py-2 px-4 border-b border-[#d0dbec] w-64 text-center">Permisos Tácticos</th>
+                      <th className="py-2 px-4 border-b border-[#d0dbec] w-64 text-center">Permisos TÃ¡cticos</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -163,7 +163,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
                               >
                                 L
                               </button>
-                              {/* EDICIÓN */}
+                              {/* EDICIÃ“N */}
                               <button 
                                 onClick={() => setPermission(selectedId!, item.id, { edit: !grants.edit })}
                                 className={clsx(
@@ -174,7 +174,7 @@ export function PermissionMatrixScreen({ onBack }: Props) {
                               >
                                 E
                               </button>
-                              {/* APROBACIÓN */}
+                              {/* APROBACIÃ“N */}
                               <button 
                                 onClick={() => setPermission(selectedId!, item.id, { approve: !grants.approve })}
                                 className={clsx(

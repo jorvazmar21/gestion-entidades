@@ -16,6 +16,7 @@ interface DataState {
   psetHistoryDb: PSetHistoryRecord[];
   tiposEntidadDb: EntityType[];
   MODULES: Record<string, ModuleConfig>;
+  appConfig: Record<string, any>;
 
   // Estado de red y filtrado tabular
   filters: { active: boolean; inactive: boolean; deleted: boolean };
@@ -28,6 +29,7 @@ interface DataState {
   init: () => Promise<void>;
   setFilter: (filterKey: 'active' | 'inactive' | 'deleted') => void;
   saveDb: () => Promise<void>;
+  updateAppConfig: (key: string, value: any) => Promise<void>;
 }
 
 // "useDataStore": La Biblioteca (Almacén de Entidades y CSVs)
@@ -38,6 +40,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   psetHistoryDb: [],
   tiposEntidadDb: [],
   MODULES: {},
+  appConfig: {},
 
   filters: { active: true, inactive: false, deleted: false },
   sortCol: 'name',
@@ -66,11 +69,13 @@ export const useDataStore = create<DataState>((set, get) => ({
         throw new Error(result.error || result.message || "Error al decodificar la Base de Datos del servidor.");
       }
 
-      const { master, psets_def, psets_val, psets_dyn, tipos_entidad } = result.csvData;
+      const { appConfig, csvData } = result;
+      const { master, psets_def, psets_val, psets_dyn, tipos_entidad } = csvData;
       
       const { tiposEntidadDb, MODULES } = parseTiposEntidad(tipos_entidad);
       
       set({
+        appConfig: appConfig || {},
         tiposEntidadDb,
         MODULES,
         db: parseCSV(master, MODULES),
@@ -107,6 +112,20 @@ export const useDataStore = create<DataState>((set, get) => ({
       });
     } catch (e) {
       console.error("Error guardando en el servidor.", e);
+    }
+  },
+
+  updateAppConfig: async (key: string, value: any) => {
+    const newConfig = { ...get().appConfig, [key]: value };
+    set({ appConfig: newConfig });
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      });
+    } catch (e) {
+      console.error("Error guardando app config en el servidor", e);
     }
   }
 }));

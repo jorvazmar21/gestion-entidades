@@ -1,0 +1,14 @@
+{
+  "v-sys-fields-MAESTRO": [
+    "id_tipo",
+    "id_pset",
+    "id_entity",
+    "id_record",
+    "timestamp",
+    "createdAt",
+    "updatedAt",
+    "deletedAt",
+    "behavior",
+    "appliesTo"
+  ]
+}
