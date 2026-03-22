@@ -46,7 +46,7 @@ let sqlDbPromise = getDb().catch(console.error);
 let isWriting = false;
 const writeQueue = [];
 
-function processWriteQueue() {
+async function processWriteQueue() {
     if (isWriting || writeQueue.length === 0) return;
     isWriting = true;
 
@@ -54,8 +54,8 @@ function processWriteQueue() {
     const task = writeQueue.shift();
 
     try {
-        // Ejecutar escritura a Disco
-        task.execute();
+        // Ejecutar escritura a Disco / SQLite
+        await task.execute();
         task.resolve({ success: true, message: 'Guardado correctamente.' });
     } catch (err) {
         console.error("❌ Error en cola de escritura:", err);
@@ -102,22 +102,20 @@ const server = http.createServer(async (req, res) => {
     // A. API: CARGAR DATOS
     if (req.url === '/api/load' && req.method === 'GET') {
         try {
-            // Verificar primero si existe tipos_entidad.csv (CRÍTICO)
-            if (!fs.existsSync(CSV_FILES.tipos_entidad)) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    success: false, 
-                    error: "CRITICAL_MISSING_TYPES",
-                    message: "Error de carga de datos. No existe tabla de sistema 'Tipos de Entidad', póngase en contacto con el administrador."
-                }));
-                return;
-            }
+            const db = await sqlDbPromise;
+            
+            const entidades = await db.all('SELECT * FROM entidades');
+            const psets_def = await db.all('SELECT * FROM sys_psets_def');
+            const psets_val = await db.all('SELECT * FROM pset_estatico_valores');
+            const psets_dyn = await db.all('SELECT * FROM pset_dinamico_valores');
+            const sys_niveles = await db.all('SELECT * FROM sys_niveles');
+            const sys_moldes = await db.all('SELECT * FROM sys_moldes');
 
-            const rawMaster = fs.readFileSync(CSV_FILES.master, 'utf8').split('\n').filter(l => l.trim() !== '');
-            const rawDefs = fs.readFileSync(CSV_FILES.psets_def, 'utf8').split('\n').filter(l => l.trim() !== '');
-            const rawVals = fs.readFileSync(CSV_FILES.psets_val, 'utf8').split('\n').filter(l => l.trim() !== '');
-            const rawDyns = fs.readFileSync(CSV_FILES.psets_dyn, 'utf8').split('\n').filter(l => l.trim() !== '');
-            const rawTipos = fs.readFileSync(CSV_FILES.tipos_entidad, 'utf8').split('\n').filter(l => l.trim() !== '');
+            // Parsear campos JSON nativos de SQLite a Objetos JS para que el frontend no tenga que hacer doble parseo
+            const processedMoldes = sys_moldes.map(m => ({ ...m, reglas_config: m.reglas_config ? JSON.parse(m.reglas_config) : [] }));
+            const processedPsetsDef = psets_def.map(p => ({ ...p, json_schema: p.json_schema ? JSON.parse(p.json_schema) : {} }));
+            const processedPsetsVal = psets_val.map(p => ({ ...p, valor_json: p.valor_json ? JSON.parse(p.valor_json) : {} }));
+            const processedPsetsDyn = psets_dyn.map(p => ({ ...p, valor_json: p.valor_json ? JSON.parse(p.valor_json) : {} }));
 
             let appConfig = {};
             if (fs.existsSync(CSV_FILES.app_config)) {
@@ -131,12 +129,13 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({
                 success: true,
                 appConfig: appConfig,
-                csvData: {
-                    master: rawMaster.slice(1),
-                    psets_def: rawDefs.slice(1),
-                    psets_val: rawVals.slice(1),
-                    psets_dyn: rawDyns.slice(1),
-                    tipos_entidad: rawTipos.slice(1)
+                sqlData: {
+                    entidades,
+                    psets_def: processedPsetsDef,
+                    psets_val: processedPsetsVal,
+                    psets_dyn: processedPsetsDyn,
+                    sys_niveles,
+                    sys_moldes: processedMoldes
                 }
             }));
         } catch (e) {
@@ -185,7 +184,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // B. API: GUARDAR DATOS (TRANSACCIÓN COMPLETA)
+    // B. API: GUARDAR DATOS (TRANSACCIÓN COMPLETA SQLITE)
     if (req.url === '/api/save' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -193,49 +192,89 @@ const server = http.createServer(async (req, res) => {
             try {
                 const payload = JSON.parse(body); // Recibe el estado entero de la RAM
 
-                // Encolar escritura a disco
-                const result = await queueWriteTransaction(() => {
-                    // Generar CSV Master (17 columnas)
-                    let csvMaster = "id;level;category;subCategory;type;code;name;location;canal;parentId;isActive;deletedAt;deletedBy;createdAt;createdBy;updatedAt;updatedBy\n";
-                    payload.db.forEach(r => {
-                        csvMaster += `${escapeCSV(r.id)};${escapeCSV(r.level || '')};${escapeCSV(r.category || '')};${escapeCSV(r.subCategory || '')};${escapeCSV(r.type)};${escapeCSV(r.code)};${escapeCSV(r.name)};${escapeCSV(r.location || '')};${escapeCSV(r.canal || '')};${escapeCSV(r.parentId || '')};${r.isActive};${escapeCSV(r.deletedAt)};${escapeCSV(r.deletedBy || '')};${escapeCSV(r.createdAt)};${escapeCSV(r.createdBy || '')};${escapeCSV(r.updatedAt)};${escapeCSV(r.updatedBy || '')}\n`;
-                    });
-                    fs.writeFileSync(CSV_FILES.master, csvMaster, 'utf8');
-
-                    // Generar CSV Defs
-                    let csvDefs = "id_pset;behavior;appliesTo;properties\n";
-                    payload.psets_def.forEach(d => {
-                        csvDefs += `${escapeCSV(d.id_pset)};${escapeCSV(d.behavior)};${escapeCSV(JSON.stringify(d.appliesTo))};${escapeCSV(JSON.stringify(d.properties))}\n`;
-                    });
-                    fs.writeFileSync(CSV_FILES.psets_def, csvDefs, 'utf8');
-
-                    // Generar CSV Vals (Objeto -> Filas)
-                    let csvVals = "id_entity;id_pset;data\n";
-                    for (const [key, value] of Object.entries(payload.psetValuesDb)) {
-                        const [id_ent, id_pst] = key.split('_');
-                        if (id_ent && id_pst) {
-                            csvVals += `${escapeCSV(id_ent)};${escapeCSV(id_pst)};${escapeCSV(JSON.stringify(value))}\n`;
+                const result = await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    
+                    await db.run('BEGIN TRANSACTION');
+                    
+                    try {
+                        // 1. Entidades
+                        if (payload.db) {
+                            await db.run('DELETE FROM entidades');
+                            const stmt = await db.prepare('INSERT INTO entidades (id_entidad, id_molde, id_padre, codigo, nombre, fase_actual, is_active, deleted_at, deleted_by, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                            for (const e of payload.db) {
+                                await stmt.run([
+                                    e.id, 
+                                    e.type, 
+                                    e.parentId || null, 
+                                    e.code, 
+                                    e.name, 
+                                    e.canal || 'ESTUDIO', 
+                                    e.isActive ? 1 : 0, 
+                                    e.deletedAt || null, 
+                                    e.deletedBy || null, 
+                                    e.createdAt, 
+                                    e.createdBy || '', 
+                                    e.updatedAt, 
+                                    e.updatedBy || ''
+                                ]);
+                            }
+                            await stmt.finalize();
                         }
+
+                        // 2. Sys Psets Def
+                        if (payload.psets_def) {
+                            await db.run('DELETE FROM sys_psets_def');
+                            const stmt = await db.prepare('INSERT INTO sys_psets_def (id_pset, nombre, tipo, json_schema) VALUES (?, ?, ?, ?)');
+                            for (const d of payload.psets_def) {
+                                await stmt.run([
+                                    d.id_pset || d.id || 'GENERIC', 
+                                    d.nombre || d.behavior || 'PSET', 
+                                    d.tipo || (d.behavior === 'DYNAMIC' ? 'DINAMICO' : 'ESTATICO'), 
+                                    JSON.stringify(d.properties || {})
+                                ]);
+                            }
+                            await stmt.finalize();
+                        }
+
+                        // 3. Psets Valores Estáticos
+                        if (payload.psetValuesDb) {
+                            await db.run('DELETE FROM pset_estatico_valores');
+                            const stmt = await db.prepare('INSERT INTO pset_estatico_valores (id_entidad, id_pset, valor_json, updated_at, updated_by) VALUES (?, ?, ?, CURRENT_TIMESTAMP, "SYSTEM")');
+                            for (const [key, value] of Object.entries(payload.psetValuesDb)) {
+                                const [id_ent, id_pst] = key.split('_');
+                                if (id_ent && id_pst) {
+                                    await stmt.run([ id_ent, id_pst, JSON.stringify(value) ]);
+                                }
+                            }
+                            await stmt.finalize();
+                        }
+
+                        // 4. Psets Valores Dinámicos
+                        if (payload.psetHistoryDb) {
+                            await db.run('DELETE FROM pset_dinamico_valores');
+                            const stmt = await db.prepare('INSERT INTO pset_dinamico_valores (id_entidad, id_pset, valor_json, anotacion, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)');
+                            for (const h of payload.psetHistoryDb) {
+                                await stmt.run([
+                                    h.id_entity || h.id_entidad, 
+                                    h.id_pset, 
+                                    JSON.stringify(h.data || h.valor_json), 
+                                    h.anotacion || '', 
+                                    h.timestamp || h.created_at || new Date().toISOString(), 
+                                    h.createdBy || h.created_by || 'SYSTEM'
+                                ]);
+                            }
+                            await stmt.finalize();
+                        }
+
+                        // Omittimos TiposEntidadDb ya que se manejan via sys_moldes y sys_niveles (protegidos arquitecturalmente por ahora)
+                        
+                        await db.run('COMMIT');
+                        console.log(`✅ Base de Datos SQL Guardada. Volcadas ${payload.db?.length || 0} filas maestras.`);
+                    } catch (e) {
+                        await db.run('ROLLBACK');
+                        throw e;
                     }
-                    fs.writeFileSync(CSV_FILES.psets_val, csvVals, 'utf8');
-
-                    // Generar CSV Dyns
-                    let csvDyns = "id_record;id_entity;id_pset;timestamp;data\n";
-                    payload.psetHistoryDb.forEach(h => {
-                        csvDyns += `${escapeCSV(h.id_record)};${escapeCSV(h.id_entity)};${escapeCSV(h.id_pset)};${escapeCSV(h.timestamp)};${escapeCSV(JSON.stringify(h.data))}\n`;
-                    });
-                    fs.writeFileSync(CSV_FILES.psets_dyn, csvDyns, 'utf8');
-
-                    // Generar CSV Tipos
-                    if (payload.tiposEntidadDb) {
-                        let csvTipos = "id_tipo;nombre;categoria;subCategoria;nivel;icono;tipos_hijo_permitidos;max_count_per_parent\n";
-                        payload.tiposEntidadDb.forEach(t => {
-                            csvTipos += `${escapeCSV(t.id_tipo)};${escapeCSV(t.nombre)};${escapeCSV(t.categoria)};${escapeCSV(t.subCategoria)};${escapeCSV(t.nivel)};${escapeCSV(t.icono)};${escapeCSV(JSON.stringify(t.tipos_hijo_permitidos))};${escapeCSV(t.max_count_per_parent)}\n`;
-                        });
-                        fs.writeFileSync(CSV_FILES.tipos_entidad, csvTipos, 'utf8');
-                    }
-
-                    console.log(`✅ Base de Datos Guardada CSV. Volcadas ${payload.db.length} filas maestras.`);
                 });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

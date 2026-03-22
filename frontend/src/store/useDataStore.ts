@@ -69,19 +69,85 @@ export const useDataStore = create<DataState>((set, get) => ({
         throw new Error(result.error || result.message || "Error al decodificar la Base de Datos del servidor.");
       }
 
-      const { appConfig, csvData } = result;
-      const { master, psets_def, psets_val, psets_dyn, tipos_entidad } = csvData;
+      const { appConfig, sqlData } = result;
+      const { entidades, psets_def, psets_val, psets_dyn, sys_niveles, sys_moldes } = sqlData || {};
+
+      if (!entidades || !sys_moldes) {
+          throw new Error("El esquema de SQLite devuelto por el servidor está incompleto o la BBDD está vacía.");
+      }
       
-      const { tiposEntidadDb, MODULES } = parseTiposEntidad(tipos_entidad);
-      
+      const tiposEntidadDb: EntityType[] = sys_moldes.map((m: any) => {
+          const nivelObj = (sys_niveles || []).find((n: any) => n.id_nivel === m.id_nivel);
+          return {
+              id_tipo: m.id_molde,
+              nombre: m.nombre,
+              categoria: m.descripcion || 'General',
+              subCategoria: '',
+              nivel: nivelObj ? nivelObj.nombre : 'L1',
+              icono: m.icono_sistema || '',
+              tipos_hijo_permitidos: m.reglas_config?.admite_hijos || [],
+              max_count_per_parent: m.reglas_config?.max_hijos || null
+          };
+      });
+
+      const MODULES: Record<string, ModuleConfig> = {};
+      tiposEntidadDb.forEach((t: EntityType) => {
+          MODULES[t.id_tipo] = {
+              title: t.nombre,
+              prefix: t.id_tipo,
+              level: t.nivel,
+              category: t.categoria,
+              subCategory: t.subCategoria,
+              icono: t.icono,
+              tiposHijo: t.tipos_hijo_permitidos,
+              maxCount: t.max_count_per_parent
+          };
+      });
+
+      const db: Entity[] = entidades.map((e: any) => {
+          const modCfg = MODULES[e.id_molde] || {} as any;
+          return {
+              id: e.id_entidad,
+              level: modCfg.level || 'L1',
+              category: modCfg.category || 'General',
+              subCategory: modCfg.subCategory || '',
+              type: e.id_molde,
+              code: e.codigo,
+              name: e.nombre,
+              location: '', 
+              canal: e.fase_actual || 'ESTUDIO', 
+              parentId: e.id_padre,
+              isActive: e.is_active === 1,
+              deletedAt: e.deleted_at,
+              deletedBy: e.deleted_by,
+              createdAt: e.created_at,
+              createdBy: e.created_by,
+              updatedAt: e.updated_at,
+              updatedBy: e.updated_by
+          };
+      });
+
+      const parsedValuesDb: Record<string, any> = {};
+      (psets_val || []).forEach((v: any) => {
+          parsedValuesDb[`${v.id_entidad}_${v.id_pset}`] = typeof v.valor_json === 'string' ? JSON.parse(v.valor_json) : v.valor_json;
+      });
+
+      const parsedHistoryDb: PSetHistoryRecord[] = (psets_dyn || []).map((d: any) => ({
+          id_record: d.id_registro?.toString() || new Date().getTime().toString(),
+          id_entity: d.id_entidad,
+          id_pset: d.id_pset,
+          timestamp: d.created_at,
+          data: typeof d.valor_json === 'string' ? JSON.parse(d.valor_json) : d.valor_json
+      }));
+
       set({
         appConfig: appConfig || {},
         tiposEntidadDb,
         MODULES,
-        db: parseCSV(master, MODULES),
-        psets_def: parseCSVDefs(psets_def),
-        psetValuesDb: parseCSVVals(psets_val),
-        psetHistoryDb: parseCSVDyns(psets_dyn),
+        db,
+        psets_def: psets_def || [],
+        psetValuesDb: parsedValuesDb,
+        psetHistoryDb: parsedHistoryDb,
         loading: false,
       });
 
