@@ -9,5 +9,5 @@
 export const APP_CONFIG = {
   TITLE: 'FRACTAL CORE 1.0',
   VERSION: '1.0.0',
-  COMPANY: 'NORTUNEL S.A.' // Placeholder corporativo
+  COMPANY: '[EMPRESA CLIENTE]' // Placeholder corporativo
 };

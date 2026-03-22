@@ -37,6 +37,11 @@ if (!fs.existsSync(CSV_FILES.psets_dyn)) fs.writeFileSync(CSV_FILES.psets_dyn, "
 if (!fs.existsSync(CSV_FILES.usuarios)) fs.writeFileSync(CSV_FILES.usuarios, "usuario;password;rol\nadmin;admin;admin\nzeus;zeus;zeus\n", 'utf8');
 if (!fs.existsSync(CSV_FILES.app_config)) fs.writeFileSync(CSV_FILES.app_config, "{}\n", 'utf8');
 
+// --- PASARELA HACIA SQLITE (EVOLUCIÓN L1-L5) ---
+const { getDb } = require('./database/db');
+// Iniciamos la BD silenciosamente al arrancar
+let sqlDbPromise = getDb().catch(console.error);
+
 // --- SISTEMA DE BLOQUEO DE ESCRITURA (CONCURRENCIA) ---
 let isWriting = false;
 const writeQueue = [];

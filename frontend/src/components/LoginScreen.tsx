@@ -61,7 +61,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
             FRACTAL CORE 1.0
           </div>
           <p className="text-[14px] font-semibold text-[#8a716f] tracking-[0.1em] uppercase mt-1">
-            By NORTUNEL, S.A.
+            By [EMPRESA CLIENTE]
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, errorMsg }) =
               type="text"
               autoComplete="off"
               className="w-full bg-[#edf2fc] px-3 py-2 outline-none text-gray-800 text-[11px] placeholder-[#94a3b8]"
-              placeholder="tuUsuario@nortunel.com"
+              placeholder="tuUsuario@empresa.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />

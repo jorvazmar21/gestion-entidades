@@ -24,7 +24,7 @@ export const HomeScreen: React.FC = () => {
         <div className="flex items-center gap-3">
            <SafeImage 
              src="/branding/logo-fractales.svg" 
-             alt="NORTUNEL ERP" 
+             alt="FRACTAL CORE" 
              wrapperClassName="w-[30px] h-[30px]"
              className="w-full h-full object-contain" 
              fallbackType="svg"
