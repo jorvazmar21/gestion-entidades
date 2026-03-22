@@ -148,6 +148,14 @@ export const HomeScreen: React.FC = () => {
                      </button>
 
                      <button 
+                       onClick={() => setScreen('CANVAS_SANDBOX')}
+                       className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px]"
+                     >
+                        <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-180" className="w-full h-full" />
+                        <span className="font-semibold text-sm uppercase tracking-wide">Pruebas Lienzo</span>
+                     </button>
+
+                     <button 
                        onClick={() => setScreen('MEDIA_MANAGER')}
                        className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
                      >
