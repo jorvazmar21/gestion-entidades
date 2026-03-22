@@ -52,7 +52,7 @@ export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] flex flex-col font-['Inter']">
+    <div className="h-screen w-full overflow-hidden bg-[#f8f9ff] flex flex-col font-['Inter']">
       {/* HEADER */}
       <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-50 w-full">
          <div className="flex items-center gap-3">
@@ -67,9 +67,9 @@ export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
          <div className="flex items-center gap-4">
            <button 
              onClick={onBack}
-             className="w-[80px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
+             className="w-[100px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
            >
-             VOLVER AL<br/>INICIO
+             INICIO
            </button>
          </div>
       </header>

@@ -12,6 +12,7 @@ import { PermissionMatrixScreen } from './components/admin/PermissionMatrixScree
 import { DataDictionaryScreen } from './components/admin/DataDictionaryScreen'
 import { ExcelViewerScreen } from './components/admin/ExcelViewerScreen'
 import { CanvasSandboxScreen } from './components/admin/CanvasSandboxScreen'
+import { MoldBuilderScreen } from './components/admin/MoldBuilderScreen'
 
 function App() {
   // El "Mundo" Visual / Navegación (Pilar 2)
@@ -61,6 +62,7 @@ function App() {
   if (currentScreen === 'DATA_DICTIONARY') return <DataDictionaryScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'EXCEL_VIEWER') return <ExcelViewerScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'CANVAS_SANDBOX') return <CanvasSandboxScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'MOLD_BUILDER') return <MoldBuilderScreen onBack={() => setScreen('HOME')} />;
 
   return null;
 }

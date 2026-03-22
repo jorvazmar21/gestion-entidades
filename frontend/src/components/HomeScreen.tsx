@@ -18,7 +18,7 @@ export const HomeScreen: React.FC = () => {
   const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1');
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] flex flex-col font-['Inter'] relative w-full overflow-hidden">
+    <div className="h-screen w-full overflow-hidden bg-[#f8f9ff] flex flex-col font-['Inter'] relative">
       {/* HEADER GLOBAL DEL DASHBOARD INICIO */}
       <header className="h-[60px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 relative z-10 shadow-sm">
         <div className="flex items-center gap-3">
@@ -125,10 +125,11 @@ export const HomeScreen: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                      
                      <button 
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
+                       onClick={() => setScreen('MOLD_BUILDER')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#ffb347]"
                      >
                         <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                        <span className="font-semibold text-sm uppercase tracking-wide">Gestión de Tipos</span>
+                        <span className="font-semibold text-[13px] uppercase tracking-wide text-[#ffb347]">Diseñador ADN</span>
                      </button>
 
                      <button 

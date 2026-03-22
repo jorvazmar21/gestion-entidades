@@ -456,6 +456,55 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // I. API MOLDE BUILDER: CREAR/ACTUALIZAR MOLDE
+    if (req.url === '/api/moldes/create' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body);
+                // payload: { id_molde, nombre, id_nivel, id_categoria, sub_categoria, icono, moldes_hijo_permitidos, reglas_config }
+                if (!payload.id_molde || !payload.nombre || !payload.id_nivel) {
+                    throw new Error("Faltan campos obligatorios para crear el Molde");
+                }
+                
+                // Asegurar formato ID (Sin espacios, mayúsculas)
+                const safeId = payload.id_molde.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+
+                await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    
+                    // Upsert pattern (Insert or Replace) SQLite native feature
+                    const stmt = await db.prepare(`
+                        INSERT OR REPLACE INTO sys_moldes 
+                        (id_molde, nombre, id_nivel, id_categoria, sub_categoria, icono, moldes_hijo_permitidos, reglas_config, is_active, created_at, created_by)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, "SYSTEM")
+                    `);
+                    
+                    await stmt.run([
+                        safeId,
+                        payload.nombre,
+                        payload.id_nivel,
+                        payload.id_categoria || 'GENERAL',
+                        payload.sub_categoria || '',
+                        payload.icono || 'sys_box.svg',
+                        JSON.stringify(payload.moldes_hijo_permitidos || []),
+                        JSON.stringify(payload.reglas_config || {})
+                    ]);
+                    await stmt.finalize();
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: `Molde ${safeId} inyectado estructuralmente.` }));
+            } catch (err) {
+                console.error("Error creating molde:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // C. SERVIDOR ESTÁTICO WEB
     
     // STATIC: MEDIA (Sirviendo desde datos_csv/media)
