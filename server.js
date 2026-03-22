@@ -352,6 +352,110 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // F. API AUDITORIA: MODO DIOS (Lectura Cruda)
+    if (req.url.startsWith('/api/raw-db') && req.method === 'GET' && !req.url.includes('/update')) {
+        try {
+            const urlObj = new URL(req.url, `http://${req.headers.host}`);
+            const table = urlObj.searchParams.get('table');
+            if (!table || table.includes(';') || table.includes(' ')) throw new Error("Tabla inválida");
+            
+            const db = await sqlDbPromise;
+            // Validar que la tabla existe (Seguridad extra)
+            const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table"');
+            if (!tables.some(t => t.name === table)) throw new Error("Tabla no encontrada");
+            
+            const rows = await db.all(`SELECT * FROM ${table}`);
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, data: rows }));
+        } catch (e) {
+            console.error(e);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: e.message }));
+        }
+        return;
+    }
+
+    // G. API AUDITORIA: ESQUEMA (Diccionario)
+    if (req.url === '/api/schema-db' && req.method === 'GET') {
+        try {
+            const db = await sqlDbPromise;
+            const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"');
+            
+            const schemaData = [];
+            for (const t of tables) {
+                const info = await db.all(`PRAGMA table_info(${t.name})`);
+                schemaData.push({
+                    name: t.name,
+                    fields: info.map(f => ({
+                        name: f.name,
+                        type: f.type,
+                        pk: f.pk,
+                        notnull: f.notnull
+                    }))
+                });
+            }
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, data: schemaData }));
+        } catch (e) {
+            console.error(e);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: e.message }));
+        }
+        return;
+    }
+
+    // H. API AUDITORIA: ACTUALIZACIÓN SEGURA (Anti-corrupción)
+    if (req.url === '/api/raw-db/update' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const { table, pkColumn, pkValue, updateColumn, newValue } = JSON.parse(body);
+                
+                // Muro Firewall Anti-corrupción
+                const lowerCol = updateColumn.toLowerCase();
+                const forbiddenExact = ['id', 'id_entidad', 'id_molde', 'id_pset', 'id_tipo', 'id_record'];
+                const forbiddenTails = ['at', 'by', 'timestamp'];
+                
+                const isProtectedField = forbiddenExact.includes(lowerCol) || forbiddenTails.some(tail => lowerCol.endsWith(tail));
+
+                if (isProtectedField || updateColumn === pkColumn) {
+                    res.writeHead(403, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Edición denegada por Firewall (Campo protegido de Auditoría o Clave Primaria).' }));
+                    return;
+                }
+                
+                // Basic anti-injection logic
+                if (!table || table.includes(';') || table.includes(' ') || !updateColumn || !pkColumn) {
+                    throw new Error("Parámetros SQL inseguros");
+                }
+                
+                // Convert object/array back to string cleanly if newValue is object
+                let finalValue = newValue;
+                if (typeof newValue === 'object' && newValue !== null) {
+                    finalValue = JSON.stringify(newValue);
+                }
+
+                await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    const stmt = await db.prepare(`UPDATE ${table} SET ${updateColumn} = ? WHERE ${pkColumn} = ?`);
+                    await stmt.run([finalValue, pkValue]);
+                    await stmt.finalize();
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error("Error en raw update:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // C. SERVIDOR ESTÁTICO WEB
     
     // STATIC: MEDIA (Sirviendo desde datos_csv/media)

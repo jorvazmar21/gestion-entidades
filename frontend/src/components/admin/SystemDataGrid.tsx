@@ -17,6 +17,8 @@ export interface SystemDataGridProps {
   toolbarLeftHeader?: React.ReactNode;
   toolbarRightHeader?: React.ReactNode;
   heightClass?: string;
+  primaryKeyField?: string;
+  onCellEdit?: (table: string, pkField: string, pkValue: string, column: string, newValue: any) => Promise<boolean>;
 }
 
 export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
@@ -26,7 +28,9 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
   toolbarTitle,
   toolbarLeftHeader,
   toolbarRightHeader,
-  heightClass = "flex-1 h-full"
+  heightClass = "flex-1 h-full",
+  primaryKeyField,
+  onCellEdit
 }) => {
   const { appConfig, updateAppConfig } = useDataStore();
   
@@ -97,6 +101,11 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
          
          return {
             ...col,
+            editable: col.editable,
+            cellClassRules: {
+               ...col.cellClassRules,
+               'bg-slate-100 text-slate-500 cursor-not-allowed': '!colDef.editable'
+            },
             hide: isUserHidden || isSystemRestricted
          };
       });
@@ -243,6 +252,18 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
             pagination={true}
             paginationPageSize={100}
             suppressFieldDotNotation={true}
+            onCellValueChanged={async (params: any) => {
+                if (params.oldValue !== params.newValue && primaryKeyField && onCellEdit) {
+                    const pkValue = params.data[primaryKeyField];
+                    const field = params.colDef.field;
+                    if (pkValue && field) {
+                        const success = await onCellEdit(moduleId, primaryKeyField, pkValue, field, params.newValue);
+                        if (!success) {
+                            params.node.setDataValue(field, params.oldValue);
+                        }
+                    }
+                }
+            }}
         />
       </div>
     </div>
