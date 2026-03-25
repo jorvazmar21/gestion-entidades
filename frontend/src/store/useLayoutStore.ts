@@ -6,6 +6,7 @@
  * @files src/store/useLayoutStore.ts
  */
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface LayoutState {
   altoTotal: string;
@@ -32,29 +33,36 @@ interface LayoutState {
 }
 
 // "useLayoutStore": El Dios de la Geometría
-export const useLayoutStore = create<LayoutState>((set) => ({
-  // Cotas matemáticas por defecto (las que acordamos)
-  altoTotal: '100vh',
-  anchoTotal: '100%',
-  altoFilaSuperior: 60,
-  altoFila2: 80,
-  altoZonaBdD: 80,
-  anchoColumnaIzquierda: 260,
-  anchoColumnaDerecha: 320,
-  altoZonasInferiores: 150,
-  anchoBotonera: 350,
-  mostrarTabiques: false,
+export const useLayoutStore = create<LayoutState>()(
+  persist(
+    (set) => ({
+      // Cotas matemáticas por defecto (las que acordamos)
+      altoTotal: '100vh',
+      anchoTotal: '100%',
+      altoFilaSuperior: 60,
+      altoFila2: 80,
+      altoZonaBdD: 80,
+      anchoColumnaIzquierda: 260,
+      anchoColumnaDerecha: 320,
+      altoZonasInferiores: 150,
+      anchoBotonera: 350,
+      mostrarTabiques: false,
 
-  z5_ratio_top: 25,
-  z5_ratio_bottom: 75,
-  z5_toolbar_left: 40,
-  z5_toolbar_mid: 30,
-  z5_toolbar_right: 30,
+      z5_ratio_top: 25,
+      z5_ratio_bottom: 75,
+      z5_toolbar_left: 40,
+      z5_toolbar_mid: 30,
+      z5_toolbar_right: 30,
 
-  // Setter universal
-  updateLayoutParam: (key, value) => 
-    set((state) => ({ ...state, [key]: value })),
+      // Setter universal
+      updateLayoutParam: (key, value) => 
+        set((state) => ({ ...state, [key]: value })),
 
-  // Toggle de visibilidad de tabiques en producción
-  toggleTabiques: () => set((state) => ({ mostrarTabiques: !state.mostrarTabiques })),
-}));
+      // Toggle de visibilidad de tabiques en producción
+      toggleTabiques: () => set((state) => ({ mostrarTabiques: !state.mostrarTabiques })),
+    }),
+    {
+      name: 'crimson-layout-storage', // Key for localStorage
+    }
+  )
+);

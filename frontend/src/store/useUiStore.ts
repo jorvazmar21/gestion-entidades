@@ -7,7 +7,7 @@
  */
 import { create } from 'zustand';
 
-export type ScreenType = 'LOGIN' | 'HOME' | 'MODULE_VIEW' | 'LAYOUT_CONFIG' | 'MEDIA_MANAGER' | 'PROFILE_FORGE' | 'INVENTORY_CATALOG' | 'PERMISSION_MATRIX' | 'DATA_DICTIONARY' | 'EXCEL_VIEWER' | 'CANVAS_SANDBOX' | 'MOLD_BUILDER' | 'ADN_V2';
+export type ScreenType = 'LOGIN' | 'HOME' | 'MODULE_VIEW' | 'LAYOUT_CONFIG' | 'MEDIA_MANAGER' | 'PROFILE_FORGE' | 'INVENTORY_CATALOG' | 'PERMISSION_MATRIX' | 'DATA_DICTIONARY' | 'EXCEL_VIEWER' | 'CANVAS_SANDBOX' | 'ADN_V2' | 'SANDBOX_GRID' | 'SANDBOX_INSPECTOR';
 
 interface UiState {
   currentScreen: ScreenType;
@@ -15,6 +15,8 @@ interface UiState {
   searchTerm: string;
   activeFase: string | null;
   activeDepartamento: string | null;
+  activePSetTab: 'ESTATICO' | 'DINAMICO';
+  selectedEntityId: string | null;
   
   // Acciones
   setScreen: (screen: ScreenType) => void;
@@ -23,6 +25,8 @@ interface UiState {
   setSearchTerm: (term: string) => void;
   setActiveFase: (fase: string | null) => void;
   setActiveDepartamento: (dept: string | null) => void;
+  setActivePSetTab: (tab: 'ESTATICO' | 'DINAMICO') => void;
+  setSelectedEntityId: (id: string | null) => void;
 }
 
 // "useUiStore": El GPS / Navegador de la aplicación
@@ -32,11 +36,15 @@ export const useUiStore = create<UiState>((set) => ({
   searchTerm: '',
   activeFase: null,
   activeDepartamento: null,
+  activePSetTab: 'ESTATICO',
+  selectedEntityId: null,
 
   setScreen: (screen) => set({ currentScreen: screen, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on screen change
   setModule: (moduleId) => set({ activeModuleId: moduleId, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on module change
   navigateToModule: (moduleId) => set({ currentScreen: 'MODULE_VIEW', activeModuleId: moduleId, searchTerm: '', activeFase: null, activeDepartamento: null }),
   setSearchTerm: (term) => set({ searchTerm: term }),
   setActiveFase: (fase) => set({ activeFase: fase }),
-  setActiveDepartamento: (dept) => set({ activeDepartamento: dept })
+  setActiveDepartamento: (dept) => set({ activeDepartamento: dept }),
+  setActivePSetTab: (tab) => set({ activePSetTab: tab }),
+  setSelectedEntityId: (id) => set({ selectedEntityId: id })
 }));

@@ -119,87 +119,116 @@ export const HomeScreen: React.FC = () => {
                     <span className="w-2 h-2 bg-gray-800 rounded-sm block"></span>
                     Arquitectura y Sistemas
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                     
-                     <button 
-                       onClick={() => setScreen('MOLD_BUILDER')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#ffb347]"
-                     >
-                        <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                        <span className="font-semibold text-[13px] uppercase tracking-wide text-[#ffb347]">Diseñador ADN</span>
-                     </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    
+                    {/* Tema 1: Base de Datos */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-1 border-b border-gray-200 pb-2">Base de Datos</h4>
+                      
+                      <button 
+                         onClick={() => setScreen('DATA_DICTIONARY')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758] w-full"
+                       >
+                          <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide">Diccionario Dts.</span>
+                       </button>
 
-                     <button 
-                       onClick={() => setScreen('DATA_DICTIONARY')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
-                     >
-                        <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                        <span className="font-semibold text-sm uppercase tracking-wide">Diccionario Dts.</span>
-                     </button>
+                       <button 
+                         onClick={() => setScreen('EXCEL_VIEWER')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758] w-full"
+                       >
+                          <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide">Visor Tablas Raw</span>
+                       </button>
+                    </div>
 
-                     <button 
-                       onClick={() => setScreen('ADN_V2')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-blue-500"
-                     >
-                        <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full filter backdrop-hue-rotate-180" />
-                        <span className="font-semibold text-[13px] uppercase tracking-wide text-blue-400">Diseñador ADN (v2)</span>
-                     </button>
+                    {/* Tema 2: Diseño del Sistema */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-1 border-b border-gray-200 pb-2">Diseño del Sistema</h4>
+                      
+                       <button 
+                         onClick={() => setScreen('ADN_V2')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-blue-500 w-full"
+                       >
+                          <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full filter backdrop-hue-rotate-180" />
+                          <span className="font-semibold text-[13px] uppercase tracking-wide text-blue-400">Diseñador ADN (v2)</span>
+                       </button>
 
-                     <button 
-                       onClick={() => setScreen('EXCEL_VIEWER')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
-                     >
-                        <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                        <span className="font-semibold text-sm uppercase tracking-wide">Visor Tablas Raw</span>
-                     </button>
+                       <button 
+                         onClick={() => setScreen('MEDIA_MANAGER')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758] w-full"
+                       >
+                          <SafeImage src="/icons/sys_media.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide text-white">Gestor Media</span>
+                       </button>
 
-                     <button 
-                       onClick={() => setScreen('CANVAS_SANDBOX')}
-                       className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px]"
-                     >
-                        <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-180" className="w-full h-full" />
-                        <span className="font-semibold text-sm uppercase tracking-wide">Pruebas Lienzo</span>
-                     </button>
+                       <button
+                         onClick={() => setScreen('LAYOUT_CONFIG')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758] w-full"
+                       >
+                         <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                         <span className="font-semibold text-sm uppercase tracking-wide text-white">Taller WYSIWYG</span>
+                       </button>
+                    </div>
 
-                     <button 
-                       onClick={() => setScreen('MEDIA_MANAGER')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
-                     >
-                        <SafeImage src="/icons/sys_media.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                        <span className="font-semibold text-sm uppercase tracking-wide text-white">Gestor de Media</span>
-                     </button>
-                     
-                     <button
-                       onClick={() => setScreen('PROFILE_FORGE')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
-                     >
-                       <SafeImage src="/icons/sys_forge.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Fragua Arquetipos</span>
-                     </button>
+                    {/* Tema 3: Entornos de Prueba */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-1 border-b border-gray-200 pb-2">Entornos de Prueba</h4>
+                      
+                       <button 
+                         onClick={() => setScreen('CANVAS_SANDBOX')}
+                         className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px] w-full"
+                       >
+                          <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-180" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide">Pruebas Lienzo</span>
+                       </button>
 
-                     <button
-                       onClick={() => setScreen('INVENTORY_CATALOG')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
-                     >
-                       <SafeImage src="/icons/sys_inventory.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Catálogo Inventario</span>
-                     </button>
+                       <button 
+                         onClick={() => setScreen('SANDBOX_GRID')}
+                         className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px] w-full"
+                       >
+                          <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-[270deg]" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide text-indigo-300">Sandbox: Grid</span>
+                       </button>
 
-                     <button
-                       onClick={() => setScreen('PERMISSION_MATRIX')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a]"
-                     >
-                       <SafeImage src="/icons/sys_matrix.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                       <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Mesa de Cruce</span>
-                     </button>
-                     
-                     <button
-                       onClick={() => setScreen('LAYOUT_CONFIG')}
-                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#3b4758]"
-                     >
-                       <SafeImage src="/icons/sys_wysiwyg.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
-                       <span className="font-semibold text-sm uppercase tracking-wide text-white">Taller WYSIWYG</span>
-                     </button>
+                       <button 
+                         onClick={() => setScreen('SANDBOX_INSPECTOR')}
+                         className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px] w-full"
+                       >
+                          <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-[270deg]" className="w-full h-full" />
+                          <span className="font-semibold text-sm uppercase tracking-wide text-indigo-300">Sandbox: PSet</span>
+                       </button>
+                    </div>
+
+                    {/* Tema 4: Seguridad y Trazabilidad */}
+                    <div className="flex flex-col gap-4">
+                      <h4 className="text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-1 border-b border-gray-200 pb-2">Seguridad y Trazabilidad</h4>
+                      
+                       <button
+                         onClick={() => setScreen('PROFILE_FORGE')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a] w-full"
+                       >
+                         <SafeImage src="/icons/sys_forge.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                         <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Fragua Arquet.</span>
+                       </button>
+
+                       <button
+                         onClick={() => setScreen('INVENTORY_CATALOG')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a] w-full"
+                       >
+                         <SafeImage src="/icons/sys_inventory.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                         <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Catál. Inventario</span>
+                       </button>
+
+                       <button
+                         onClick={() => setScreen('PERMISSION_MATRIX')}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-[#5f030a] w-full"
+                       >
+                         <SafeImage src="/icons/sys_matrix.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
+                         <span className="font-semibold text-sm uppercase tracking-wide text-[#fe8983]">Mesa Cruce</span>
+                       </button>
+                    </div>
+
                   </div>
                </div>
                )}

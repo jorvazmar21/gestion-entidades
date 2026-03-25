@@ -13,7 +13,8 @@ import { DataDictionaryScreen } from './components/admin/DataDictionaryScreen'
 import { AdvancedMoldBuilderScreen } from './components/admin/mold_builder_v2/AdvancedMoldBuilderScreen';
 import { ExcelViewerScreen } from './components/admin/ExcelViewerScreen'
 import { CanvasSandboxScreen } from './components/admin/CanvasSandboxScreen'
-import { MoldBuilderScreen } from './components/admin/MoldBuilderScreen'
+import { SandboxGridScreen } from './components/admin/SandboxGridScreen'
+import { SandboxInspectorScreen } from './components/admin/SandboxInspectorScreen'
 
 function App() {
   // El "Mundo" Visual / Navegación (Pilar 2)
@@ -64,7 +65,8 @@ function App() {
   if (currentScreen === 'ADN_V2') return <AdvancedMoldBuilderScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'EXCEL_VIEWER') return <ExcelViewerScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'CANVAS_SANDBOX') return <CanvasSandboxScreen onBack={() => setScreen('HOME')} />;
-  if (currentScreen === 'MOLD_BUILDER') return <MoldBuilderScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'SANDBOX_GRID') return <SandboxGridScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'SANDBOX_INSPECTOR') return <SandboxInspectorScreen onBack={() => setScreen('HOME')} />;
 
   return null;
 }

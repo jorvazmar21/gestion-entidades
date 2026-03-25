@@ -7,6 +7,7 @@
  * @files src/components/MainLayout.tsx
  */
 import { useLayoutStore } from '../store/useLayoutStore';
+import { useUiStore } from '../store/useUiStore';
 import { SystemBreadcrumbs } from './SystemBreadcrumbs';
 import { SystemHeaderLogo } from './SystemHeaderLogo';
 import { ModuleTitle } from './ModuleTitle';
@@ -14,9 +15,6 @@ import { ModuleSearch } from './ModuleSearch';
 import { SystemTopRightActions } from './SystemTopRightActions';
 import { ModulePhases } from './ModulePhases';
 import { ModuleDepartments } from './ModuleDepartments';
-
-
-
 // Separador inteligente que reacciona a la directriz del Administrador
 const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
   const mostrar = useLayoutStore(state => state.mostrarTabiques);
@@ -27,6 +25,7 @@ const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
 
 export function MainLayout() {
   const LAYOUT = useLayoutStore();
+  const { activePSetTab, setActivePSetTab } = useUiStore();
 
   return (
     <div className="flex bg-white font-['Inter'] absolute inset-0 w-full h-full overflow-hidden">
@@ -136,9 +135,22 @@ export function MainLayout() {
            
            <SimpleDivider />
 
-           {/* ZONA 9: PESTAÑAS */}
-           <div className="w-full shrink-0 bg-white flex items-center justify-center" style={{ height: LAYOUT.altoFila2 }}>
-             <span className="text-xs font-bold text-gray-500">Pestañas Inspector</span>
+           {/* ZONA 9: PESTAÑAS PSET */}
+           <div className="w-full shrink-0 bg-[#f8f9ff] flex items-end justify-center px-4 pt-4 border-b border-gray-200" style={{ height: LAYOUT.altoFila2 }}>
+             <div className="w-full flex">
+               <button 
+                 onClick={() => setActivePSetTab?.('ESTATICO')}
+                 className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePSetTab === 'ESTATICO' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+               >
+                 Estáticas
+               </button>
+               <button 
+                 onClick={() => setActivePSetTab?.('DINAMICO')}
+                 className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePSetTab === 'DINAMICO' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+               >
+                 Dinámicas
+               </button>
+             </div>
            </div>
            
            <SimpleDivider />

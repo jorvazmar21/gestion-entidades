@@ -21,6 +21,7 @@ export interface SystemDataGridProps {
   onCellEdit?: (table: string, pkField: string, pkValue: string, column: string, newValue: any) => Promise<boolean>;
   onAddRow?: () => void;
   onDeleteSelected?: (selectedNodes: any[]) => void;
+  onRowDoubleClicked?: (node: any) => void;
   readOnly?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
   onCellEdit,
   onAddRow,
   onDeleteSelected,
+  onRowDoubleClicked,
   readOnly = false
 }) => {
   const { appConfig, updateAppConfig } = useDataStore();
@@ -288,6 +290,7 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
             pagination={true}
             paginationPageSize={100}
             suppressFieldDotNotation={true}
+            onRowDoubleClicked={onRowDoubleClicked}
             onCellValueChanged={async (params: any) => {
                 if (params.oldValue !== params.newValue && primaryKeyField && onCellEdit) {
                     const pkValue = params.data[primaryKeyField];
