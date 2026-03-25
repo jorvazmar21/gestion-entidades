@@ -7,9 +7,10 @@ import { useUiStore } from './store/useUiStore'
 
 import { MediaManagerScreen } from './components/MediaManagerScreen'
 import { ProfileForgeScreen } from './components/admin/ProfileForgeScreen'
-import { InventoryCatalogScreen } from './components/admin/InventoryCatalogScreen'
-import { PermissionMatrixScreen } from './components/admin/PermissionMatrixScreen'
+import { InventoryCatalogScreen } from './components/admin/InventoryCatalogScreen';
+import { PermissionMatrixScreen } from './components/admin/PermissionMatrixScreen';
 import { DataDictionaryScreen } from './components/admin/DataDictionaryScreen'
+import { AdvancedMoldBuilderScreen } from './components/admin/mold_builder_v2/AdvancedMoldBuilderScreen';
 import { ExcelViewerScreen } from './components/admin/ExcelViewerScreen'
 import { CanvasSandboxScreen } from './components/admin/CanvasSandboxScreen'
 import { MoldBuilderScreen } from './components/admin/MoldBuilderScreen'
@@ -60,6 +61,7 @@ function App() {
   if (currentScreen === 'INVENTORY_CATALOG') return <InventoryCatalogScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'PERMISSION_MATRIX') return <PermissionMatrixScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'DATA_DICTIONARY') return <DataDictionaryScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'ADN_V2') return <AdvancedMoldBuilderScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'EXCEL_VIEWER') return <ExcelViewerScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'CANVAS_SANDBOX') return <CanvasSandboxScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'MOLD_BUILDER') return <MoldBuilderScreen onBack={() => setScreen('HOME')} />;

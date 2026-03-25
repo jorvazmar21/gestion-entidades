@@ -19,6 +19,9 @@ export interface SystemDataGridProps {
   heightClass?: string;
   primaryKeyField?: string;
   onCellEdit?: (table: string, pkField: string, pkValue: string, column: string, newValue: any) => Promise<boolean>;
+  onAddRow?: () => void;
+  onDeleteSelected?: (selectedNodes: any[]) => void;
+  readOnly?: boolean;
 }
 
 export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
@@ -30,7 +33,10 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
   toolbarRightHeader,
   heightClass = "flex-1 h-full",
   primaryKeyField,
-  onCellEdit
+  onCellEdit,
+  onAddRow,
+  onDeleteSelected,
+  readOnly = false
 }) => {
   const { appConfig, updateAppConfig } = useDataStore();
   
@@ -101,7 +107,7 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
          
          return {
             ...col,
-            editable: col.editable,
+            editable: readOnly ? false : col.editable,
             cellClassRules: {
                ...col.cellClassRules,
                'bg-slate-100 text-slate-500 cursor-not-allowed': '!colDef.editable'
@@ -109,7 +115,7 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
             hide: isUserHidden || isSystemRestricted
          };
       });
-  }, [columnDefs, userHiddenColumns, showSystemFields, systemFieldsData]);
+  }, [columnDefs, userHiddenColumns, showSystemFields, systemFieldsData, readOnly]);
 
   useEffect(() => {
       // Small timeout to yield to React's render phase
@@ -140,6 +146,35 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
          </div>
 
          <div className="flex items-center gap-2">
+            {/* GRUPO CRUD (Si está habilitado) */}
+            {(onAddRow || onDeleteSelected) && (
+               <>
+                 {onAddRow && (
+                   <button 
+                     onClick={readOnly ? undefined : onAddRow}
+                     disabled={readOnly}
+                     className={`w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[10px] text-center font-bold transition-colors uppercase rounded-sm shadow-sm ${readOnly ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'text-emerald-700 bg-emerald-50 border-emerald-600 hover:bg-emerald-600 hover:text-white cursor-pointer'}`}
+                   >
+                     + AÑADIR
+                   </button>
+                 )}
+                 {onDeleteSelected && (
+                   <button 
+                     onClick={readOnly ? undefined : () => {
+                        if (gridRef.current && gridRef.current.api) {
+                            onDeleteSelected(gridRef.current.api.getSelectedNodes());
+                        }
+                     }}
+                     disabled={readOnly}
+                     className={`w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[10px] text-center font-bold transition-colors uppercase rounded-sm shadow-sm ${readOnly ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'text-red-700 bg-red-50 border-red-600 hover:bg-red-600 hover:text-white cursor-pointer'}`}
+                   >
+                     🗑 BORRAR
+                   </button>
+                 )}
+                 <div className="w-px h-6 bg-slate-200 mx-1"></div>
+               </>
+            )}
+
             {/* GRUPO 1: VISIBILIDAD */}
             {/* Toggle System Fields */}
             <button 
@@ -249,6 +284,7 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
             columnDefs={contextualColumnDefs}
             defaultColDef={{ minWidth: 10, resizable: true, filter: AGCheckboxFilter, sortable: true }}
             autoSizeStrategy={{ type: 'fitCellContents' }}
+            rowSelection="multiple"
             pagination={true}
             paginationPageSize={100}
             suppressFieldDotNotation={true}
@@ -259,7 +295,9 @@ export const SystemDataGrid: React.FC<SystemDataGridProps> = ({
                     if (pkValue && field) {
                         const success = await onCellEdit(moduleId, primaryKeyField, pkValue, field, params.newValue);
                         if (!success) {
-                            params.node.setDataValue(field, params.oldValue);
+                            // Revertir vista silenciosamente sin disparar eventos
+                            params.data[field] = params.oldValue;
+                            params.api.refreshCells({ rowNodes: [params.node], force: true });
                         }
                     }
                 }

@@ -12,6 +12,7 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   const [activeTabIdx, setActiveTabIdx] = useState<number>(0);
   const [rowData, setRowData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // 1. Cargar el esquema completo al inicio
   useEffect(() => {
@@ -28,11 +29,11 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   const activeTableInfo = tables.length > 0 ? tables[activeTabIdx] : null;
   const activeTableName = activeTableInfo ? activeTableInfo.name : '';
 
-  // 2. Cargar los datos crudos cuando cambia la tabla
+  // 2. Cargar los datos crudos cuando cambia la tabla o se fuerza refresco
   useEffect(() => {
      if (!activeTableName) return;
      setLoading(true);
-     fetch(`/api/raw-db?table=${activeTableName}`)
+     fetch(`/api/raw-db?table=${activeTableName}&v=${refreshKey}`)
        .then(r => r.json())
        .then(res => {
           if (res.success && res.data) {
@@ -54,7 +55,7 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
           console.error(err);
           setLoading(false);
        });
-  }, [activeTableName]);
+  }, [activeTableName, refreshKey]);
 
   const handlePrev = () => setActiveTabIdx(p => p > 0 ? p - 1 : tables.length - 1);
   const handleNext = () => setActiveTabIdx(p => p < tables.length - 1 ? p + 1 : 0);
@@ -97,12 +98,12 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   }, [rowData, activeTableInfo, primaryKeyField]);
 
   // 5. Callback de edición segura
-  const handleCellEdit = async (table: string, pkField: string, pkValue: string, column: string, newValue: any): Promise<boolean> => {
+  const handleCellEdit = async (tableIdFromGrid: string, pkField: string, pkValue: string, column: string, newValue: any): Promise<boolean> => {
       try {
           const response = await fetch('/api/raw-db/update', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ table, pkColumn: pkField, pkValue, updateColumn: column, newValue })
+              body: JSON.stringify({ table: activeTableName, pkColumn: pkField, pkValue, updateColumn: column, newValue })
           });
           const res = await response.json();
           if (!res.success) {
@@ -114,6 +115,61 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
           alert(`Error de red: ${e.message}`);
           return false;
       }
+  };
+
+  // 6. CRUD Operations
+  const allowedMasterTables = ['sys_moldes', 'sys_niveles', 'sys_psets_def', 'sys_abac_matrix', 'sys_psets_audit_log', 'sys_reglas_jerarquia'];
+  const isMasterTable = allowedMasterTables.includes(activeTableName);
+
+  const handleAddRow = async () => {
+      if (!activeTableName || !primaryKeyField) return;
+      const isAuto = ['sys_abac_matrix', 'sys_psets_audit_log', 'sys_reglas_jerarquia'].includes(activeTableName);
+      let pkValue = null;
+      if (!isAuto) {
+         pkValue = prompt(`ATENCIÓN: Cuidado al añadir datos estructurales.\n\nNuevo registro para: ${activeTableName}\nIntroduzca un valor único MODO TEXTO para la clave primaria (${primaryKeyField}):\n(Sin espacios ni tildes)`);
+         if (!pkValue) return; // User cancelled
+      }
+      
+      try {
+          const response = await fetch('/api/raw-db/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ table: activeTableName, pkColumn: primaryKeyField, pkValue })
+          });
+          const res = await response.json();
+          if (res.success) {
+              setRefreshKey(k => k + 1); // Trigger reload
+          } else {
+              alert(`Error del Servidor: ${res.error}`);
+          }
+      } catch (e: any) {
+          alert(`Error de red: ${e.message}`);
+      }
+  };
+
+  const handleDeleteSelected = async (selectedNodes: any[]) => {
+      if (!selectedNodes || selectedNodes.length === 0) return;
+      if (!confirm(`¿Está seguro de borrar ${selectedNodes.length} registro(s) ESTRUCTURAL(ES)?\nEsta acción es física en la Base de Datos y no se puede deshacer.`)) return;
+      
+      if (!activeTableName || !primaryKeyField) return;
+
+      let successCount = 0;
+      for (const node of selectedNodes) {
+          const pkValue = node.data[primaryKeyField];
+          try {
+              const response = await fetch('/api/raw-db/delete', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ table: activeTableName, pkColumn: primaryKeyField, pkValue })
+              });
+              const res = await response.json();
+              if (res.success) successCount++;
+          } catch(e) {}
+      }
+      if (successCount < selectedNodes.length) {
+         alert(`Se borraron ${successCount} de ${selectedNodes.length}. Los demás pueden tener dependencias restrictivas (Foreign Keys).`);
+      }
+      setRefreshKey(k => k + 1); // Trigger reload
   };
 
   return (
@@ -178,6 +234,8 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
                 toolbarTitle={`MESA: ${activeTableName.toUpperCase()}`}
                 primaryKeyField={primaryKeyField}
                 onCellEdit={handleCellEdit}
+                onAddRow={isMasterTable ? handleAddRow : undefined}
+                onDeleteSelected={isMasterTable ? handleDeleteSelected : undefined}
               />
             )}
           </div>

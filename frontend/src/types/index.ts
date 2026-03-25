@@ -40,6 +40,7 @@ export interface EntityType {
   icono: string;
   tipos_hijo_permitidos: string[];
   max_count_per_parent: number | null;
+  min_count_per_parent: number | null;
 }
 
 export interface ModuleConfig {
@@ -51,6 +52,7 @@ export interface ModuleConfig {
   icono: string;
   tiposHijo: string[];
   maxCount: number | null;
+  minCount: number | null;
 }
 
 export interface PSetHistoryRecord {

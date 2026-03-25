@@ -352,7 +352,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // F. API AUDITORIA: MODO DIOS (Lectura Cruda)
+    // F. API AUDITORIA: MODO DIOS (Lectura Cruda GET)
     if (req.url.startsWith('/api/raw-db') && req.method === 'GET' && !req.url.includes('/update')) {
         try {
             const urlObj = new URL(req.url, `http://${req.headers.host}`);
@@ -360,12 +360,10 @@ const server = http.createServer(async (req, res) => {
             if (!table || table.includes(';') || table.includes(' ')) throw new Error("Tabla inválida");
             
             const db = await sqlDbPromise;
-            // Validar que la tabla existe (Seguridad extra)
             const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table"');
             if (!tables.some(t => t.name === table)) throw new Error("Tabla no encontrada");
             
             const rows = await db.all(`SELECT * FROM ${table}`);
-            
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true, data: rows }));
         } catch (e) {
@@ -373,6 +371,41 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, error: e.message }));
         }
+        return;
+    }
+
+    // F2. API MODO DIOS: Lectura con Condiciones (POST)
+    if (req.url === '/api/raw-db/read' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+             try {
+                 const { table, conditions } = JSON.parse(body);
+                 if (!table || table.includes(';') || table.includes(' ')) throw new Error("Tabla inválida");
+                 
+                 const db = await sqlDbPromise;
+                 const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table"');
+                 if (!tables.some(t => t.name === table)) throw new Error("Tabla no encontrada");
+                 
+                 let query = `SELECT * FROM ${table}`;
+                 let params = [];
+                 
+                 if (conditions && Object.keys(conditions).length > 0) {
+                     const keys = Object.keys(conditions);
+                     const whereClauses = keys.map(k => `${k} = ?`);
+                     query += ` WHERE ` + whereClauses.join(' AND ');
+                     params = keys.map(k => conditions[k]);
+                 }
+                 
+                 const rows = await db.all(query, params);
+                 res.writeHead(200, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: true, data: rows }));
+             } catch (e) {
+                 console.error(e);
+                 res.writeHead(500, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: false, error: e.message }));
+             }
+        });
         return;
     }
 
@@ -456,6 +489,91 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // H2. API AUDITORIA: CREATE ROW (Solo Tablas Maestras)
+    if (req.url === '/api/raw-db/create' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const { table, pkColumn, pkValue, id_molde_hijo } = JSON.parse(body);
+                const allowedTables = ['sys_moldes', 'sys_niveles', 'sys_psets_def', 'sys_abac_matrix', 'sys_psets_audit_log', 'sys_reglas_jerarquia'];
+                
+                if (!allowedTables.includes(table)) {
+                    throw new Error("Creación denegada. Solo aplicable a Tablas Maestras estructurales.");
+                }
+                if (!table || !pkColumn || pkValue === undefined) throw new Error("Parámetros SQL insuficientes");
+
+                await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    let stmt;
+                    if (table === 'sys_abac_matrix') {
+                        stmt = await db.prepare(`INSERT INTO sys_abac_matrix (fase_obra, departamento, rol_autoridad) VALUES ('NUEVO', 'NUEVO', 'NUEVO')`);
+                        await stmt.run([]);
+                    } else if (table === 'sys_reglas_jerarquia') {
+                        if (!pkValue || !id_molde_hijo) throw new Error("Se requiere Padre e Hijo");
+                        stmt = await db.prepare(`INSERT INTO sys_reglas_jerarquia (id_molde_padre, id_molde_hijo) VALUES (?, ?)`);
+                        await stmt.run([pkValue, id_molde_hijo]);
+                    } else if (table === 'sys_moldes') {
+                        stmt = await db.prepare(`INSERT INTO sys_moldes (id_molde, id_tipo_entidad, id_nivel, nombre, icono_sistema, reglas_config) VALUES (?, 'XXX', 'L1', 'NUEVO MOLDE', 'sys_box.svg', '{}')`);
+                        await stmt.run([pkValue]);
+                    } else if (table === 'sys_psets_def') {
+                        stmt = await db.prepare(`INSERT INTO sys_psets_def (id_pset, nombre, tipo, json_schema) VALUES (?, 'NUEVO PSET', 'ESTATICO', '{}')`);
+                        await stmt.run([pkValue]);
+                    } else if (table === 'sys_niveles') {
+                        stmt = await db.prepare(`INSERT INTO sys_niveles (id_nivel, jerarquia, nombre) VALUES (?, 999, 'NUEVO NIVEL')`);
+                        await stmt.run([pkValue]);
+                    } else if (pkColumn && pkValue !== null && pkValue !== '') {
+                        stmt = await db.prepare(`INSERT INTO ${table} (${pkColumn}) VALUES (?)`);
+                        await stmt.run([pkValue]);
+                    } else {
+                        throw new Error("Se requiere una Clave Primaria para insertar.");
+                    }
+                    if(stmt) await stmt.finalize();
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error("Error en raw create:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // H3. API AUDITORIA: DELETE ROW (Solo Tablas Maestras)
+    if (req.url === '/api/raw-db/delete' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const { table, pkColumn, pkValue } = JSON.parse(body);
+                const allowedTables = ['sys_moldes', 'sys_niveles', 'sys_psets_def', 'sys_abac_matrix', 'sys_psets_audit_log', 'sys_reglas_jerarquia'];
+                
+                if (!allowedTables.includes(table)) {
+                    throw new Error("Borrado denegado. Solo aplicable a Tablas Maestras estructurales.");
+                }
+                if (!table || !pkColumn || pkValue === undefined) throw new Error("Parámetros SQL insuficientes");
+
+                await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    const stmt = await db.prepare(`DELETE FROM ${table} WHERE ${pkColumn} = ?`);
+                    await stmt.run([pkValue]);
+                    await stmt.finalize();
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error("Error en raw delete:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // I. API MOLDE BUILDER: CREAR/ACTUALIZAR MOLDE
     if (req.url === '/api/moldes/create' && req.method === 'POST') {
         let body = '';
@@ -463,33 +581,28 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body);
-                // payload: { id_molde, nombre, id_nivel, id_categoria, sub_categoria, icono, moldes_hijo_permitidos, reglas_config }
                 if (!payload.id_molde || !payload.nombre || !payload.id_nivel) {
                     throw new Error("Faltan campos obligatorios para crear el Molde");
                 }
                 
-                // Asegurar formato ID (Sin espacios, mayúsculas)
                 const safeId = payload.id_molde.toUpperCase().replace(/[^A-Z0-9_]/g, '');
 
                 await queueWriteTransaction(async () => {
                     const db = await sqlDbPromise;
-                    
-                    // Upsert pattern (Insert or Replace) SQLite native feature
                     const stmt = await db.prepare(`
                         INSERT OR REPLACE INTO sys_moldes 
-                        (id_molde, nombre, id_nivel, id_categoria, sub_categoria, icono, moldes_hijo_permitidos, reglas_config, is_active, created_at, created_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, "SYSTEM")
+                        (id_molde, id_tipo_entidad, id_nivel, nombre, descripcion, reglas_config, icono_sistema)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                     `);
                     
                     await stmt.run([
                         safeId,
-                        payload.nombre,
+                        payload.id_tipo_entidad || `ENTIDAD_${safeId}`,
                         payload.id_nivel,
-                        payload.id_categoria || 'GENERAL',
-                        payload.sub_categoria || '',
-                        payload.icono || 'sys_box.svg',
-                        JSON.stringify(payload.moldes_hijo_permitidos || []),
-                        JSON.stringify(payload.reglas_config || {})
+                        payload.nombre,
+                        payload.descripcion || '',
+                        JSON.stringify(payload.reglas_config || {}),
+                        payload.icono_sistema || 'sys_box.svg'
                     ]);
                     await stmt.finalize();
                 });
@@ -498,6 +611,33 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: true, message: `Molde ${safeId} inyectado estructuralmente.` }));
             } catch (err) {
                 console.error("Error creating molde:", err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // J. API MOLDE BUILDER: BORRAR MOLDE
+    if (req.url === '/api/moldes/delete' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const { id_molde } = JSON.parse(body);
+                if (!id_molde) throw new Error("Falta id_molde");
+                
+                await queueWriteTransaction(async () => {
+                    const db = await sqlDbPromise;
+                    const stmt = await db.prepare(`DELETE FROM sys_moldes WHERE id_molde = ?`);
+                    await stmt.run([id_molde]);
+                    await stmt.finalize();
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error("Error deleting molde:", err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }

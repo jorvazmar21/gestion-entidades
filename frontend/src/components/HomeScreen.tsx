@@ -5,7 +5,7 @@ import { useUiStore } from '../store/useUiStore';
 import { SafeImage } from './SafeImage';
 
 export const HomeScreen: React.FC = () => {
-  const { tiposEntidadDb, loading, error } = useDataStore();
+  const { loading, error } = useDataStore();
   const { activeUser, userRole, logout } = useAuthStore();
   const { navigateToModule, setScreen } = useUiStore();
 
@@ -14,8 +14,15 @@ export const HomeScreen: React.FC = () => {
     setScreen('LOGIN');
   };
 
-  // Los Entornos Operativos (Módulos) son los niveles 'L1' del CSV de tipos
-  const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1');
+  // Los Entornos Operativos (Módulos) son los contenedores de las Entidades Finales
+  // Se mapean de forma estática y humana, conservando los IDs y el orden original.
+  const staticModules = [
+    { id: 'OBR', label: 'Gestión de Obras', icon: 'mod_OBR' },
+    { id: 'SED', label: 'Gestión de Sedes', icon: 'mod_SED' },
+    { id: 'PRQ', label: 'Gestión de Parques', icon: 'mod_PAR' },
+    { id: 'PRO', label: 'Gestión de Proveedores', icon: 'mod_PRV' },
+    { id: 'CLI', label: 'Gestión de Clientes', icon: 'mod_CLI' }
+  ];
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#f8f9ff] flex flex-col font-['Inter'] relative">
@@ -23,7 +30,7 @@ export const HomeScreen: React.FC = () => {
       <header className="h-[60px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 relative z-10 shadow-sm">
         <div className="flex items-center gap-3">
            <SafeImage 
-             src="/branding/logo-fractales.svg" 
+             src="/media/logo-fractales.svg" 
              alt="FRACTAL CORE" 
              wrapperClassName="w-[30px] h-[30px]"
              className="w-full h-full object-contain" 
@@ -78,40 +85,30 @@ export const HomeScreen: React.FC = () => {
                     Entornos Operativos
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
-                     {l1Modules.map(mod => (
+                     {staticModules.map(mod => (
                         <button 
-                          key={mod.id_tipo} 
-                          onClick={() => navigateToModule(mod.id_tipo)}
+                          key={mod.id} 
+                          onClick={() => navigateToModule(mod.id)}
                           className="flex flex-col items-start justify-center bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-[#7f1d1d]/40 transition-all group min-h-[130px] relative overflow-hidden"
                         >
                            <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-red-50 transition-colors"></div>
                            
-                           <img 
-                             src={`/icons/mod_${mod.id_tipo}.svg?v=${Date.now()}`} 
-                             className="w-10 h-10 mb-3 object-contain relative z-10 transition-transform group-hover:scale-110"
-                             alt={mod.nombre}
-                             onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                             }}
+                           <SafeImage 
+                             src={`/icons/${mod.icon}.svg`} 
+                             fallbackType="svg"
+                             wrapperClassName="w-10 h-10 mb-3 relative z-10 transition-transform group-hover:scale-110"
+                             className="w-full h-full object-contain filter grayscale" 
+                             alt={mod.label}
                            />
-                           <span className="text-2xl mb-3 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform relative z-10 text-[#7f1d1d] hidden">
-                             {mod.icono || '📁'}
-                           </span>
                            
                            <span className="font-bold text-gray-800 group-hover:text-[#7f1d1d] transition-colors text-sm uppercase tracking-wide relative z-10">
-                             {mod.nombre}
+                             {mod.label}
                            </span>
                            <span className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide relative z-10">
-                             Módulo Central
+                             Módulo Principal L1
                            </span>
                         </button>
                      ))}
-                     {l1Modules.length === 0 && (
-                        <div className="col-span-full p-8 text-center bg-white border border-dashed border-gray-300 rounded-lg text-sm text-gray-500">
-                           No hay Entornos (L1) definidos en la matriz de Tipos de Entidad del Servidor.
-                        </div>
-                     )}
                   </div>
                </div>
 
@@ -138,6 +135,14 @@ export const HomeScreen: React.FC = () => {
                      >
                         <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                         <span className="font-semibold text-sm uppercase tracking-wide">Diccionario Dts.</span>
+                     </button>
+
+                     <button 
+                       onClick={() => setScreen('ADN_V2')}
+                       className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-blue-500"
+                     >
+                        <SafeImage src="/icons/sys_tipos.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full filter backdrop-hue-rotate-180" />
+                        <span className="font-semibold text-[13px] uppercase tracking-wide text-blue-400">Diseñador ADN (v2)</span>
                      </button>
 
                      <button 

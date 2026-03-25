@@ -15,6 +15,7 @@ interface DataState {
   psetValuesDb: Record<string, any>;
   psetHistoryDb: PSetHistoryRecord[];
   tiposEntidadDb: EntityType[];
+  sysNivelesDb: any[];
   MODULES: Record<string, ModuleConfig>;
   appConfig: Record<string, any>;
 
@@ -39,6 +40,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   psetValuesDb: {},
   psetHistoryDb: [],
   tiposEntidadDb: [],
+  sysNivelesDb: [],
   MODULES: {},
   appConfig: {},
 
@@ -70,23 +72,25 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
 
       const { appConfig, sqlData } = result;
-      const { entidades, psets_def, psets_val, psets_dyn, sys_niveles, sys_moldes } = sqlData || {};
+      const { entidades, psets_def, psets_val, psets_dyn, sys_moldes, sys_niveles } = sqlData || {};
 
       if (!entidades || !sys_moldes) {
           throw new Error("El esquema de SQLite devuelto por el servidor está incompleto o la BBDD está vacía.");
       }
       
       const tiposEntidadDb: EntityType[] = sys_moldes.map((m: any) => {
-          const nivelObj = (sys_niveles || []).find((n: any) => n.id_nivel === m.id_nivel);
           return {
               id_tipo: m.id_molde,
+              id_tipo_entidad: m.id_tipo_entidad,
               nombre: m.nombre,
               categoria: m.descripcion || 'General',
               subCategoria: '',
-              nivel: nivelObj ? nivelObj.nombre : 'L1',
+              nivel: m.id_nivel || 'L1',
               icono: m.icono_sistema || '',
               tipos_hijo_permitidos: m.reglas_config?.admite_hijos || [],
-              max_count_per_parent: m.reglas_config?.max_hijos || null
+              padres_permitidos: m.reglas_config?.padres_permitidos || [],
+              max_count_per_parent: m.reglas_config?.max_hijos || null,
+              min_count_per_parent: m.reglas_config?.min_hijos || 0
           };
       });
 
@@ -100,8 +104,9 @@ export const useDataStore = create<DataState>((set, get) => ({
               subCategory: t.subCategoria,
               icono: t.icono,
               tiposHijo: t.tipos_hijo_permitidos,
-              maxCount: t.max_count_per_parent
-          };
+              maxCount: t.max_count_per_parent,
+              minCount: t.min_count_per_parent
+          } as ModuleConfig;
       });
 
       const db: Entity[] = entidades.map((e: any) => {
@@ -142,6 +147,7 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       set({
         appConfig: appConfig || {},
+        sysNivelesDb: sys_niveles || [],
         tiposEntidadDb,
         MODULES,
         db,
@@ -196,140 +202,4 @@ export const useDataStore = create<DataState>((set, get) => ({
   }
 }));
 
-// --- PARSERS ---
-
-const safeJSONParse = (val: string, fallback: any) => {
-    try {
-        if (!val || val.trim() === '') return fallback;
-        return JSON.parse(val);
-    } catch (e) {
-        console.warn('Fallo al parsear JSON de CSV:', val);
-        return fallback;
-    }
-};
-
-function parseTiposEntidad(lines: string[]) {
-  const tiposEntidadDb = lines.map(line => {
-    const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, '').replace(/""/g, '"'));
-    return {
-        id_tipo: vals[0],
-        nombre: vals[1],
-        categoria: vals[2],
-        subCategoria: vals[3] || '',
-        nivel: vals[4],
-        icono: vals[5] || '',
-        tipos_hijo_permitidos: safeJSONParse(vals[6], []),
-        max_count_per_parent: vals[7] ? parseInt(vals[7]) : null
-    } as EntityType;
-  });
-
-  const MODULES: Record<string, ModuleConfig> = {};
-  tiposEntidadDb.forEach(t => {
-      MODULES[t.id_tipo] = {
-          title: t.nombre,
-          prefix: t.id_tipo,
-          level: t.nivel,
-          category: t.categoria,
-          subCategory: t.subCategoria,
-          icono: t.icono,
-          tiposHijo: t.tipos_hijo_permitidos,
-          maxCount: t.max_count_per_parent
-      };
-  });
-
-  return { tiposEntidadDb, MODULES };
-}
-
-function parseCSV(lines: string[], MODULES: Record<string, ModuleConfig>): Entity[] {
-    const parsedDb = lines.map(line => {
-        const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, ''));
-
-        if (vals.length <= 8) { // Mapeo antiguo
-            const modCfg = MODULES[vals[1]] || {} as any;
-            return {
-                id: vals[0],
-                level: modCfg.level || 'L1',
-                category: modCfg.category || 'LUGAR',
-                subCategory: modCfg.subCategory || '',
-                type: vals[1],
-                code: vals[2],
-                name: vals[3],
-                location: '', canal: '', parentId: null,
-                isActive: vals[4] === 'true',
-                deletedAt: vals[5] && vals[5] !== 'null' && vals[5] !== '""' ? vals[5] : null,
-                deletedBy: '',
-                createdAt: vals[6],
-                createdBy: 'SYSTEM_MIGRATION',
-                updatedAt: vals[7],
-                updatedBy: 'SYSTEM_MIGRATION'
-            };
-        } else {
-            return {
-                id: vals[0],
-                level: vals[1] || 'L1',
-                category: vals[2] || 'LUGAR',
-                subCategory: vals[3] || '',
-                type: vals[4],
-                code: vals[5],
-                name: vals[6],
-                location: vals[7] || '',
-                canal: vals[8] || '',
-                parentId: vals[9] && vals[9] !== 'null' ? vals[9] : null,
-                isActive: vals[10] === 'true',
-                deletedAt: vals[11] && vals[11] !== 'null' && vals[11] !== '""' ? vals[11] : null,
-                deletedBy: vals[12] || '',
-                createdAt: vals[13],
-                createdBy: vals[14] || '',
-                updatedAt: vals[15],
-                updatedBy: vals[16] || ''
-            };
-        }
-    }).filter(r => r && r.id);
-
-    // Inferencia de parentId (Lógica original de app.js)
-    parsedDb.forEach(r => {
-        if (r.parentId === null && r.level === 'L2') {
-            const parts = r.code.split('.');
-            if (parts.length > 1) {
-                const parentCode = parts[0];
-                const parent = parsedDb.find(p => p.code === parentCode && p.level === 'L1');
-                if (parent) {
-                    r.parentId = parent.id;
-                }
-            }
-        }
-    });
-
-    return parsedDb;
-}
-
-function parseCSVDefs(lines: string[]): PSetDef[] {
-    return lines.map(line => {
-        const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, '').replace(/""/g, '"'));
-        return {
-            id_pset: vals[0], behavior: vals[1],
-            appliesTo: safeJSONParse(vals[2], []),
-            properties: safeJSONParse(vals[3], [])
-        };
-    });
-}
-
-function parseCSVVals(lines: string[]): Record<string, any> {
-    const obj: Record<string, any> = {};
-    lines.forEach(line => {
-        const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, '').replace(/""/g, '"'));
-        const key = `${vals[0]}_${vals[1]}`;
-        obj[key] = safeJSONParse(vals[2], {});
-    });
-    return obj;
-}
-
-function parseCSVDyns(lines: string[]): PSetHistoryRecord[] {
-    return lines.map(line => {
-        const vals = line.split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, '').replace(/""/g, '"'));
-        return {
-            id_record: vals[0], id_entity: vals[1], id_pset: vals[2], timestamp: vals[3],
-            data: safeJSONParse(vals[4], {})
-        };
-    });
-}
+// --- FIN DEL STORE ---

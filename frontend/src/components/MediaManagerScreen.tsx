@@ -13,7 +13,18 @@ import { SafeImage } from './SafeImage';
 export function MediaManagerScreen() {
   const setScreen = useUiStore(state => state.setScreen);
   const { tiposEntidadDb } = useDataStore();
-  const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1');
+  const orderL1 = ['OBR', 'SED', 'PRQ', 'PRO', 'CLI'];
+  const l1Modules = tiposEntidadDb.filter(t => t.nivel === 'L1').sort((a, b) => {
+      const indexA = orderL1.indexOf(a.id_tipo);
+      const indexB = orderL1.indexOf(b.id_tipo);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+  });
+  const l2Modules = tiposEntidadDb.filter(t => t.nivel === 'L2');
+  const l3Modules = tiposEntidadDb.filter(t => t.nivel === 'L3');
+  const lmModules = tiposEntidadDb.filter(t => t.nivel === 'Lm');
+  const lnModules = tiposEntidadDb.filter(t => t.nivel === 'Ln');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, filename: string) => {
@@ -128,7 +139,7 @@ export function MediaManagerScreen() {
                <h3 className="text-[#121c2a] font-bold text-[16px] tracking-wide font-['Manrope']">Iconografía de Departamentos</h3>
                <div className="h-[1px] bg-slate-200 flex-1"></div>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
                 <MediaCard title="Departamento Estudios" filename="icons/dept_estudios.svg" accept=".svg" />
                 <MediaCard title="Departamento Administración" filename="icons/dept_administracion.svg" accept=".svg" />
                 <MediaCard title="Departamento RRHH" filename="icons/dept_rrhh.svg" accept=".svg" />
@@ -164,22 +175,66 @@ export function MediaManagerScreen() {
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-6 border-b border-gray-100 pb-3 flex items-center gap-2">
                 <span className="w-3 h-3 bg-green-600 rounded-sm block shadow-sm"></span>
-                Entornos Operativos (Módulos Sistema)
+                Entornos Operativos (Módulos L1 a Ln)
              </h2>
-             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
-                {l1Modules.map(mod => (
-                  <MediaCard 
-                    key={mod.id_tipo} 
-                    title={mod.nombre} 
-                    filename={`icons/mod_${mod.id_tipo}.svg`} 
-                    accept=".svg" 
-                    desc={`Icono Módulo L1`}
-                  />
-                ))}
-                {l1Modules.length === 0 && (
-                   <span className="col-span-full text-xs text-gray-400 italic">No hay módulos cargados en base de datos.</span>
-                )}
+
+             {/* Nivel L1 */}
+             <div className="mb-8">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">L1 - Lugares (Hubs)</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                  {l1Modules.map(mod => (
+                    <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
+                  ))}
+               </div>
              </div>
+
+             {/* Nivel L2 */}
+             {l2Modules.length > 0 && (
+             <div className="mb-8 border-t border-gray-100 pt-6">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">L2 - Delegaciones</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                  {l2Modules.map(mod => (
+                    <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
+                  ))}
+               </div>
+             </div>
+             )}
+
+             {/* Nivel L3 */}
+             {l3Modules.length > 0 && (
+             <div className="mb-8 border-t border-gray-100 pt-6">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">L3 - Eventos</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                  {l3Modules.map(mod => (
+                    <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
+                  ))}
+               </div>
+             </div>
+             )}
+
+             {/* Nivel Lm */}
+             {lmModules.length > 0 && (
+             <div className="mb-8 border-t border-gray-100 pt-6">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Lm - Desgloses</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                  {lmModules.map(mod => (
+                    <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
+                  ))}
+               </div>
+             </div>
+             )}
+
+             {/* Nivel Ln */}
+             {lnModules.length > 0 && (
+             <div className="mb-8 border-t border-gray-100 pt-6">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Ln - Medios</h3>
+               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                  {lnModules.map(mod => (
+                    <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
+                  ))}
+               </div>
+             </div>
+             )}
           </section>
 
           {/* SECCIÓN 4: RESPALDO GENÉRICOS */}

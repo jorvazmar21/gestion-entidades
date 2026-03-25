@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS sys_niveles (
 -- 2. LOS MOLDES CANÓNICOS (El ADN de las entidades)
 CREATE TABLE IF NOT EXISTS sys_moldes (
     id_molde TEXT PRIMARY KEY,
+    id_tipo_entidad TEXT NOT NULL,
     id_nivel TEXT NOT NULL REFERENCES sys_niveles(id_nivel) ON DELETE RESTRICT,
     nombre TEXT NOT NULL,
     descripcion TEXT,
@@ -101,8 +102,32 @@ CREATE TABLE IF NOT EXISTS sys_abac_matrix (
     fase_obra TEXT NOT NULL,
     departamento TEXT NOT NULL,
     rol_autoridad TEXT NOT NULL,
-    -- Acciones Operativas (Independientes)
     can_view INTEGER DEFAULT 0,
     can_edit INTEGER DEFAULT 0,
     can_approve INTEGER DEFAULT 0
 );
+
+-- 9. LA TABLA EN LA SOMBRA (Audit Trail para PSets)
+CREATE TABLE IF NOT EXISTS sys_psets_audit_log (
+    id_audit INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo_pset TEXT NOT NULL,
+    id_referencia TEXT NOT NULL,
+    id_entidad TEXT NOT NULL,
+    id_pset TEXT NOT NULL,
+    valor_anterior JSON,
+    valor_nuevo JSON NOT NULL,
+    motivo_cambio TEXT,
+    modificado_por TEXT NOT NULL,
+    modificado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. REGLAS DE JERARQUÍA (Cardinalidad de Árbol)
+CREATE TABLE IF NOT EXISTS sys_reglas_jerarquia (
+    id_regla INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_molde_padre TEXT NOT NULL,
+    id_molde_hijo TEXT NOT NULL,
+    hijos_min INTEGER DEFAULT 0,
+    hijos_max INTEGER DEFAULT -1, -- -1 significa N (infinitos)
+    UNIQUE(id_molde_padre, id_molde_hijo)
+);
+
