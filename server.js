@@ -99,23 +99,43 @@ const server = http.createServer(async (req, res) => {
 
     // --- ENRUTADOR ---
 
-    // A. API: CARGAR DATOS
+        // A. API: CARGAR DATOS (L-MATRIX)
     if (req.url === '/api/load' && req.method === 'GET') {
         try {
             const db = await sqlDbPromise;
             
-            const entidades = await db.all('SELECT * FROM entidades');
-            const psets_def = await db.all('SELECT * FROM sys_psets_def');
-            const psets_val = await db.all('SELECT * FROM pset_estatico_valores');
-            const psets_dyn = await db.all('SELECT * FROM pset_dinamico_valores');
-            const sys_niveles = await db.all('SELECT * FROM sys_niveles');
-            const sys_moldes = await db.all('SELECT * FROM sys_moldes');
+            const l1_categories = await db.all('SELECT * FROM def_entity_l1_category');
+            const l2_families = await db.all('SELECT * FROM def_entity_l2_family');
+            const l3_types = await db.all('SELECT * FROM def_entity_l3_type');
+            const l4_instances = await db.all('SELECT * FROM dat_entity_l4_instance');
+            const topology_graph = await db.all('SELECT * FROM rel_entity_topology_graph');
+            const psets_template_raw = await db.all('SELECT * FROM def_pset_template');
+            const psets_bridge = await db.all('SELECT * FROM rel_pset_to_entity_bridge');
+            const psets_payloads_raw = await db.all('SELECT * FROM dat_pset_live_payloads');
+            const eventos_l3 = await db.all('SELECT * FROM eventos_l3');
+            const desgloses_l4 = await db.all('SELECT * FROM desgloses_l4');
 
-            // Parsear campos JSON nativos de SQLite a Objetos JS para que el frontend no tenga que hacer doble parseo
-            const processedMoldes = sys_moldes.map(m => ({ ...m, reglas_config: m.reglas_config ? JSON.parse(m.reglas_config) : [] }));
-            const processedPsetsDef = psets_def.map(p => ({ ...p, json_schema: p.json_schema ? JSON.parse(p.json_schema) : {} }));
-            const processedPsetsVal = psets_val.map(p => ({ ...p, valor_json: p.valor_json ? JSON.parse(p.valor_json) : {} }));
-            const processedPsetsDyn = psets_dyn.map(p => ({ ...p, valor_json: p.valor_json ? JSON.parse(p.valor_json) : {} }));
+            // TODO: Extraer Rol desde Sesión Segura. Mockeado para demostración inicial.
+            const userRole = req.headers['x-user-role'] || 'ADMINISTRADOR'; 
+
+            const psets_template = psets_template_raw.map(p => ({ ...p, json_shape_definition: p.json_shape_definition ? JSON.parse(p.json_shape_definition) : {} }));
+            
+            // BACKEND SECURITY PRUNING (REGLA 3.A - EL BISTURÍ DE SEGURIDAD)
+            const psets_payloads = psets_payloads_raw.map(p => {
+                let pd = p.json_payload ? JSON.parse(p.json_payload) : {};
+                const template = psets_template.find(t => t.pset_id === p.pset_id);
+                if (template && template.json_shape_definition && template.json_shape_definition.UISchema) {
+                    const uiSchema = template.json_shape_definition.UISchema;
+                    Object.keys(uiSchema).forEach(key => {
+                        const rules = uiSchema[key];
+                        // Si existe regla de visibilidad, y el Rol del operario NO está en la lista...
+                        if (rules && rules['security:visible_roles'] && !rules['security:visible_roles'].includes(userRole)) {
+                            delete pd[key]; // <--- DESTRUCCIÓN FÍSICA DE LA VARIABLE. Jamás viaja por red.
+                        }
+                    });
+                }
+                return { ...p, json_payload: pd };
+            });
 
             let appConfig = {};
             if (fs.existsSync(CSV_FILES.app_config)) {
@@ -129,14 +149,7 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({
                 success: true,
                 appConfig: appConfig,
-                sqlData: {
-                    entidades,
-                    psets_def: processedPsetsDef,
-                    psets_val: processedPsetsVal,
-                    psets_dyn: processedPsetsDyn,
-                    sys_niveles,
-                    sys_moldes: processedMoldes
-                }
+                sqlData: { l1_categories, l2_families, l3_types, l4_instances, topology_graph, psets_template, psets_bridge, psets_payloads, eventos_l3, desgloses_l4 }
             }));
         } catch (e) {
             console.error(e);
@@ -184,106 +197,56 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // B. API: GUARDAR DATOS (TRANSACCIÓN COMPLETA SQLITE)
+        // B. API: GUARDAR DATOS (L-MATRIX CQRS - ADMIN ONLY FOR NOW)
     if (req.url === '/api/save' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
-            try {
-                const payload = JSON.parse(body); // Recibe el estado entero de la RAM
+             res.writeHead(503, { 'Content-Type': 'application/json' });
+             res.end(JSON.stringify({ success: false, error: 'Endpoint legacy /api/save deshabilitado. En el modelo L-Matrix se usan Puts individuales CQRS.' }));
+        });
+        return;
+    }
 
-                const result = await queueWriteTransaction(async () => {
-                    const db = await sqlDbPromise;
-                    
-                    await db.run('BEGIN TRANSACTION');
-                    
-                    try {
-                        // 1. Entidades
-                        if (payload.db) {
-                            await db.run('DELETE FROM entidades');
-                            const stmt = await db.prepare('INSERT INTO entidades (id_entidad, id_molde, id_padre, codigo, nombre, fase_actual, is_active, deleted_at, deleted_by, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                            for (const e of payload.db) {
-                                await stmt.run([
-                                    e.id, 
-                                    e.type, 
-                                    e.parentId || null, 
-                                    e.code, 
-                                    e.name, 
-                                    e.canal || 'ESTUDIO', 
-                                    e.isActive ? 1 : 0, 
-                                    e.deletedAt || null, 
-                                    e.deletedBy || null, 
-                                    e.createdAt, 
-                                    e.createdBy || '', 
-                                    e.updatedAt, 
-                                    e.updatedBy || ''
-                                ]);
-                            }
-                            await stmt.finalize();
-                        }
+    // B2. API CQRS: PUT INSTANCE PAYLOAD
+    if (req.url.startsWith('/api/instances/put') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+             try {
+                 const payload = JSON.parse(body);
+                 const { l4_instance_id, pset_id, json_payload, __v } = payload;
+                 
+                 await queueWriteTransaction(async () => {
+                     const db = await sqlDbPromise;
+                     // Implement Optimistic Concurrency Control
+                     const current = await db.get('SELECT json_payload FROM dat_pset_live_payloads WHERE l4_instance_id = ? AND pset_id = ?', [l4_instance_id, pset_id]);
+                     
+                     if (current) {
+                         const currentData = JSON.parse(current.json_payload);
+                         if (currentData.__v && currentData.__v !== __v) {
+                             throw new Error('HTTP 409 Conflict: El documento ha sido modificado por otro usuario. Recarga la página.');
+                         }
+                     }
 
-                        // 2. Sys Psets Def
-                        if (payload.psets_def) {
-                            await db.run('DELETE FROM sys_psets_def');
-                            const stmt = await db.prepare('INSERT INTO sys_psets_def (id_pset, nombre, tipo, json_schema) VALUES (?, ?, ?, ?)');
-                            for (const d of payload.psets_def) {
-                                await stmt.run([
-                                    d.id_pset || d.id || 'GENERIC', 
-                                    d.nombre || d.behavior || 'PSET', 
-                                    d.tipo || (d.behavior === 'DYNAMIC' ? 'DINAMICO' : 'ESTATICO'), 
-                                    JSON.stringify(d.properties || {})
-                                ]);
-                            }
-                            await stmt.finalize();
-                        }
-
-                        // 3. Psets Valores Estáticos
-                        if (payload.psetValuesDb) {
-                            await db.run('DELETE FROM pset_estatico_valores');
-                            const stmt = await db.prepare('INSERT INTO pset_estatico_valores (id_entidad, id_pset, valor_json, updated_at, updated_by) VALUES (?, ?, ?, CURRENT_TIMESTAMP, "SYSTEM")');
-                            for (const [key, value] of Object.entries(payload.psetValuesDb)) {
-                                const [id_ent, id_pst] = key.split('_');
-                                if (id_ent && id_pst) {
-                                    await stmt.run([ id_ent, id_pst, JSON.stringify(value) ]);
-                                }
-                            }
-                            await stmt.finalize();
-                        }
-
-                        // 4. Psets Valores Dinámicos
-                        if (payload.psetHistoryDb) {
-                            await db.run('DELETE FROM pset_dinamico_valores');
-                            const stmt = await db.prepare('INSERT INTO pset_dinamico_valores (id_entidad, id_pset, valor_json, anotacion, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)');
-                            for (const h of payload.psetHistoryDb) {
-                                await stmt.run([
-                                    h.id_entity || h.id_entidad, 
-                                    h.id_pset, 
-                                    JSON.stringify(h.data || h.valor_json), 
-                                    h.anotacion || '', 
-                                    h.timestamp || h.created_at || new Date().toISOString(), 
-                                    h.createdBy || h.created_by || 'SYSTEM'
-                                ]);
-                            }
-                            await stmt.finalize();
-                        }
-
-                        // Omittimos TiposEntidadDb ya que se manejan via sys_moldes y sys_niveles (protegidos arquitecturalmente por ahora)
-                        
-                        await db.run('COMMIT');
-                        console.log(`✅ Base de Datos SQL Guardada. Volcadas ${payload.db?.length || 0} filas maestras.`);
-                    } catch (e) {
-                        await db.run('ROLLBACK');
-                        throw e;
-                    }
-                });
-
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(result));
-
-            } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
-            }
+                     // Inject new version
+                     const newPayload = { ...json_payload, __v: (__v || 0) + 1 };
+                     
+                     await db.run(`
+                         INSERT INTO dat_pset_live_payloads (l4_instance_id, pset_id, json_payload, updated_at, updated_by)
+                         VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'SYSTEM')
+                         ON CONFLICT(l4_instance_id, pset_id) DO UPDATE SET 
+                         json_payload = excluded.json_payload, 
+                         updated_at = excluded.updated_at
+                     `, [l4_instance_id, pset_id, JSON.stringify(newPayload)]);
+                 });
+                 res.writeHead(200, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: true }));
+             } catch(e) {
+                 const status = e.message.includes('409') ? 409 : 500;
+                 res.writeHead(status, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: false, error: e.message }));
+             }
         });
         return;
     }

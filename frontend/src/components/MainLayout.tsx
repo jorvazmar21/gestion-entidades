@@ -16,6 +16,7 @@ import { SystemTopRightActions } from './SystemTopRightActions';
 import { ModulePhases } from './ModulePhases';
 import { ModuleDepartments } from './ModuleDepartments';
 import { ImportWizardModal } from './generics/ImportWizardModal';
+import { PSetInspector } from './generics/PSetInspector';
 import { useState } from 'react';
 
 // Separador inteligente que reacciona a la directriz del Administrador
@@ -28,7 +29,7 @@ const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
 
 export function MainLayout() {
   const LAYOUT = useLayoutStore();
-  const { activePSetTab, setActivePSetTab, activeModuleId } = useUiStore();
+  const { activeModuleId, selectedEntityId } = useUiStore();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   return (
@@ -152,29 +153,16 @@ export function MainLayout() {
            
            <SimpleDivider />
 
-           {/* ZONA 9: PESTAÑAS PSET */}
-           <div className="w-full shrink-0 bg-[#f8f9ff] flex items-end justify-center px-4 pt-4 border-b border-gray-200" style={{ height: LAYOUT.altoFila2 }}>
-             <div className="w-full flex">
-               <button 
-                 onClick={() => setActivePSetTab?.('ESTATICO')}
-                 className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePSetTab === 'ESTATICO' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-               >
-                 Estáticas
-               </button>
-               <button 
-                 onClick={() => setActivePSetTab?.('DINAMICO')}
-                 className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePSetTab === 'DINAMICO' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-               >
-                 Dinámicas
-               </button>
-             </div>
+           {/* ZONA 9: CABECERA INSPECTOR */}
+           <div className="w-full shrink-0 bg-[#f8f9ff] flex items-center justify-center px-4 pt-4 border-b border-gray-200" style={{ height: LAYOUT.altoFila2 }}>
+             <h3 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-2">Atributos CQRS (PSet L-Matrix)</h3>
            </div>
            
            <SimpleDivider />
            
            {/* ZONA 10: INSPECTOR */}
-           <div className="flex-1 p-4 bg-white overflow-y-auto">
-              <span className="text-xs text-slate-400">ZONA 10: Inspector de PSets</span>
+           <div className="flex-1 bg-white overflow-hidden flex flex-col">
+              <PSetInspector entityId={selectedEntityId} />
            </div>
         </aside>
 

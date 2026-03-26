@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MasterEntityDataGrid } from './MasterEntityDataGrid';
 import { useUiStore } from '../../store/useUiStore';
+import { useDataStore } from '../../store/useDataStore';
 
 interface ChildMold {
   id: string;
@@ -18,6 +19,8 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 }) => {
   const selectedEntityId = useUiStore(state => state.selectedEntityId);
   const setSelectedEntityId = useUiStore(state => state.setSelectedEntityId);
+  
+  const { db } = useDataStore(); // <--- OBTENEMOS LA BASE DE DATOS L4 REAL EN VIVO
 
   const [allowedChildren, setAllowedChildren] = useState<ChildMold[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
@@ -107,45 +110,19 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
              {/* CONTENT GRID */}
              <div className="flex-1 w-full bg-white relative flex flex-col overflow-hidden">
-                 <MasterEntityDataGrid 
+                  <MasterEntityDataGrid 
                    moduleId={`MASTER_${moduleId}`}
                    rowData={
-                     moduleId === 'EMP' ? [
-                       { 
-                         id: 'ENT-EMP-001', codigo: 'CL-001', nombre: 'Dragados S.A.', descripcion: 'Constructora principal V. Pajares', 
-                         is_contrata: true, is_ute: false, is_proveedor: false, is_subcontrata: false, is_cliente: true, 
-                         es_activa: true, deletedAt: null 
-                       },
-                       { 
-                         id: 'ENT-EMP-002', codigo: 'PR-452', nombre: 'Hilti España', descripcion: 'Suministro anclajes', 
-                         is_contrata: false, is_ute: false, is_proveedor: true, is_subcontrata: false, is_cliente: false, 
-                         es_activa: true, deletedAt: null 
-                       },
-                       { 
-                         id: 'ENT-EMP-003', codigo: 'UT-11', nombre: 'UTE Variante', descripcion: 'Consorcio ADIF', 
-                         is_contrata: false, is_ute: true, is_proveedor: false, is_subcontrata: false, is_cliente: false, 
-                         es_activa: false, deletedAt: null 
-                       },
-                       { 
-                         id: 'ENT-EMP-004', codigo: 'XX-999', nombre: 'Empresa Obsoleta', descripcion: 'Cerró en 2024', 
-                         is_contrata: false, is_ute: false, is_proveedor: true, is_subcontrata: false, is_cliente: false, 
-                         es_activa: false, deletedAt: '2024-05-12' 
-                       }
-                     ] : [
-                       { id: 'ENT-OBR-100', codigo: 'OB-24-01', nombre: 'Túnel AVE Variante Pajares', es_activa: true, deletedAt: null }
-                     ]
+                      db.filter((e: any) => e.category === moduleId) // <--- OBTENEMOS LAS L4 QUE CUELGAN DE ESTA CATEGORÍA L1
                    }
                    columnDefs={[
-                     { field: 'codigo', headerName: 'CÓDIGO', width: 100 },
-                     { field: 'nombre', headerName: 'NOMBRE / (ALIAS)', width: 200 },
-                     { field: 'descripcion', headerName: 'DESCRIPCIÓN', flex: 1 },
-                     { field: 'is_contrata', headerName: 'CONTRATA', width: 95, cellRenderer: (p:any) => p.value ? '✅' : '' },
-                     { field: 'is_ute', headerName: 'UTE', width: 70, cellRenderer: (p:any) => p.value ? '✅' : '' },
-                     { field: 'is_proveedor', headerName: 'PROVEEDOR', width: 100, cellRenderer: (p:any) => p.value ? '✅' : '' },
-                     { field: 'is_subcontrata', headerName: 'SUBCONTRATA', width: 110, cellRenderer: (p:any) => p.value ? '✅' : '' },
-                     { field: 'is_cliente', headerName: 'CLIENTE', width: 85, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     { field: 'code', headerName: 'ID FÍSICO (L4)', width: 140 },
+                     { field: 'name', headerName: 'ALIAS / NOMBRE HUMANO', width: 250 },
+                     { field: 'type', headerName: 'TIPO ESTRUCTURAL (L3)', width: 180 },
+                     { field: 'subCategory', headerName: 'FAMILIA (L2)', flex: 1 },
+                     { field: 'canal', headerName: 'FASE / ESTADO', width: 130 },
                      {
-                        field: 'es_activa',
+                        field: 'isActive',
                         headerName: 'ACTIVA',
                         width: 80,
                         cellRenderer: (params: any) => {

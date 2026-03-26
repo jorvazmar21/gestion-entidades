@@ -73,59 +73,56 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
 
       const { appConfig, sqlData } = result;
-      const { entidades, psets_def, psets_val, psets_dyn, sys_moldes, sys_niveles } = sqlData || {};
-
-      if (!entidades || !sys_moldes) {
-          throw new Error("El esquema de SQLite devuelto por el servidor está incompleto o la BBDD está vacía.");
-      }
       
-      const tiposEntidadDb: EntityType[] = sys_moldes.map((m: any) => {
-          return {
-              id_tipo: m.id_molde,
-              id_tipo_entidad: m.id_tipo_entidad,
-              nombre: m.nombre,
-              categoria: m.descripcion || 'General',
-              subCategoria: '',
-              nivel: m.id_nivel || 'L1',
-              icono: m.icono_sistema || '',
-              tipos_hijo_permitidos: m.reglas_config?.admite_hijos || [],
-              padres_permitidos: m.reglas_config?.padres_permitidos || [],
-              max_count_per_parent: m.reglas_config?.max_hijos || null,
-              min_count_per_parent: m.reglas_config?.min_hijos || 0
-          };
-      });
+      // NUEVO ESQUEMA L-MATRIX V2
+      const { 
+          l1_categories, l2_families, l3_types, l4_instances, 
+          topology_graph, psets_template, psets_bridge, psets_payloads, 
+          eventos_l3, desgloses_l4 
+      } = sqlData || {};
 
+      if (!l1_categories || !l2_families) {
+          throw new Error("El esquema de la BBDD devuelto no contiene L1/L2 L-Matrix. ¿Has reconstruido SQLite?");
+      }
+
+      // TODO (Fase 3 Completa): Reestructurar los Types. Por ahora evitamos el crasheo mapeando por encima.
       const MODULES: Record<string, ModuleConfig> = {};
-      tiposEntidadDb.forEach((t: EntityType) => {
-          MODULES[t.id_tipo] = {
-              title: t.nombre,
-              prefix: t.id_tipo,
-              level: t.nivel,
-              category: t.categoria,
-              subCategory: t.subCategoria,
-              icono: t.icono,
-              tiposHijo: t.tipos_hijo_permitidos,
-              maxCount: t.max_count_per_parent,
-              minCount: t.min_count_per_parent
+      l1_categories.forEach((cat: any) => {
+          const catId = cat.l1_id.replace('L1_', ''); // Ej: L1_OBR -> OBR
+          MODULES[catId] = {
+              title: cat.human_readable_name,
+              prefix: catId,
+              level: 'L1',
+              category: catId, // <--- Guardamos la categoría física
+              subCategory: '',
+              icono: cat.ui_icon_identifier,
+              tiposHijo: [],
+              maxCount: null,
+              minCount: null
           } as ModuleConfig;
       });
 
-      const db: Entity[] = entidades.map((e: any) => {
-          const modCfg = MODULES[e.id_molde] || {} as any;
+      // Mapeo Inteligente (Árbol Transversal Inverso L4 -> L3 -> L2 -> L1)
+      const db: Entity[] = l4_instances.map((e: any) => {
+          const l3 = l3_types.find((t:any) => t.l3_id === e.l3_parent_id);
+          const l2 = l3 ? l2_families.find((f:any) => f.l2_id === l3.l2_parent_id) : null;
+          const l1 = l2 ? l1_categories.find((c:any) => c.l1_id === l2.l1_parent_id) : null;
+          const assignedCategory = l1 ? l1.l1_id.replace('L1_', '') : 'General';
+
           return {
-              id: e.id_entidad,
-              level: modCfg.level || 'L1',
-              category: modCfg.category || 'General',
-              subCategory: modCfg.subCategory || '',
-              type: e.id_molde,
-              code: e.codigo,
-              name: e.nombre,
+              id: e.l4_id,
+              level: 'L4',
+              category: assignedCategory,
+              subCategory: l2?.human_readable_name || '',
+              type: e.l3_parent_id,
+              code: e.l4_id,
+              name: e.human_readable_name,
               location: '', 
-              canal: e.fase_actual || 'ESTUDIO', 
-              parentId: e.id_padre,
-              isActive: e.is_active === 1,
-              deletedAt: e.deleted_at,
-              deletedBy: e.deleted_by,
+              canal: e.estado_actual || 'ESTUDIO', 
+              parentId: e.l3_parent_id,
+              isActive: true, // TODO: Añadir soft-delete en L-matrix si es necesario
+              deletedAt: null,
+              deletedBy: null,
               createdAt: e.created_at,
               createdBy: e.created_by,
               updatedAt: e.updated_at,
@@ -133,28 +130,16 @@ export const useDataStore = create<DataState>((set, get) => ({
           };
       });
 
-      const parsedValuesDb: Record<string, any> = {};
-      (psets_val || []).forEach((v: any) => {
-          parsedValuesDb[`${v.id_entidad}_${v.id_pset}`] = typeof v.valor_json === 'string' ? JSON.parse(v.valor_json) : v.valor_json;
-      });
-
-      const parsedHistoryDb: PSetHistoryRecord[] = (psets_dyn || []).map((d: any) => ({
-          id_record: d.id_registro?.toString() || new Date().getTime().toString(),
-          id_entity: d.id_entidad,
-          id_pset: d.id_pset,
-          timestamp: d.created_at,
-          data: typeof d.valor_json === 'string' ? JSON.parse(d.valor_json) : d.valor_json
-      }));
-
       set({
         appConfig: appConfig || {},
-        sysNivelesDb: sys_niveles || [],
-        tiposEntidadDb,
+        // Arrays vacíos para no romper la UI antigua hasta que se purguen
+        sysNivelesDb: [],
+        tiposEntidadDb: [],
         MODULES,
         db,
-        psets_def: psets_def || [],
-        psetValuesDb: parsedValuesDb,
-        psetHistoryDb: parsedHistoryDb,
+        psets_def: psets_template || [],
+        psetValuesDb: psets_payloads || {},
+        psetHistoryDb: [],
         loading: false,
       });
 
