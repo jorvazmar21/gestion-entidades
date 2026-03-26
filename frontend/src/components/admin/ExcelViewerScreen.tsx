@@ -2,6 +2,35 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { SafeImage } from '../SafeImage';
 import type { ColDef } from 'ag-grid-community';
 import { SystemDataGrid } from './SystemDataGrid';
+import { useDataStore } from '../../store/useDataStore';
+
+const FkSelectEditor = React.forwardRef((props: any, ref) => {
+    const { lookupMap } = props;
+    const firstOptionKey = Object.keys(lookupMap)[0] || '';
+    
+    const [value, setValue] = useState(props.value != null && props.value !== '' ? String(props.value) : firstOptionKey);
+
+    React.useImperativeHandle(ref, () => {
+        return {
+            getValue() {
+                return value !== '' ? Number(value) : null;
+            }
+        };
+    });
+
+    return (
+        <select 
+            value={value} 
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full h-full border-none bg-white focus:outline-none focus:ring-2 focus:ring-[#7f1d1d] text-xs px-1 text-gray-800 font-medium"
+            autoFocus
+        >
+            {Object.entries(lookupMap).map(([id, label]) => (
+                <option key={id} value={id}>{String(label)}</option>
+            ))}
+        </select>
+    );
+});
 
 interface Props {
   onBack: () => void;
@@ -13,6 +42,37 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   const [rowData, setRowData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const { l1_categories, l2_families, l3_types, psets_def } = useDataStore();
+
+  const dicts = useMemo(() => {
+     // --- HEURÍSTICA UNIVERSAL TIER-1 DE EXTRACCIÓN ALIAS ---
+     // Esta micro-IA interna se come CUALQUIER fila de la Base de Datos, sea la tabla que sea,
+     // y auto-descubre su 'Código' y su 'Alias' buscando patrones de Arquitectura L-Matrix.
+     const extractUniversalLabel = (obj: any): string => {
+         if (!obj) return '--';
+         // 1. Caza de Códigos Técnicos (cualquier columna que acabe en '_code')
+         const codeKey = Object.keys(obj).find(k => k.toLowerCase().endsWith('_code'));
+         const code = codeKey ? obj[codeKey] : (obj.code || 'SYS');
+         // 2. Caza de Nombres Humanos (prioridad Tier-1)
+         const alias = obj.human_readable_name || obj.nombre || obj.schema_alias || obj.name || obj.descripcion || 'Sin Alias';
+         return `${code} | ${alias}`;
+     };
+
+     const l1Map: Record<number, string> = {};
+     l1_categories.forEach((c: any) => l1Map[c.id_l1] = extractUniversalLabel(c));
+  
+     const l2Map: Record<number, string> = {};
+     l2_families.forEach((c: any) => l2Map[c.id_l2] = extractUniversalLabel(c));
+     
+     const l3Map: Record<number, string> = {};
+     l3_types.forEach((c: any) => l3Map[c.id_l3] = extractUniversalLabel(c));
+     
+     const psetMap: Record<number, string> = {};
+     psets_def.forEach((c: any) => psetMap[c.id_pset] = extractUniversalLabel(c));
+  
+     return { l1Map, l2Map, l3Map, psetMap };
+  }, [l1_categories, l2_families, l3_types, psets_def]);
 
   // 1. Cargar el esquema completo al inicio
   useEffect(() => {
@@ -89,16 +149,43 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
       
       // Protección: Celdas JSON propensas a corrupción manual (DataSchema or live payloads)
       const isJsonBlob = lowerField.includes('json') || lowerField.includes('payload');
+
+      let customEditor = undefined;
+      let cellEditorParams = undefined;
+      let valueFormatter = undefined;
+
+      if (lowerField.includes('fk_l1')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.l1Map };
+          valueFormatter = (p: any) => p.value ? (dicts.l1Map[p.value] || p.value) : p.value;
+      } else if (lowerField.includes('fk_l2')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.l2Map };
+          valueFormatter = (p: any) => p.value ? (dicts.l2Map[p.value] || p.value) : p.value;
+      } else if (lowerField.includes('fk_l3')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.l3Map };
+          valueFormatter = (p: any) => p.value ? (dicts.l3Map[p.value] || p.value) : p.value;
+      } else if (lowerField.includes('fk_pset')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.psetMap };
+          valueFormatter = (p: any) => p.value ? (dicts.psetMap[p.value] || p.value) : p.value;
+      }
+      
+      const isFkColumn = !!customEditor;
                           
       return {
         field,
         headerName: field.toUpperCase(),
         minWidth: 10,
         editable: !(isPk || isProtected || isJsonBlob),
-        cellClass: "font-mono text-xs text-gray-700"
+        cellClass: `font-mono text-xs flex items-center ${isFkColumn ? 'bg-yellow-50 text-amber-900 shadow-[inset_0_0_0_1px_rgba(253,230,138,0.5)]' : 'text-gray-700'}`,
+        cellEditor: customEditor,
+        cellEditorParams: cellEditorParams,
+        valueFormatter: valueFormatter
       };
     });
-  }, [rowData, activeTableInfo, primaryKeyField]);
+  }, [rowData, activeTableInfo, primaryKeyField, dicts]);
 
   // 5. Callback de edición segura
   const handleCellEdit = async (tableIdFromGrid: string, pkField: string, pkValue: string, column: string, newValue: any): Promise<boolean> => {

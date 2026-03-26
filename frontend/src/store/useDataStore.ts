@@ -11,6 +11,9 @@ import type { Entity, PSetDef, EntityType, ModuleConfig, PSetHistoryRecord } fro
 interface DataState {
   // Base de Datos en Memoria
   db: Entity[];
+  l1_categories: any[];
+  l2_families: any[];
+  l3_types: any[];
   psets_def: PSetDef[];
   psetValuesDb: Record<string, any>;
   psetHistoryDb: PSetHistoryRecord[];
@@ -37,6 +40,9 @@ interface DataState {
 // "useDataStore": La Biblioteca (Almacén de Entidades y CSVs)
 export const useDataStore = create<DataState>((set, get) => ({
   db: [],
+  l1_categories: [],
+  l2_families: [],
+  l3_types: [],
   psets_def: [],
   psetValuesDb: {},
   psetHistoryDb: [],
@@ -137,6 +143,9 @@ export const useDataStore = create<DataState>((set, get) => ({
         tiposEntidadDb: [],
         MODULES,
         db,
+        l1_categories: l1_categories || [],
+        l2_families: l2_families || [],
+        l3_types: l3_types || [],
         psets_def: psets_template || [],
         psetValuesDb: psets_payloads || {},
         psetHistoryDb: [],
