@@ -87,19 +87,21 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
              
              {/* ROW 1: TABS OSCURAS SOBRE FONDO TRANSPARENTE EN ANCHO TOTAL */}
              {customFilters.length > 0 && (
-               <div className="bg-transparent flex pt-2 shrink-0 border-b-4 border-[#1e293b] w-full gap-[2px] px-1">
-                 {customFilters.map((tab) => {
-                    const isActive = activeTabFilter === tab;
-                    return (
-                      <button 
-                         key={tab}
-                         onClick={() => setActiveTabFilter(tab)}
-                         className={`flex-1 py-1.5 text-[12.5px] text-center uppercase tracking-widest font-bold transition-all relative top-[4px] rounded-t-md ${isActive ? 'text-white bg-[#1e293b] border-t-4 border-t-[#7f1d1d] z-10 shadow-sm' : 'text-gray-400 bg-[#334155] hover:text-white hover:bg-[#475569] border-t-4 border-t-transparent z-0'}`}
-                      >
-                         {pluralizeFilter(tab)}
-                      </button>
-                    );
-                 })}
+               <div className="bg-transparent flex pt-2 shrink-0 border-b-4 border-[#1e293b] w-full gap-[2px] px-1 justify-between items-end">
+                 <div className="flex gap-[2px] w-[70%]">
+                   {customFilters.map((tab) => {
+                      const isActive = activeTabFilter === tab;
+                      return (
+                        <button 
+                           key={tab}
+                           onClick={() => setActiveTabFilter(tab)}
+                           className={`flex-1 py-1.5 text-[12.5px] text-center uppercase tracking-widest font-bold transition-all relative top-[4px] rounded-t-md ${isActive ? 'text-white bg-[#1e293b] border-t-4 border-t-[#7f1d1d] z-10 shadow-sm' : 'text-gray-400 bg-[#334155] hover:text-white hover:bg-[#475569] border-t-4 border-t-transparent z-0'}`}
+                        >
+                           {pluralizeFilter(tab)}
+                        </button>
+                      );
+                   })}
+                 </div>
                </div>
              )}
 
@@ -109,38 +111,86 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                    moduleId={`MASTER_${moduleId}`}
                    rowData={
                      moduleId === 'EMP' ? [
-                       { id: 'ENT-EMP-001', codigo: 'CL-001', nombre: 'Dragados S.A.', tipo: 'Cliente', estado: 'ACTIVO' },
-                       { id: 'ENT-EMP-002', codigo: 'PR-452', nombre: 'Hilti España', tipo: 'Proveedor', estado: 'ACTIVO' },
-                       { id: 'ENT-EMP-003', codigo: 'UT-11', nombre: 'UTE Variante', tipo: 'UTE', estado: 'INACTIVO' }
+                       { 
+                         id: 'ENT-EMP-001', codigo: 'CL-001', nombre: 'Dragados S.A.', descripcion: 'Constructora principal V. Pajares', 
+                         is_contrata: true, is_ute: false, is_proveedor: false, is_subcontrata: false, is_cliente: true, 
+                         es_activa: true, deletedAt: null 
+                       },
+                       { 
+                         id: 'ENT-EMP-002', codigo: 'PR-452', nombre: 'Hilti España', descripcion: 'Suministro anclajes', 
+                         is_contrata: false, is_ute: false, is_proveedor: true, is_subcontrata: false, is_cliente: false, 
+                         es_activa: true, deletedAt: null 
+                       },
+                       { 
+                         id: 'ENT-EMP-003', codigo: 'UT-11', nombre: 'UTE Variante', descripcion: 'Consorcio ADIF', 
+                         is_contrata: false, is_ute: true, is_proveedor: false, is_subcontrata: false, is_cliente: false, 
+                         es_activa: false, deletedAt: null 
+                       },
+                       { 
+                         id: 'ENT-EMP-004', codigo: 'XX-999', nombre: 'Empresa Obsoleta', descripcion: 'Cerró en 2024', 
+                         is_contrata: false, is_ute: false, is_proveedor: true, is_subcontrata: false, is_cliente: false, 
+                         es_activa: false, deletedAt: '2024-05-12' 
+                       }
                      ] : [
-                       { id: 'ENT-OBR-100', codigo: 'OB-24-01', nombre: 'Túnel AVE Variante Pajares' }
+                       { id: 'ENT-OBR-100', codigo: 'OB-24-01', nombre: 'Túnel AVE Variante Pajares', es_activa: true, deletedAt: null }
                      ]
                    }
                    columnDefs={[
-                     { field: 'codigo', headerName: 'CÓDIGO', width: 120 },
-                     { field: 'nombre', headerName: 'NOMBRE / (ALIAS)', flex: 1 },
-                     { 
-                        field: 'tipo', 
-                        headerName: 'TIPO', 
-                        width: 130,
+                     { field: 'codigo', headerName: 'CÓDIGO', width: 100 },
+                     { field: 'nombre', headerName: 'NOMBRE / (ALIAS)', width: 200 },
+                     { field: 'descripcion', headerName: 'DESCRIPCIÓN', flex: 1 },
+                     { field: 'is_contrata', headerName: 'CONTRATA', width: 95, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     { field: 'is_ute', headerName: 'UTE', width: 70, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     { field: 'is_proveedor', headerName: 'PROVEEDOR', width: 100, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     { field: 'is_subcontrata', headerName: 'SUBCONTRATA', width: 110, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     { field: 'is_cliente', headerName: 'CLIENTE', width: 85, cellRenderer: (p:any) => p.value ? '✅' : '' },
+                     {
+                        field: 'es_activa',
+                        headerName: 'ACTIVA',
+                        width: 80,
                         cellRenderer: (params: any) => {
-                           const t = params.value;
-                           if(!t) return '';
-                           let bg = 'bg-gray-100 text-gray-700';
-                           if(t==='Cliente') bg = 'bg-blue-100 text-blue-800';
-                           if(t==='Proveedor') bg = 'bg-amber-100 text-amber-800';
-                           if(t==='UTE') bg = 'bg-purple-100 text-purple-800';
-                           return <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-widest ${bg}`}>{t}</span>;
+                           if(params.data.deletedAt) return '';
+                           return params.value 
+                              ? <span className="text-green-600 font-bold text-[10px]">SÍ</span>
+                              : <span className="text-yellow-600 font-bold text-[10px]">NO</span>;
                         }
                      },
                      {
-                        field: 'estado',
-                        headerName: 'ESTADO',
-                        width: 100,
+                        field: 'deletedAt',
+                        headerName: 'BORRADA',
+                        width: 90,
                         cellRenderer: (params: any) => {
-                           if(params.value === 'ACTIVO') return <span className="text-green-600 font-bold">✅ ACTIVA</span>;
-                           if(params.value === 'INACTIVO') return <span className="text-yellow-600 font-bold">⚠️ INACTIVA</span>;
-                           return params.value;
+                           return params.value 
+                              ? <span className="text-red-600 font-bold text-[10px]" title={`Borrada el ${params.value}`}>🗑️ Sí</span>
+                              : '';
+                        }
+                     },
+                     {
+                        headerName: 'ACCIONES',
+                        width: 140,
+                        sortable: false,
+                        filter: false,
+                        // Fix padding and stop propagation on click
+                        cellRenderer: (params: any) => {
+                           const row = params.data;
+                           return (
+                              <div className="flex gap-1 items-center h-full pt-1">
+                                 {!row.deletedAt && (
+                                   <button
+                                      onClick={(e) => { e.stopPropagation(); console.log('Toggle Activo', row.id); }}
+                                      className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-bold bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700"
+                                   >
+                                      {row.es_activa ? 'Inactivar' : 'Activar'}
+                                   </button>
+                                 )}
+                                 <button
+                                    onClick={(e) => { e.stopPropagation(); console.log('Toggle Borrar', row.id); }}
+                                    className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-bold bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-700"
+                                 >
+                                    {row.deletedAt ? 'Restaurar' : 'Borrar'}
+                                 </button>
+                              </div>
+                           );
                         }
                      }
                    ]}

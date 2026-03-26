@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeImage } from '../SafeImage';
 import { HierarchicalEntityGrid } from '../generics/HierarchicalEntityGrid';
+import { ImportWizardModal } from '../generics/ImportWizardModal';
 import { useLayoutStore } from '../../store/useLayoutStore';
 
 interface SandboxGridScreenProps {
@@ -10,6 +11,7 @@ interface SandboxGridScreenProps {
 export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) => {
 
   const [activeMolde, setActiveMolde] = useState<string>('EMP');
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const LAYOUT = useLayoutStore();
 
   return (
@@ -49,9 +51,22 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
              </select>
          </div>
          <div className="flex items-center gap-2">
+            <button 
+               onClick={() => setIsWizardOpen(true)}
+               className="bg-white hover:bg-gray-100 text-[#1e293b] text-[10px] font-bold tracking-wider px-3 py-1.5 border border-[#1e293b] rounded-sm transition-colors uppercase shadow-sm flex items-center gap-2"
+            >
+               <span>🪄</span> CARGA MASIVA (CSV)
+            </button>
             <button className="px-3 py-1.5 bg-[#7f1d1d] hover:bg-[#5f1515] text-white rounded text-[10px] font-bold transition-colors uppercase cursor-pointer shadow-sm">
                ➕ Añadir Entidad
             </button>
+            {isWizardOpen && (
+               <ImportWizardModal 
+                   isOpen={isWizardOpen} 
+                   onClose={() => setIsWizardOpen(false)} 
+                   initialMoldeId={activeMolde} 
+               />
+            )}
          </div>
       </div>
 

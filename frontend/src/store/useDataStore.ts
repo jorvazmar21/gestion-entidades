@@ -31,6 +31,7 @@ interface DataState {
   setFilter: (filterKey: 'active' | 'inactive' | 'deleted') => void;
   saveDb: () => Promise<void>;
   updateAppConfig: (key: string, value: any) => Promise<void>;
+  addEntities: (newEntities: Entity[]) => void;
 }
 
 // "useDataStore": La Biblioteca (Almacén de Entidades y CSVs)
@@ -199,6 +200,11 @@ export const useDataStore = create<DataState>((set, get) => ({
     } catch (e) {
       console.error("Error guardando app config en el servidor", e);
     }
+  },
+
+  addEntities: (newEntities: Entity[]) => {
+      const current = get().db;
+      set({ db: [...newEntities, ...current] }); // Nuevos arriba para UX
   }
 }));
 

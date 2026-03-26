@@ -15,6 +15,9 @@ import { ModuleSearch } from './ModuleSearch';
 import { SystemTopRightActions } from './SystemTopRightActions';
 import { ModulePhases } from './ModulePhases';
 import { ModuleDepartments } from './ModuleDepartments';
+import { ImportWizardModal } from './generics/ImportWizardModal';
+import { useState } from 'react';
+
 // Separador inteligente que reacciona a la directriz del Administrador
 const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
   const mostrar = useLayoutStore(state => state.mostrarTabiques);
@@ -25,7 +28,8 @@ const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
 
 export function MainLayout() {
   const LAYOUT = useLayoutStore();
-  const { activePSetTab, setActivePSetTab } = useUiStore();
+  const { activePSetTab, setActivePSetTab, activeModuleId } = useUiStore();
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   return (
     <div className="flex bg-white font-['Inter'] absolute inset-0 w-full h-full overflow-hidden">
@@ -90,8 +94,21 @@ export function MainLayout() {
                 </div>
                 
                 {/* DERECHA: 30% (Reservado Botonera) */}
-                <div className={`h-full shrink-0 flex items-center justify-center ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_right}%` }}>
+                <div className={`h-full shrink-0 flex items-center justify-end pr-6 gap-2 ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_right}%` }}>
                    {LAYOUT.mostrarTabiques && <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">HERRAMIENTAS (30%)</span>}
+                   <button 
+                        onClick={() => setIsWizardOpen(true)}
+                        className="bg-white hover:bg-gray-100 text-[#1e293b] text-[10px] font-bold tracking-wider px-3 py-1.5 border border-[#1e293b] rounded-sm transition-colors uppercase shadow-sm flex items-center gap-2"
+                   >
+                        <span>🪄</span> CARGA MASIVA (CSV)
+                   </button>
+                   {isWizardOpen && (
+                        <ImportWizardModal 
+                            isOpen={isWizardOpen} 
+                            onClose={() => setIsWizardOpen(false)} 
+                            initialMoldeId={activeModuleId || ''} 
+                        />
+                   )}
                 </div>
              </div>
            </div>
