@@ -114,6 +114,11 @@ const server = http.createServer(async (req, res) => {
             const psets_payloads_raw = await db.all('SELECT * FROM dat_pset_live_payloads');
             const eventos_l3 = await db.all('SELECT * FROM eventos_l3');
             const desgloses_l4 = await db.all('SELECT * FROM desgloses_l4');
+            
+            // ABAC V2 Matrix Dictionaries
+            const lifecycle_phases = await db.all('SELECT * FROM def_lifecycle_phase');
+            const company_departments = await db.all('SELECT * FROM def_company_department');
+            const abac_matrix_rules = await db.all('SELECT * FROM rel_abac_matrix_rules');
 
             // TODO: Extraer Rol desde Sesión Segura. Mockeado para demostración inicial.
             const userRole = req.headers['x-user-role'] || 'ADMINISTRADOR'; 
@@ -149,7 +154,12 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({
                 success: true,
                 appConfig: appConfig,
-                sqlData: { l1_categories, l2_families, l3_types, l4_instances, topology_graph, psets_template, psets_bridge, psets_payloads, eventos_l3, desgloses_l4 }
+                sqlData: { 
+                    l1_categories, l2_families, l3_types, l4_instances, 
+                    topology_graph, psets_template, psets_bridge, psets_payloads, 
+                    eventos_l3, desgloses_l4,
+                    lifecycle_phases, company_departments, abac_matrix_rules
+                }
             }));
         } catch (e) {
             console.error(e);

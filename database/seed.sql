@@ -112,18 +112,42 @@ INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_
 '{"DataSchema": {"socios": {"type": "array", "items": {"type": "object", "properties": {"fk_empresa": {"type": "string"}, "porcentaje": {"type": "number"}}}}, "avisoUte": {"type": "boolean", "default": true}}, "UISchema": {"avisoUte": {"ui:readonly": true, "security:visible_roles": ["USUARIO", "ADMINISTRADOR"]}}}', 'SEED_SYSTEM');
 
 -- ATAQUES (PUENTES) POLIMÓRFICOS
-INSERT OR IGNORE INTO rel_pset_to_entity_bridge (fk_pset, target_uuid, attachment_level_enum) VALUES
-(1, '2', 'L1'), -- L1_OBR
-(1, '1', 'L1'), -- L1_EMP
-(2, '1', 'L1'), -- L1_EMP
-(3, '1', 'L2'), -- L2_EMP_UTE
-(4, '2', 'L2'), -- L2_EMP_NOUTE
-(5, '1', 'L3'); -- L3_EMP_UTE_STD
+INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_uuid, attachment_level_enum) VALUES
+(1, 1, '2', 'L1'), -- L1_OBR
+(2, 1, '1', 'L1'), -- L1_EMP
+(3, 2, '1', 'L1'), -- L1_EMP
+(4, 3, '1', 'L2'), -- L2_EMP_UTE
+(5, 4, '2', 'L2'), -- L2_EMP_NOUTE
+(6, 5, '1', 'L3'); -- L3_EMP_UTE_STD
 
 -- =========================================================================
--- 3. ABAC MATRIX SEEDING
+-- 3. ABAC MULTIDIMENSIONAL SEEDING
 -- =========================================================================
-INSERT OR IGNORE INTO sys_abac_matrix (fase_obra, departamento, rol_autoridad, can_view, can_edit, can_approve) VALUES
-('ESTUDIO', 'OFICINA_TECNICA', 'CREADOR', 1, 1, 1),
-('EJECUCION', 'PRODUCCION', 'ADMINISTRADOR', 1, 1, 1),
-('EJECUCION', 'PRODUCCION', 'USUARIO', 1, 1, 0);
+
+-- Fases de Vida del Usuario (CODIGO y ALIAS)
+INSERT OR IGNORE INTO def_lifecycle_phase (id_phase, phase_code, human_readable_name, ui_order, created_by) VALUES
+(1, '00', 'PRE-ESTUDIO', 10, 'SEED_SYSTEM'),
+(2, '10', 'ESTUDIO', 20, 'SEED_SYSTEM'),
+(3, '20', 'LICITACION', 30, 'SEED_SYSTEM'),
+(4, '30', 'ADJUDICACION', 40, 'SEED_SYSTEM'),
+(5, '40', 'EJECUCION', 50, 'SEED_SYSTEM'),
+(6, '80', 'GARANTIA', 60, 'SEED_SYSTEM'),
+(7, '90', 'COMPLETADA', 70, 'SEED_SYSTEM'),
+(8, '99', 'TODAS', 80, 'SEED_SYSTEM');
+
+-- Departamentos del Usuario (CODIGO y ALIAS)
+INSERT OR IGNORE INTO def_company_department (id_department, department_code, human_readable_name, ui_order, created_by) VALUES
+(1, 'EST', 'ESTUDIOS', 10, 'SEED_SYSTEM'),
+(2, 'ADM', 'ADMINISTRACION', 20, 'SEED_SYSTEM'),
+(3, 'RRH', 'RECURSOS HUMANOS', 30, 'SEED_SYSTEM'),
+(4, 'PRL', 'PREVENCION R.L.', 40, 'SEED_SYSTEM'),
+(5, 'PCC', 'ASEGURAMIENTO DE LA CALIDAD', 50, 'SEED_SYSTEM'),
+(6, 'PVA', 'MEDIOAMBIENTE', 60, 'SEED_SYSTEM'),
+(7, 'OFT', 'OF. TECNICA', 70, 'SEED_SYSTEM'),
+(8, 'DIR', 'DIRECCION', 80, 'SEED_SYSTEM');
+
+-- Asignación Genérica Transaccional de Ejemplo: 
+-- El "PSet 1" en L1_OBR (id_bridge = 1) solo lo edita OFT en Fase Ejecucion (id_phase = 5)
+INSERT OR IGNORE INTO rel_abac_matrix_rules (id_rule, fk_bridge, fk_phase, fk_department, can_read, can_write, can_approve) VALUES
+(1, 1, 5, 7, 1, 1, 1),
+(2, 1, 5, 2, 1, 0, 0);

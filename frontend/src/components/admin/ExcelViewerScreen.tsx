@@ -43,7 +43,7 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { l1_categories, l2_families, l3_types, psets_def } = useDataStore();
+  const { l1_categories, l2_families, l3_types, psets_def, lifecycle_phases, company_departments } = useDataStore();
 
   const dicts = useMemo(() => {
      // --- HEURÍSTICA UNIVERSAL TIER-1 DE EXTRACCIÓN ALIAS ---
@@ -71,8 +71,14 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
      const psetMap: Record<number, string> = {};
      psets_def.forEach((c: any) => psetMap[c.id_pset] = extractUniversalLabel(c));
   
-     return { l1Map, l2Map, l3Map, psetMap };
-  }, [l1_categories, l2_families, l3_types, psets_def]);
+     const phaseMap: Record<number, string> = {};
+     lifecycle_phases.forEach((c: any) => phaseMap[c.id_phase] = extractUniversalLabel(c));
+
+     const departmentMap: Record<number, string> = {};
+     company_departments.forEach((c: any) => departmentMap[c.id_department] = extractUniversalLabel(c));
+
+     return { l1Map, l2Map, l3Map, psetMap, phaseMap, departmentMap };
+  }, [l1_categories, l2_families, l3_types, psets_def, lifecycle_phases, company_departments]);
 
   // 1. Cargar el esquema completo al inicio
   useEffect(() => {
@@ -170,6 +176,14 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
           customEditor = FkSelectEditor;
           cellEditorParams = { lookupMap: dicts.psetMap };
           valueFormatter = (p: any) => p.value ? (dicts.psetMap[p.value] || p.value) : p.value;
+      } else if (lowerField.includes('fk_phase')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.phaseMap };
+          valueFormatter = (p: any) => p.value ? (dicts.phaseMap[p.value] || p.value) : p.value;
+      } else if (lowerField.includes('fk_department') || lowerField.includes('fk_dep')) {
+          customEditor = FkSelectEditor;
+          cellEditorParams = { lookupMap: dicts.departmentMap };
+          valueFormatter = (p: any) => p.value ? (dicts.departmentMap[p.value] || p.value) : p.value;
       }
       
       const isFkColumn = !!customEditor;

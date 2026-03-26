@@ -14,6 +14,9 @@ interface DataState {
   l1_categories: any[];
   l2_families: any[];
   l3_types: any[];
+  lifecycle_phases: any[];
+  company_departments: any[];
+  abac_matrix_rules: any[];
   psets_def: PSetDef[];
   psetValuesDb: Record<string, any>;
   psetHistoryDb: PSetHistoryRecord[];
@@ -43,6 +46,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   l1_categories: [],
   l2_families: [],
   l3_types: [],
+  lifecycle_phases: [],
+  company_departments: [],
+  abac_matrix_rules: [],
   psets_def: [],
   psetValuesDb: {},
   psetHistoryDb: [],
@@ -80,11 +86,12 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       const { appConfig, sqlData } = result;
       
-      // NUEVO ESQUEMA L-MATRIX V2
+      // NUEVO ESQUEMA L-MATRIX V2 + ABAC
       const { 
           l1_categories, l2_families, l3_types, l4_instances, 
           topology_graph, psets_template, psets_bridge, psets_payloads, 
-          eventos_l3, desgloses_l4 
+          eventos_l3, desgloses_l4,
+          lifecycle_phases, company_departments, abac_matrix_rules
       } = sqlData || {};
 
       if (!l1_categories || !l2_families) {
@@ -146,6 +153,9 @@ export const useDataStore = create<DataState>((set, get) => ({
         l1_categories: l1_categories || [],
         l2_families: l2_families || [],
         l3_types: l3_types || [],
+        lifecycle_phases: lifecycle_phases || [],
+        company_departments: company_departments || [],
+        abac_matrix_rules: abac_matrix_rules || [],
         psets_def: psets_template || [],
         psetValuesDb: psets_payloads || {},
         psetHistoryDb: [],

@@ -147,10 +147,11 @@ CREATE TABLE IF NOT EXISTS def_pset_template (
 
 -- The Polymorphic Transversal Bridge (Attaching PSets to L1, L2, L3, or L4)
 CREATE TABLE IF NOT EXISTS rel_pset_to_entity_bridge (
+    id_bridge INTEGER PRIMARY KEY AUTOINCREMENT,
     fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE CASCADE,
     target_uuid TEXT NOT NULL,             
     attachment_level_enum TEXT NOT NULL,   -- 'L1', 'L2', 'L3', 'L4'
-    PRIMARY KEY (fk_pset, target_uuid)
+    UNIQUE (fk_pset, target_uuid)
 );
 
 -- =========================================================================
@@ -206,14 +207,44 @@ CREATE TABLE IF NOT EXISTS desgloses_l4 (
 );
 
 -- =========================================================================
--- 6. LA MATRIZ CUATRIDIMENSIONAL (Motor ABAC)
+-- 6. LA MATRIZ CUATRIDIMENSIONAL (Motor ABAC V2 Multidimensional)
 -- =========================================================================
-CREATE TABLE IF NOT EXISTS sys_abac_matrix (
-    id_regla INTEGER PRIMARY KEY AUTOINCREMENT,
-    fase_obra TEXT NOT NULL,
-    departamento TEXT NOT NULL,
-    rol_autoridad TEXT NOT NULL,
-    can_view INTEGER DEFAULT 0,
-    can_edit INTEGER DEFAULT 0,
+
+-- Fases de Vida (Ej: Licitación, Ejecución)
+CREATE TABLE IF NOT EXISTS def_lifecycle_phase (
+    id_phase INTEGER PRIMARY KEY AUTOINCREMENT,
+    phase_code TEXT NOT NULL UNIQUE,          
+    human_readable_name TEXT NOT NULL,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
+);
+
+-- Departamentos / Roles (Ej: RRHH, ADM)
+CREATE TABLE IF NOT EXISTS def_company_department (
+    id_department INTEGER PRIMARY KEY AUTOINCREMENT,
+    department_code TEXT NOT NULL UNIQUE,          
+    human_readable_name TEXT NOT NULL,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
+);
+
+-- Reglas de Seguridad (ADN del PSet) Multi-fase y Multi-departamento
+CREATE TABLE IF NOT EXISTS rel_abac_matrix_rules (
+    id_rule INTEGER PRIMARY KEY AUTOINCREMENT,
+    fk_bridge INTEGER NOT NULL REFERENCES rel_pset_to_entity_bridge(id_bridge) ON DELETE CASCADE,
+    fk_phase INTEGER REFERENCES def_lifecycle_phase(id_phase) ON DELETE CASCADE,
+    fk_department INTEGER REFERENCES def_company_department(id_department) ON DELETE CASCADE,
+    can_read INTEGER DEFAULT 1,
+    can_write INTEGER DEFAULT 0,
     can_approve INTEGER DEFAULT 0
 );
