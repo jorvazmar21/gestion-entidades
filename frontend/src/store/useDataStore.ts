@@ -88,7 +88,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       // TODO (Fase 3 Completa): Reestructurar los Types. Por ahora evitamos el crasheo mapeando por encima.
       const MODULES: Record<string, ModuleConfig> = {};
       l1_categories.forEach((cat: any) => {
-          const catId = cat.l1_id.replace('L1_', ''); // Ej: L1_OBR -> OBR
+          const catId = cat.l1_code.replace('L1_', ''); // Ej: L1_OBR -> OBR
           MODULES[catId] = {
               title: cat.human_readable_name,
               prefix: catId,
@@ -104,23 +104,23 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       // Mapeo Inteligente (Árbol Transversal Inverso L4 -> L3 -> L2 -> L1)
       const db: Entity[] = l4_instances.map((e: any) => {
-          const l3 = l3_types.find((t:any) => t.l3_id === e.l3_parent_id);
-          const l2 = l3 ? l2_families.find((f:any) => f.l2_id === l3.l2_parent_id) : null;
-          const l1 = l2 ? l1_categories.find((c:any) => c.l1_id === l2.l1_parent_id) : null;
-          const assignedCategory = l1 ? l1.l1_id.replace('L1_', '') : 'General';
+          const l3 = l3_types.find((t:any) => t.id_l3 === e.fk_l3);
+          const l2 = l3 ? l2_families.find((f:any) => f.id_l2 === l3.fk_l2) : null;
+          const l1 = l2 ? l1_categories.find((c:any) => c.id_l1 === l2.fk_l1) : null;
+          const assignedCategory = l1 ? l1.l1_code.replace('L1_', '') : 'General';
 
           return {
               id: e.l4_id,
               level: 'L4',
               category: assignedCategory,
               subCategory: l2?.human_readable_name || '',
-              type: e.l3_parent_id,
+              type: e.fk_l3, // Nivel 3 FK (ID Auto numérico)
               code: e.l4_id,
-              name: e.human_readable_name,
+              name: e.instance_name || e.human_readable_name,
               location: '', 
-              canal: e.estado_actual || 'ESTUDIO', 
-              parentId: e.l3_parent_id,
-              isActive: true, // TODO: Añadir soft-delete en L-matrix si es necesario
+              canal: e.lifecycle_phase || 'ESTUDIO', 
+              parentId: e.fk_l3, 
+              isActive: e.is_active === 1, 
               deletedAt: null,
               deletedBy: null,
               createdAt: e.created_at,

@@ -123,7 +123,7 @@ const server = http.createServer(async (req, res) => {
             // BACKEND SECURITY PRUNING (REGLA 3.A - EL BISTURÍ DE SEGURIDAD)
             const psets_payloads = psets_payloads_raw.map(p => {
                 let pd = p.json_payload ? JSON.parse(p.json_payload) : {};
-                const template = psets_template.find(t => t.pset_id === p.pset_id);
+                const template = psets_template.find(t => t.id_pset === p.fk_pset);
                 if (template && template.json_shape_definition && template.json_shape_definition.UISchema) {
                     const uiSchema = template.json_shape_definition.UISchema;
                     Object.keys(uiSchema).forEach(key => {
@@ -215,12 +215,12 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
              try {
                  const payload = JSON.parse(body);
-                 const { l4_instance_id, pset_id, json_payload, __v } = payload;
+                 const { l4_instance_id, fk_pset, json_payload, __v } = payload;
                  
                  await queueWriteTransaction(async () => {
                      const db = await sqlDbPromise;
                      // Implement Optimistic Concurrency Control
-                     const current = await db.get('SELECT json_payload FROM dat_pset_live_payloads WHERE l4_instance_id = ? AND pset_id = ?', [l4_instance_id, pset_id]);
+                     const current = await db.get('SELECT json_payload FROM dat_pset_live_payloads WHERE l4_instance_id = ? AND fk_pset = ?', [l4_instance_id, fk_pset]);
                      
                      if (current) {
                          const currentData = JSON.parse(current.json_payload);
@@ -233,12 +233,12 @@ const server = http.createServer(async (req, res) => {
                      const newPayload = { ...json_payload, __v: (__v || 0) + 1 };
                      
                      await db.run(`
-                         INSERT INTO dat_pset_live_payloads (l4_instance_id, pset_id, json_payload, updated_at, updated_by)
+                         INSERT INTO dat_pset_live_payloads (l4_instance_id, fk_pset, json_payload, updated_at, updated_by)
                          VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'SYSTEM')
-                         ON CONFLICT(l4_instance_id, pset_id) DO UPDATE SET 
+                         ON CONFLICT(l4_instance_id, fk_pset) DO UPDATE SET 
                          json_payload = excluded.json_payload, 
                          updated_at = excluded.updated_at
-                     `, [l4_instance_id, pset_id, JSON.stringify(newPayload)]);
+                     `, [l4_instance_id, fk_pset, JSON.stringify(newPayload)]);
                  });
                  res.writeHead(200, { 'Content-Type': 'application/json' });
                  res.end(JSON.stringify({ success: true }));

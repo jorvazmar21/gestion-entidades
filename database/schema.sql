@@ -41,29 +41,53 @@ CREATE TABLE IF NOT EXISTS rel_ai_behavior_to_table_bridge (
 
 -- L1: CATEGORY (The Root Concept. E.g., 'EMPRESA', 'OBRA')
 CREATE TABLE IF NOT EXISTS def_entity_l1_category (
-    l1_id TEXT PRIMARY KEY,
+    id_l1 INTEGER PRIMARY KEY AUTOINCREMENT,
+    l1_code TEXT NOT NULL UNIQUE,          
     human_readable_name TEXT NOT NULL UNIQUE,
-    ui_icon_identifier TEXT
+    ui_icon_identifier TEXT,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
 );
 
 -- L2: FAMILY (The Business Division. E.g., 'NOUTE', 'UTE')
 CREATE TABLE IF NOT EXISTS def_entity_l2_family (
-    l2_id TEXT PRIMARY KEY,
-    l1_parent_id TEXT NOT NULL REFERENCES def_entity_l1_category(l1_id) ON DELETE RESTRICT,
-    human_readable_name TEXT NOT NULL
+    id_l2 INTEGER PRIMARY KEY AUTOINCREMENT,
+    l2_code TEXT NOT NULL UNIQUE,          
+    fk_l1 INTEGER NOT NULL REFERENCES def_entity_l1_category(id_l1) ON DELETE RESTRICT,
+    human_readable_name TEXT NOT NULL,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
 );
 
 -- L3: TYPE (The Concrete Mold. E.g., 'UTE-STANDAR')
 CREATE TABLE IF NOT EXISTS def_entity_l3_type (
-    l3_id TEXT PRIMARY KEY,
-    l2_parent_id TEXT NOT NULL REFERENCES def_entity_l2_family(l2_id) ON DELETE RESTRICT,
-    human_readable_name TEXT NOT NULL
+    id_l3 INTEGER PRIMARY KEY AUTOINCREMENT,
+    l3_code TEXT NOT NULL UNIQUE,          
+    fk_l2 INTEGER NOT NULL REFERENCES def_entity_l2_family(id_l2) ON DELETE RESTRICT,
+    human_readable_name TEXT NOT NULL,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
 );
 
 -- L4: INSTANCE (The Live Physical Record. E.g., 'Nortunel S.A')
 CREATE TABLE IF NOT EXISTS dat_entity_l4_instance (
     l4_id TEXT PRIMARY KEY,
-    l3_parent_id TEXT NOT NULL REFERENCES def_entity_l3_type(l3_id) ON DELETE RESTRICT,
+    fk_l3 INTEGER NOT NULL REFERENCES def_entity_l3_type(id_l3) ON DELETE RESTRICT,
     unique_human_code TEXT UNIQUE NOT NULL, 
     instance_name TEXT NOT NULL,
     lifecycle_phase TEXT DEFAULT 'ACTIVE',
@@ -71,7 +95,8 @@ CREATE TABLE IF NOT EXISTS dat_entity_l4_instance (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
     updated_at DATETIME,
-    updated_by TEXT
+    updated_by TEXT,
+    deleted_at DATETIME
 );
 
 -- =========================================================================
@@ -90,21 +115,42 @@ CREATE TABLE IF NOT EXISTS rel_entity_topology_graph (
 -- 3. PARAMETRIC PROPERTY SETS (CQRS DICTIONARIES)
 -- =========================================================================
 
+-- Tabla Centralizada de Grupos de UI (Evita desnormalización alfabética)
+CREATE TABLE IF NOT EXISTS def_ui_groups (
+    id_ui_group INTEGER PRIMARY KEY AUTOINCREMENT,
+    ui_group_code TEXT UNIQUE NOT NULL,
+    ui_group_name TEXT NOT NULL UNIQUE,
+    ui_order INTEGER DEFAULT 0,            
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
+);
+
 -- The PSet Dictionary (DataSchema + UISchema locked in JSON)
 CREATE TABLE IF NOT EXISTS def_pset_template (
-    pset_id TEXT PRIMARY KEY,
+    id_pset INTEGER PRIMARY KEY AUTOINCREMENT,
     schema_code TEXT UNIQUE NOT NULL,      
-    schema_alias TEXT UNIQUE NOT NULL,     
-    ui_group_name TEXT NOT NULL,           
-    json_shape_definition JSON NOT NULL    
+    schema_alias TEXT UNIQUE NOT NULL,
+    fk_ui_group INTEGER NOT NULL REFERENCES def_ui_groups(id_ui_group) ON DELETE RESTRICT,
+    ui_order INTEGER DEFAULT 0,            
+    json_shape_definition JSON NOT NULL,   
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at DATETIME,
+    updated_by TEXT,
+    deleted_at DATETIME
 );
 
 -- The Polymorphic Transversal Bridge (Attaching PSets to L1, L2, L3, or L4)
 CREATE TABLE IF NOT EXISTS rel_pset_to_entity_bridge (
-    pset_id TEXT NOT NULL REFERENCES def_pset_template(pset_id) ON DELETE CASCADE,
+    fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE CASCADE,
     target_uuid TEXT NOT NULL,             
     attachment_level_enum TEXT NOT NULL,   -- 'L1', 'L2', 'L3', 'L4'
-    PRIMARY KEY (pset_id, target_uuid)
+    PRIMARY KEY (fk_pset, target_uuid)
 );
 
 -- =========================================================================
@@ -113,18 +159,18 @@ CREATE TABLE IF NOT EXISTS rel_pset_to_entity_bridge (
 
 CREATE TABLE IF NOT EXISTS dat_pset_live_payloads (
     l4_instance_id TEXT NOT NULL REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
-    pset_id TEXT NOT NULL REFERENCES def_pset_template(pset_id) ON DELETE RESTRICT,
+    fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE RESTRICT,
     json_payload JSON NOT NULL,    
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT,
-    PRIMARY KEY (l4_instance_id, pset_id)
+    PRIMARY KEY (l4_instance_id, fk_pset)
 );
 
 -- Audit Trail for Live Payloads
 CREATE TABLE IF NOT EXISTS sys_psets_audit_log (
     id_audit INTEGER PRIMARY KEY AUTOINCREMENT,
     l4_instance_id TEXT NOT NULL REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
-    pset_id TEXT NOT NULL REFERENCES def_pset_template(pset_id) ON DELETE RESTRICT,
+    fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE RESTRICT,
     valor_anterior JSON,
     valor_nuevo JSON NOT NULL,
     motivo_cambio TEXT,
@@ -139,7 +185,7 @@ CREATE TABLE IF NOT EXISTS sys_psets_audit_log (
 -- Eventos Transaccionales
 CREATE TABLE IF NOT EXISTS eventos_l3 (
     id_evento TEXT PRIMARY KEY,
-    l3_type_id TEXT NOT NULL REFERENCES def_entity_l3_type(l3_id), 
+    fk_l3 INTEGER NOT NULL REFERENCES def_entity_l3_type(id_l3), 
     origen_l4_id TEXT REFERENCES dat_entity_l4_instance(l4_id), 
     descripcion TEXT NOT NULL,
     estado TEXT DEFAULT 'BORRADOR', 
@@ -151,7 +197,7 @@ CREATE TABLE IF NOT EXISTS eventos_l3 (
 CREATE TABLE IF NOT EXISTS desgloses_l4 (
     id_desglose TEXT PRIMARY KEY,
     id_evento TEXT NOT NULL REFERENCES eventos_l3(id_evento) ON DELETE CASCADE,
-    l3_type_id TEXT NOT NULL REFERENCES def_entity_l3_type(l3_id), 
+    fk_l3 INTEGER NOT NULL REFERENCES def_entity_l3_type(id_l3), 
     destino_l4_id TEXT NOT NULL REFERENCES dat_entity_l4_instance(l4_id), 
     descripcion TEXT,
     importe_neto REAL DEFAULT 0.00,

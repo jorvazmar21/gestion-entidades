@@ -32,7 +32,7 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
     
     const initialFormData: Record<string, Record<string, any>> = {};
     entityPayloads.forEach((payload: any) => {
-        initialFormData[payload.pset_id] = payload.json_payload || {};
+        initialFormData[payload.fk_pset] = payload.json_payload || {};
     });
 
     setFormData(initialFormData);
@@ -63,7 +63,7 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
   const handleSavePSet = async (psetId: string) => {
       setSavingPset(psetId);
       try {
-          const originalPayloadRow = Array.isArray(psetValuesDb) ? psetValuesDb.find((p:any) => p.pset_id === psetId && p.l4_instance_id === entityId) : null;
+          const originalPayloadRow = Array.isArray(psetValuesDb) ? psetValuesDb.find((p:any) => p.fk_pset === psetId && p.l4_instance_id === entityId) : null;
           const originalVersion = originalPayloadRow?.json_payload?.__v || 0;
           
           const payloadToSave = { ...formData[psetId], __v: originalVersion };
@@ -73,7 +73,7 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                   l4_instance_id: entityId,
-                  pset_id: psetId,
+                  fk_pset: psetId,
                   json_payload: payloadToSave,
                   __v: originalVersion
               })
@@ -164,20 +164,20 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
                   {/* BODY ACORDEÓN */}
                   {isExpanded && (
                      <div className="p-4 flex flex-col gap-6 bg-white">
-                        {psetsInGroup.map(pset => {
+                         {psetsInGroup.map(pset => {
                             const schema = pset.json_shape_definition?.DataSchema || {};
-                            const values = formData[pset.pset_id] || {};
+                            const values = formData[pset.id_pset] || {};
 
                             return (
-                                <div key={pset.pset_id} className="flex flex-col gap-3 relative border border-slate-100 rounded p-3 bg-slate-50/50">
+                                <div key={pset.id_pset} className="flex flex-col gap-3 relative border border-slate-100 rounded p-3 bg-slate-50/50">
                                     <div className="flex justify-between items-center mb-1">
                                         <h4 className="text-[9px] uppercase font-bold text-indigo-400 tracking-widest">{pset.schema_alias}</h4>
                                         <button 
-                                            onClick={() => handleSavePSet(pset.pset_id)}
-                                            disabled={savingPset === pset.pset_id}
+                                            onClick={() => handleSavePSet(pset.id_pset)}
+                                            disabled={savingPset === pset.id_pset}
                                             className="px-2 py-1 bg-[#7f1d1d] text-white text-[9px] font-bold uppercase rounded hover:bg-red-800 transition-colors disabled:opacity-50"
                                         >
-                                            {savingPset === pset.pset_id ? 'Procesando...' : 'Aplicar CQRS Put'}
+                                            {savingPset === pset.id_pset ? 'Procesando...' : 'Aplicar CQRS Put'}
                                         </button>
                                     </div>
 
@@ -191,7 +191,7 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
                                                     <input 
                                                         type="checkbox" 
                                                         checked={value}
-                                                        onChange={(e) => handleFieldChange(pset.pset_id, key, e.target.checked)}
+                                                        onChange={(e) => handleFieldChange(pset.id_pset, key, e.target.checked)}
                                                         className="w-3.5 h-3.5 accent-[#7f1d1d] rounded-sm cursor-pointer border-gray-300" 
                                                     />
                                                     <span className="text-xs font-semibold text-gray-700 group-hover:text-[#7f1d1d] transition-colors">{key}</span>
@@ -207,7 +207,7 @@ export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
                                                 <input 
                                                     type={propDef.format === 'date' ? 'date' : 'text'} 
                                                     value={value}
-                                                    onChange={(e) => handleFieldChange(pset.pset_id, key, e.target.value)}
+                                                    onChange={(e) => handleFieldChange(pset.id_pset, key, e.target.value)}
                                                     className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-[11px] font-medium text-gray-800 focus:outline-none focus:border-[#7f1d1d] focus:ring-1 focus:ring-[#7f1d1d] shadow-sm transition-all" 
                                                 />
                                             </div>

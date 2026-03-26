@@ -86,12 +86,15 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
       // Protección: Es de auditoría o un ID genérico protegido?
       const isProtected = forbiddenExact.includes(lowerField) || 
                           forbiddenTails.some(tail => lowerField.endsWith(tail));
+      
+      // Protección: Celdas JSON propensas a corrupción manual (DataSchema or live payloads)
+      const isJsonBlob = lowerField.includes('json') || lowerField.includes('payload');
                           
       return {
         field,
         headerName: field.toUpperCase(),
         minWidth: 10,
-        editable: !(isPk || isProtected),
+        editable: !(isPk || isProtected || isJsonBlob),
         cellClass: "font-mono text-xs text-gray-700"
       };
     });
