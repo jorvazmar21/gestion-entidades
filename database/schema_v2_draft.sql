@@ -238,3 +238,28 @@ CREATE TABLE dat_pry_project (
     FOREIGN KEY (originTender_lct_id) REFERENCES dat_lct_tender(lct_id),
     FOREIGN KEY (activeContract_cnt_id) REFERENCES dat_cnt_contract(cnt_id)
 );
+
+-- ---------------------------------------------------------------------------------------
+-- 6. CONTEXTUAL ACTION ENGINE (ZONA 7)
+-- ---------------------------------------------------------------------------------------
+-- [IA NOTE]: El diccionario maestro de comandos operacionales (Crud, Export, Procesos Masivos).
+-- Su visibilidad se calcula en Tiempos de Ejecucion cruzando sus restricciones ('rel_action_context_triggers')
+-- con el estado global de la Interfaz (EntityID actual, Modulo activo, etc).
+CREATE TABLE def_system_actions (
+    action_id TEXT PRIMARY KEY,                 -- Example: 'CMD_EXPORT_CSV', 'CMD_EDIT_CLI'
+    human_label TEXT NOT NULL,                  -- Example: 'Exportar a CSV'
+    action_category_group TEXT NOT NULL,        -- [IA NOTE]: Para agrupar iterativamente ('CRUD', 'MASIVAS', 'REPORTING')
+    ui_icon_identifier TEXT,                    -- [IA NOTE]: String identificando el SVG/Component del front (e.g. 'HeroDownload')
+    semantic_ai_description TEXT                -- [IA NOTE]: Explicacion para agentes autonomos de que hace exactamente este comando.
+);
+
+-- [IA NOTE]: Reglas de inyeccion logica. Une la Accion con su obligacion de "Entorno".
+-- P.e. 'CMD_EDIT_CLI' exige target_blueprint = 'CLI' y requires_selected_entity = 1.
+CREATE TABLE rel_action_context_triggers (
+    action_id TEXT REFERENCES def_system_actions(action_id) ON DELETE CASCADE,
+    target_root_module TEXT,                    -- Si es NULL, la accion es agnostica de modulo. Si no, solo sale en 'EMP', 'OBR', etc.
+    requires_selected_entity INTEGER DEFAULT 0, -- 1 = Exige que haya una instancia Padre seleccionada (L1). 0 = Funciona en "vacio".
+    required_state_flag TEXT,                   -- Ej: 'IS_ACTIVE=1', 'IS_CLIENTE=1'. Condicion que debe cumplir el Padre seleccionado.
+    PRIMARY KEY(action_id, target_root_module)
+);
+

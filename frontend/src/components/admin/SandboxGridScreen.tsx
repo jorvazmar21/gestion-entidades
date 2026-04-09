@@ -8,6 +8,7 @@ import { SystemBreadcrumbs } from '../SystemBreadcrumbs';
 import { ModuleTitle } from '../ModuleTitle';
 import { ModuleSearch } from '../ModuleSearch';
 import { EntityCanvasContainer } from '../generics/EntityCanvasContainer';
+import { BLUEPRINTS } from '../../config/viewBlueprints';
 
 interface SandboxGridScreenProps {
   onBack: () => void;
@@ -184,7 +185,10 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
               <div className="flex-1 w-full bg-[#f8f9ff] relative min-h-0">
                   <EntityCanvasContainer>
                       <div className="absolute inset-4 flex flex-col drop-shadow-md rounded-lg overflow-hidden">
-                          <HierarchicalEntityGrid moduleId={activeMolde} statusFilter={statusFilter} />
+                          <HierarchicalEntityGrid 
+                            blueprint={BLUEPRINTS[`VIEW_${activeMolde === 'EMP' ? 'PROVEDORES' : 'OBRAS'}_MASTER`]} 
+                            statusFilter={statusFilter} 
+                          />
                       </div>
                   </EntityCanvasContainer>
               </div>

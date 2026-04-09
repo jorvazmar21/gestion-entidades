@@ -19,11 +19,11 @@ export const HomeScreen: React.FC = () => {
   // Los Entornos Operativos (Módulos) son los contenedores de las Entidades Finales
   // Se mapean de forma estática y humana, conservando los IDs y el orden original.
   const staticModules = [
-    { id: 'OBR', label: 'Gestión de Obras', icon: 'mod_OBR' },
-    { id: 'SED', label: 'Gestión de Sedes', icon: 'mod_SED' },
-    { id: 'PRQ', label: 'Gestión de Parques', icon: 'mod_PAR' },
-    { id: 'PRO', label: 'Gestión de Proveedores', icon: 'mod_PRV' },
-    { id: 'CLI', label: 'Gestión de Clientes', icon: 'mod_CLI' }
+    { id: 'OBR', label: 'Gestion de Obras', icon: 'mod_OBR' },
+    { id: 'SED', label: 'Gestion de Sedes', icon: 'mod_SED' },
+    { id: 'PRQ', label: 'Gestion de Parques', icon: 'mod_PAR' },
+    { id: 'PRO', label: 'Gestion de Proveedores', icon: 'mod_PRV' },
+    { id: 'CLI', label: 'Gestion de Clientes', icon: 'mod_CLI' }
   ];
 
   return (
@@ -198,7 +198,15 @@ export const HomeScreen: React.FC = () => {
                          className="flex flex-col items-start justify-center bg-indigo-900 border border-indigo-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-indigo-800 transition-all group min-h-[110px] w-full"
                        >
                           <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-[270deg]" className="w-full h-full" />
-                          <span className="font-semibold text-sm uppercase tracking-wide text-indigo-300">Sandbox: Grid</span>
+                          <span className="font-semibold text-[13px] uppercase tracking-wide text-indigo-300">Sandbox: Grid</span>
+                       </button>
+
+                       <button 
+                         onClick={() => setScreen('SANDBOX_GRID_V2')}
+                         className="flex flex-col items-start justify-center bg-fuchsia-900 border border-fuchsia-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-fuchsia-800 transition-all group min-h-[110px] w-full"
+                       >
+                          <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-[90deg]" className="w-full h-full" />
+                          <span className="font-semibold text-[13px] uppercase tracking-wide text-fuchsia-300">Hierarchical Grid.V2</span>
                        </button>
 
                        <button 
@@ -207,6 +215,14 @@ export const HomeScreen: React.FC = () => {
                        >
                           <SafeImage src="/icons/sys_diccionario.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-[270deg]" className="w-full h-full" />
                           <span className="font-semibold text-sm uppercase tracking-wide text-indigo-300">Sandbox: PSet</span>
+                       </button>
+
+                       <button 
+                         onClick={() => setScreen('SANDBOX_Z7')}
+                         className="flex flex-col items-start justify-center bg-teal-900 border border-teal-700 text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-teal-800 transition-all group min-h-[110px] w-full"
+                       >
+                          <svg className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                          <span className="font-semibold text-sm uppercase tracking-wide text-teal-300">Sandbox: Z7 Action Engine</span>
                        </button>
                     </div>
 

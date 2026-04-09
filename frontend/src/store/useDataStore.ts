@@ -143,11 +143,10 @@ export const useDataStore = create<DataState>((set, get) => ({
           };
       });
 
-      // INYECCION MOCK DE USUARIO: 3 Empresas Ejemplo para probar los botones Sandbox
+      // INYECCION MOCK DE USUARIO: 6 Empresas Ejemplo para probar los botones Sandbox y los Pestañas (CLI, SED, etc)
       const mockEmpresas: any[] = [
          {
             category: 'EMP',
-            // --- DAT_PHYSICAL_INSTANCES ---
             INSTANCE_ID: 'INST-COMP-M1',
             BLUEPRINT_ID: 'COMP',
             UNIQUE_HUMAN_CODE: 'EMP-001',
@@ -155,8 +154,6 @@ export const useDataStore = create<DataState>((set, get) => ({
             LIFECYCLE_PHASE: 'PRODUCCIÓN',
             IS_ACTIVE: 1,
             CREATED_AT: new Date().toISOString(),
-
-            // --- DAT_EMP_COMPANY ---
             EMP_ID: 'INST-COMP-M1',
             EMP_FISCALCODE: 'A-39123456',
             EMP_FISCALNAME: 'ACEROS DEL NORTE SOCIEDAD QUIMI-METALURGICA S.A.',
@@ -169,12 +166,12 @@ export const useDataStore = create<DataState>((set, get) => ({
             IS_SUBCONTRATA: 0,
             IS_CONTRATISTA: 0,
             IS_CLIENTE: 0,
-
+            IS_UTE: 0,
+            IS_SEDE: 0,
             DELETED_AT: null
          },
          {
             category: 'EMP',
-            // --- DAT_PHYSICAL_INSTANCES ---
             INSTANCE_ID: 'INST-COMP-M2',
             BLUEPRINT_ID: 'COMP',
             UNIQUE_HUMAN_CODE: 'EMP-002',
@@ -182,8 +179,6 @@ export const useDataStore = create<DataState>((set, get) => ({
             LIFECYCLE_PHASE: 'BLOQUEADA',
             IS_ACTIVE: 0,
             CREATED_AT: new Date().toISOString(),
-
-            // --- DAT_EMP_COMPANY ---
             EMP_ID: 'INST-COMP-M2',
             EMP_FISCALCODE: 'B-88345678',
             EMP_FISCALNAME: 'SUMINISTROS GLOBALES GOMEZ HERMANOS S.L.',
@@ -196,12 +191,12 @@ export const useDataStore = create<DataState>((set, get) => ({
             IS_SUBCONTRATA: 1,
             IS_CONTRATISTA: 0,
             IS_CLIENTE: 0,
-
+            IS_UTE: 0,
+            IS_SEDE: 0,
             DELETED_AT: null
          },
          {
             category: 'EMP',
-            // --- DAT_PHYSICAL_INSTANCES ---
             INSTANCE_ID: 'INST-COMP-M3',
             BLUEPRINT_ID: 'COMP',
             UNIQUE_HUMAN_CODE: 'EMP-003',
@@ -209,8 +204,6 @@ export const useDataStore = create<DataState>((set, get) => ({
             LIFECYCLE_PHASE: 'ARCHIVADA',
             IS_ACTIVE: 0,
             CREATED_AT: new Date().toISOString(),
-
-            // --- DAT_EMP_COMPANY ---
             EMP_ID: 'INST-COMP-M3',
             EMP_FISCALCODE: 'B-33100200',
             EMP_FISCALNAME: 'EXCAVACIONES Y DERRIBOS NOROESTE S.L. (EXTINTA)',
@@ -223,8 +216,84 @@ export const useDataStore = create<DataState>((set, get) => ({
             IS_SUBCONTRATA: 0,
             IS_CONTRATISTA: 1,
             IS_CLIENTE: 0,
-
+            IS_UTE: 0,
+            IS_SEDE: 0,
             DELETED_AT: new Date().toISOString()
+         },
+         {
+            category: 'EMP',
+            INSTANCE_ID: 'INST-COMP-M4',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'CLI-001',
+            INSTANCE_NAME: 'AYUNTAMIENTO DE MADRID',
+            LIFECYCLE_PHASE: 'PRODUCCIÓN',
+            IS_ACTIVE: 1,
+            CREATED_AT: new Date().toISOString(),
+            EMP_ID: 'INST-COMP-M4',
+            EMP_FISCALCODE: 'P-2807900B',
+            EMP_FISCALNAME: 'AYUNTAMIENTO DE MADRID CORPORACION LOCAL',
+            EMP_FISCALDIRECTION: 'Plaza de Cibeles, 1',
+            EMP_FISCALCP: '28014',
+            EMP_FISCALLOCAL: 'Madrid',
+            EMP_FISCALPROV: 'Madrid',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 0,
+            IS_SUBCONTRATA: 0,
+            IS_CONTRATISTA: 0,
+            IS_CLIENTE: 1,
+            IS_UTE: 0,
+            IS_SEDE: 0,
+            DELETED_AT: null
+         },
+         {
+            category: 'EMP',
+            INSTANCE_ID: 'INST-COMP-M5',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'UTE-001',
+            INSTANCE_NAME: 'UTE TÚNEL NORTE-SUR',
+            LIFECYCLE_PHASE: 'PRODUCCIÓN',
+            IS_ACTIVE: 1,
+            CREATED_AT: new Date().toISOString(),
+            EMP_ID: 'INST-COMP-M5',
+            EMP_FISCALCODE: 'U-12345678',
+            EMP_FISCALNAME: 'UNION TEMPORAL DE EMPRESAS TUNEL NORTE-SUR LEY 18/1982',
+            EMP_FISCALDIRECTION: 'Calle Orense 34, Planta 5',
+            EMP_FISCALCP: '28020',
+            EMP_FISCALLOCAL: 'Madrid',
+            EMP_FISCALPROV: 'Madrid',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 0,
+            IS_SUBCONTRATA: 0,
+            IS_CONTRATISTA: 1,
+            IS_CLIENTE: 0,
+            IS_UTE: 1,
+            IS_SEDE: 0,
+            DELETED_AT: null
+         },
+         {
+            category: 'EMP',
+            INSTANCE_ID: 'INST-COMP-M6',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'SED-001',
+            INSTANCE_NAME: 'OFICINA CENTRAL SANTANDER',
+            LIFECYCLE_PHASE: 'PRODUCCIÓN',
+            IS_ACTIVE: 1,
+            CREATED_AT: new Date().toISOString(),
+            EMP_ID: 'INST-COMP-M6',
+            EMP_FISCALCODE: 'A-39988776',
+            EMP_FISCALNAME: 'NORTUNEL S.A. SEDE CENTRAL',
+            EMP_FISCALDIRECTION: 'Parque Científico y Tecnológico de Cantabria',
+            EMP_FISCALCP: '39011',
+            EMP_FISCALLOCAL: 'Santander',
+            EMP_FISCALPROV: 'Cantabria',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 0,
+            IS_SUBCONTRATA: 0,
+            IS_CONTRATISTA: 0,
+            IS_CLIENTE: 0,
+            IS_UTE: 0,
+            IS_SEDE: 1,
+            DELETED_AT: null
          }
       ];
 

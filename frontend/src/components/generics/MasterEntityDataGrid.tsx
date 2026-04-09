@@ -11,6 +11,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface MasterEntityDataGridProps {
   moduleId: string;
+  gridStateId?: string;
   rowData: any[];
   columnDefs: ColDef[];
   toolbarTitle?: string;
@@ -33,6 +34,7 @@ export interface MasterEntityDataGridProps {
 
 export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
   moduleId,
+  gridStateId,
   rowData,
   columnDefs,
   toolbarTitle,
@@ -65,13 +67,69 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
 
   // Estabilizar las props para que react no destruya el estado interno del ag-grid en cada render
   const defaultColDefProps = useMemo(() => ({ minWidth: 40, resizable: true, filter: AGCheckboxFilter, sortable: true }), []);
-  const autoSizeStrategyProps = useMemo<any>(() => ({ type: 'fitCellContents' }), []);
+
 
   const gridResetSignal = useUiStore(state => state.gridResetSignal);
+  const setGridColumnState = useUiStore(state => state.setGridColumnState);
+  
+  // Candado estricto para evitar que los reajustes del propio sistema sobreescriban la foto del usuario
+  const isApplyingState = useRef(true); // Empieza en TRUE para proteger el montaje inicial de eventos fantasmas
+
+  const saveGridState = useCallback(() => {
+     if (isApplyingState.current) {
+         return; // Bloqueado: AG-grid está manipulando las columnas internamente
+     }
+
+     if (gridStateId && gridRef.current && gridRef.current.api) {
+         setGridColumnState(gridStateId, gridRef.current.api.getColumnState());
+     }
+  }, [gridStateId, setGridColumnState]);
+
+  // Manejador centralizado cuando el estado o columnas están listas
+  const onGridReadyOrColumnsChanged = useCallback(() => {
+      if (gridRef.current && gridRef.current.api && !gridRef.current.api.isDestroyed()) {
+          // Lectura NO reactiva para evitar bucles infinitos de renderizado al mover/redimensionar
+          const currentStates = useUiStore.getState().gridColumnStates;
+          const savedState = gridStateId ? currentStates[gridStateId] : null;
+
+          isApplyingState.current = true; // CERRAMOS CANDADO PARA LA CÁMARA
+
+          if (savedState) {
+              // Si tenemos estado guardado, lo restauramos (anchos, orden, filtros)
+              gridRef.current.api.applyColumnState({ state: savedState, applyOrder: true });
+          } else {
+              // Si no hay estado guardado, aplicamos el ajuste automático por defecto
+              const cols = gridRef.current.api.getColumns();
+              if (cols && cols.length > 0) {
+                  gridRef.current.api.autoSizeColumns(cols.map((c: any) => c.getColId()));
+              }
+          }
+          
+          // Abrimos el candado 200 milisegundos después para asegurar que las animaciones de AG-Grid terminaron
+          setTimeout(() => {
+             isApplyingState.current = false;
+          }, 200);
+      }
+  }, [gridStateId]);
+
+  // Forzar re-pintado de la memoria cada vez que cambie de módulo/pestaña
+  useEffect(() => {
+      const tm = setTimeout(() => {
+          onGridReadyOrColumnsChanged();
+      }, 50);
+      return () => clearTimeout(tm);
+  }, [moduleId, onGridReadyOrColumnsChanged]);
   
   useEffect(() => {
       if (gridResetSignal > 0 && gridRef.current && gridRef.current.api && !gridRef.current.api.isDestroyed()) {
+          isApplyingState.current = true;
           gridRef.current.api.resetColumnState();
+          
+          // Si estamos trackeando el estado, borramos el state persistente en la tienda guardando el reseteado
+          if (gridStateId) {
+              setGridColumnState(gridStateId, gridRef.current.api.getColumnState());
+          }
+
           // Forzar que el auto-ajuste original vuelva a aplicar tras el reseteo
           setTimeout(() => {
              if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
@@ -80,9 +138,10 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
                     gridRef.current.api.autoSizeColumns(cols.map((c: any) => c.getColId()));
                 }
              }
+             isApplyingState.current = false;
           }, 50);
       }
-  }, [gridResetSignal]);
+  }, [gridResetSignal, gridStateId, setGridColumnState]);
 
   // Asegurar que AG-Grid recupere la highlight de la fila seleccionada si rowData se repuebla
   useEffect(() => {
@@ -184,12 +243,20 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
             columnDefs={columnDefs}
             quickFilterText={quickFilterText}
             defaultColDef={defaultColDefProps}
-            autoSizeStrategy={autoSizeStrategyProps}
+            suppressDragLeaveHidesColumns={true}
             // getRowId={(params: any) => {
             //    const pk = primaryKeyField ? params.data[primaryKeyField] : null;
             //    return String(pk || params.data.EMP_ID || params.data.id);
             // }}
+            onGridReady={onGridReadyOrColumnsChanged}
+            // Importante: Volver a evaluar el estado cuando cambien las columnas dinámicas (ej: Cambio de Pestaña)
+            onFirstDataRendered={onGridReadyOrColumnsChanged}
+            onColumnResized={saveGridState}
+            onColumnMoved={saveGridState}
+            onColumnVisible={saveGridState}
+            onSortChanged={saveGridState}
             onFilterChanged={useCallback((params: any) => {
+                saveGridState();
                 if (selectedRowId && onSelectedRowFilteredOut) {
                     let isVisible = false;
                     params.api.forEachNodeAfterFilter((node: any) => {

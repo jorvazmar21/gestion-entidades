@@ -14,7 +14,9 @@ import { AdvancedMoldBuilderScreen } from './components/admin/mold_builder_v2/Ad
 import { ExcelViewerScreen } from './components/admin/ExcelViewerScreen'
 import { CanvasSandboxScreen } from './components/admin/CanvasSandboxScreen'
 import { SandboxGridScreen } from './components/admin/SandboxGridScreen'
+import { SandboxGridScreenV2 } from './components/admin/SandboxGridScreenV2'
 import { SandboxInspectorScreen } from './components/admin/SandboxInspectorScreen'
+import { SandboxZone7Screen } from './components/admin/SandboxZone7Screen'
 
 function App() {
   // El "Mundo" Visual / Navegación (Pilar 2)
@@ -66,7 +68,9 @@ function App() {
   if (currentScreen === 'EXCEL_VIEWER') return <ExcelViewerScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'CANVAS_SANDBOX') return <CanvasSandboxScreen onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'SANDBOX_GRID') return <SandboxGridScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'SANDBOX_GRID_V2') return <SandboxGridScreenV2 onBack={() => setScreen('HOME')} />;
   if (currentScreen === 'SANDBOX_INSPECTOR') return <SandboxInspectorScreen onBack={() => setScreen('HOME')} />;
+  if (currentScreen === 'SANDBOX_Z7') return <SandboxZone7Screen onBack={() => setScreen('HOME')} />;
 
   return null;
 }

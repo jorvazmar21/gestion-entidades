@@ -7,7 +7,7 @@
  */
 import { create } from 'zustand';
 
-export type ScreenType = 'LOGIN' | 'HOME' | 'MODULE_VIEW' | 'LAYOUT_CONFIG' | 'MEDIA_MANAGER' | 'PROFILE_FORGE' | 'INVENTORY_CATALOG' | 'PERMISSION_MATRIX' | 'DATA_DICTIONARY' | 'EXCEL_VIEWER' | 'CANVAS_SANDBOX' | 'ADN_V2' | 'SANDBOX_GRID' | 'SANDBOX_INSPECTOR';
+export type ScreenType = 'LOGIN' | 'HOME' | 'MODULE_VIEW' | 'LAYOUT_CONFIG' | 'MEDIA_MANAGER' | 'PROFILE_FORGE' | 'INVENTORY_CATALOG' | 'PERMISSION_MATRIX' | 'DATA_DICTIONARY' | 'EXCEL_VIEWER' | 'CANVAS_SANDBOX' | 'ADN_V2' | 'SANDBOX_GRID' | 'SANDBOX_GRID_V2' | 'SANDBOX_INSPECTOR' | 'SANDBOX_Z7';
 
 interface UiState {
   currentScreen: ScreenType;
@@ -18,6 +18,7 @@ interface UiState {
   activePSetTab: 'ESTATICO' | 'DINAMICO';
   selectedEntityId: string | null;
   gridResetSignal: number;
+  gridColumnStates: Record<string, any>;
   
   // Acciones
   setScreen: (screen: ScreenType) => void;
@@ -29,6 +30,7 @@ interface UiState {
   setActivePSetTab: (tab: 'ESTATICO' | 'DINAMICO') => void;
   setSelectedEntityId: (id: string | null) => void;
   triggerGridReset: () => void;
+  setGridColumnState: (gridId: string, state: any) => void;
 }
 
 // "useUiStore": El GPS / Navegador de la aplicación
@@ -41,6 +43,7 @@ export const useUiStore = create<UiState>((set) => ({
   activePSetTab: 'ESTATICO',
   selectedEntityId: null,
   gridResetSignal: 0,
+  gridColumnStates: {},
 
   setScreen: (screen) => set({ currentScreen: screen, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on screen change
   setModule: (moduleId) => set({ activeModuleId: moduleId, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on module change
@@ -50,5 +53,6 @@ export const useUiStore = create<UiState>((set) => ({
   setActiveDepartamento: (dept) => set({ activeDepartamento: dept }),
   setActivePSetTab: (tab) => set({ activePSetTab: tab }),
   setSelectedEntityId: (id) => set({ selectedEntityId: id }),
-  triggerGridReset: () => set(state => ({ gridResetSignal: state.gridResetSignal + 1 }))
+  triggerGridReset: () => set(state => ({ gridResetSignal: state.gridResetSignal + 1 })),
+  setGridColumnState: (gridId, state) => set(s => ({ gridColumnStates: { ...s.gridColumnStates, [gridId]: state } }))
 }));
