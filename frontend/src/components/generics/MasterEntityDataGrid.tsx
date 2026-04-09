@@ -64,7 +64,7 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
   }, [moduleId]);
 
   // Estabilizar las props para que react no destruya el estado interno del ag-grid en cada render
-  const defaultColDefProps = useMemo(() => ({ minWidth: 10, resizable: true, filter: AGCheckboxFilter, sortable: true }), []);
+  const defaultColDefProps = useMemo(() => ({ minWidth: 40, resizable: true, filter: AGCheckboxFilter, sortable: true }), []);
   const autoSizeStrategyProps = useMemo<any>(() => ({ type: 'fitCellContents' }), []);
 
   const gridResetSignal = useUiStore(state => state.gridResetSignal);
