@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeImage } from '../SafeImage';
 import { ActionZonePanel } from '../generics/ActionZonePanel';
 import type { ContextPayload } from '../../config/actionRegistry';
 import { SimpleDivider } from '../MainLayout';
@@ -11,11 +12,14 @@ export const SandboxZone7Screen: React.FC<{onBack: () => void}> = ({ onBack }) =
        activeTabFilter: 'CLIENTE',     
        selectedEntityId: null,    
        selectedEntityData: {
-           IS_CLIENTE: 1,
+           IS_CLIENTE: 0,
            IS_PROVEEDOR: 0,
+           IS_CONTRATISTA: 1,
+           IS_SUBCONTRATISTA: 0,
+           IS_UTE: 0,
            IS_ACTIVE: 1
        },
-       activeDetailTab: 'contactos'
+       activeDetailTab: ''
    });
 
    const [logs, setLogs] = useState<any[]>([]);
@@ -27,15 +31,26 @@ export const SandboxZone7Screen: React.FC<{onBack: () => void}> = ({ onBack }) =
    return (
        <div className="flex flex-col h-screen w-full bg-slate-100 font-['Inter']">
            
-           {/* Topbar genérica Sandbox */}
-           <div className="h-[40px] shrink-0 bg-[#7f1d1d] text-white flex items-center px-4 justify-between shadow-md z-10">
-               <div className="flex items-center gap-3">
-                   <button onClick={onBack} className="hover:bg-white/20 p-1 rounded transition-colors text-white">
-                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                   </button>
-                   <span className="font-bold tracking-widest text-[11px] uppercase">Zona 7 Sandbox - Action Engine</span>
-               </div>
-           </div>
+           {/* HEADER ESTANDARIZADO DE ADMINISTRACIÓN */}
+           <header className="h-[70px] bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm relative z-50 w-full">
+              <div className="flex items-center gap-3">
+                <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 filter hue-rotate-[180deg]" className="w-full h-full object-contain" />
+                <div>
+                  <h1 className="font-['Manrope'] font-bold text-[#7f1d1d] uppercase tracking-widest text-[16px] leading-none mb-1">
+                    Sandbox: Action Engine (Z7)
+                  </h1>
+                  <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-[0.15em] border-t border-gray-100 pt-1">ENTORNO DE PRUEBAS AISLADO</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={onBack}
+                  className="w-[100px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-white border border-[#7f1d1d] hover:bg-[#7f1d1d] hover:text-white rounded-sm uppercase tracking-wide shadow-sm transition-colors"
+                >
+                  INICIO
+                </button>
+              </div>
+           </header>
 
            <div className="flex-1 flex w-full overflow-hidden">
                
@@ -49,25 +64,26 @@ export const SandboxZone7Screen: React.FC<{onBack: () => void}> = ({ onBack }) =
                            <select 
                                value={mockContext.activeModuleId || ''} 
                                onChange={e => setMockContext(prev => ({...prev, activeModuleId: e.target.value}))}
-                               className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none"
+                               className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none bg-gray-50"
+                               disabled
                            >
-                               <option value="">(Ninguno)</option>
-                               <option value="EMP">EMP (Registro de Entidades)</option>
-                               <option value="OBR">OBR (Obras)</option>
+                               <option value="EMP">Gestión de AGENTES</option>
                            </select>
                        </div>
 
                        <div>
-                           <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pestaña Activa (L1)</label>
+                           <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pestaña Padre Activa</label>
                            <select 
                                value={mockContext.activeTabFilter || ''} 
                                onChange={e => setMockContext(prev => ({...prev, activeTabFilter: e.target.value}))}
-                               className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none"
+                               className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none font-bold text-[#7f1d1d]"
                            >
-                               <option value="">(Ninguna)</option>
-                               <option value="CLIENTE">CLIENTE</option>
-                               <option value="PROVEEDOR">PROVEEDOR</option>
-                               <option value="SEDE">SEDE</option>
+                               <option value="TODAS">TODAS</option>
+                               <option value="CONTRATAS">CONTRATAS</option>
+                               <option value="UTES">UTES</option>
+                               <option value="PROVEEDORES">PROVEEDORES</option>
+                               <option value="SUBCONTRATAS">SUBCONTRATAS</option>
+                               <option value="CLIENTES">CLIENTES</option>
                            </select>
                        </div>
 
@@ -92,24 +108,26 @@ export const SandboxZone7Screen: React.FC<{onBack: () => void}> = ({ onBack }) =
                                <div className="pt-2 border-t border-gray-100">
                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cualidades Física (DB Mock)</label>
                                    <div className="flex flex-col gap-1 pl-2">
-                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_CLIENTE === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_CLIENTE: e.target.checked ? 1 : 0}}))} /> Es Cliente</label>
-                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_PROVEEDOR === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_PROVEEDOR: e.target.checked ? 1 : 0}}))} /> Es Proveedor</label>
+                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_CONTRATISTA === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_CONTRATISTA: e.target.checked ? 1 : 0}}))} /> Es Contratista</label>
+                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_SUBCONTRATISTA === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_SUBCONTRATISTA: e.target.checked ? 1 : 0}}))} /> Es Subcontratista</label>
                                        <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_UTE === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_UTE: e.target.checked ? 1 : 0}}))} /> Es U.T.E.</label>
+                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_PROVEEDOR === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_PROVEEDOR: e.target.checked ? 1 : 0}}))} /> Es Proveedor</label>
+                                       <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_CLIENTE === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_CLIENTE: e.target.checked ? 1 : 0}}))} /> Es Cliente</label>
+                                       
+                                       <div className="my-1 border-t border-gray-100"></div>
                                        <label className="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" checked={mockContext.selectedEntityData?.IS_ACTIVE === 1} onChange={e => setMockContext(prev => ({...prev, selectedEntityData: {...prev.selectedEntityData, IS_ACTIVE: e.target.checked ? 1 : 0}}))} /> Status Activo</label>
                                    </div>
                                </div>
 
                                <div>
-                                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pestaña Inferior Detalle (L2)</label>
-                                   <select 
+                                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipología Tabla Hijo (Entidad Libre)</label>
+                                   <input 
+                                       type="text"
+                                       placeholder="Ej: CONTACTO, OFICINA, ALMACÉN..."
                                        value={mockContext.activeDetailTab || ''} 
-                                       onChange={e => setMockContext(prev => ({...prev, activeDetailTab: e.target.value}))}
-                                       className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none"
-                                   >
-                                       <option value="">(Ninguna / Cerrado)</option>
-                                       <option value="contactos">Contactos</option>
-                                       <option value="delegaciones">Delegaciones / Sedes</option>
-                                   </select>
+                                       onChange={e => setMockContext(prev => ({...prev, activeDetailTab: e.target.value.toUpperCase()}))}
+                                       className="w-full border border-gray-300 rounded p-1.5 text-xs focus:border-[#7f1d1d] outline-none font-mono uppercase text-[#7f1d1d]"
+                                   />
                                </div>
                            </>
                        )}

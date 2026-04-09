@@ -46,12 +46,10 @@ CREATE TABLE IF NOT EXISTS def_entity_l1_category (
     human_readable_name TEXT NOT NULL UNIQUE,
     ui_icon_identifier TEXT,
     ui_order INTEGER DEFAULT 0,            
-    is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- L2: FAMILY (The Business Division. E.g., 'NOUTE', 'UTE')
@@ -61,12 +59,10 @@ CREATE TABLE IF NOT EXISTS def_entity_l2_family (
     fk_l1 INTEGER NOT NULL REFERENCES def_entity_l1_category(id_l1) ON DELETE RESTRICT,
     human_readable_name TEXT NOT NULL,
     ui_order INTEGER DEFAULT 0,            
-    is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- L3: TYPE (The Concrete Mold. E.g., 'UTE-STANDAR')
@@ -76,12 +72,10 @@ CREATE TABLE IF NOT EXISTS def_entity_l3_type (
     fk_l2 INTEGER NOT NULL REFERENCES def_entity_l2_family(id_l2) ON DELETE RESTRICT,
     human_readable_name TEXT NOT NULL,
     ui_order INTEGER DEFAULT 0,            
-    is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- L4: INSTANCE (The Live Physical Record. E.g., 'Nortunel S.A')
@@ -90,7 +84,7 @@ CREATE TABLE IF NOT EXISTS dat_entity_l4_instance (
     fk_l3 INTEGER NOT NULL REFERENCES def_entity_l3_type(id_l3) ON DELETE RESTRICT,
     unique_human_code TEXT UNIQUE NOT NULL, 
     instance_name TEXT NOT NULL UNIQUE,
-    fk_phase INTEGER NOT NULL DEFAULT 1 REFERENCES def_lifecycle_phase(id_phase) ON DELETE RESTRICT,
+    fk_phase INTEGER REFERENCES def_lifecycle_phase(id_phase) ON DELETE RESTRICT,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
@@ -215,12 +209,10 @@ CREATE TABLE IF NOT EXISTS def_lifecycle_phase (
     phase_code TEXT NOT NULL UNIQUE,          
     human_readable_name TEXT NOT NULL,
     ui_order INTEGER DEFAULT 0,            
-    is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- Departamentos / Roles (Ej: RRHH, ADM)
@@ -297,7 +289,8 @@ CREATE TABLE IF NOT EXISTS dat_emp_company (
     is_Proveedor INTEGER DEFAULT 1,
     is_Subcontratista INTEGER DEFAULT 1,
     is_Contratista INTEGER DEFAULT 1,           
-    is_Cliente INTEGER DEFAULT 1                
+    is_Cliente INTEGER DEFAULT 1,
+    CHECK (is_Proveedor = 1 OR is_Subcontratista = 1 OR is_Contratista = 1 OR is_Cliente = 1)
 );
 
 -- UTEs Bridge

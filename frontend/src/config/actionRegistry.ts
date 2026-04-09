@@ -22,66 +22,90 @@ export interface SystemAction {
 // THE DICTIONARY (Mirroring the SQLite AI-Semantics: def_system_actions + rel_action_context_triggers)
 // ----------------------------------------------------------------------------------------------------
 export const ACTION_REGISTRY: SystemAction[] = [
-  // --- MASIVAS E INFORMES (Solo visibles cuando NO hay nada seleccionado) ---
+  // --- MASIVAS E INFORMES ---
   {
     id: 'CMD_EXPORT_CSV',
-    label: 'Exportar a CSV',
+    label: 'Exportar Listado a CSV',
     category: 'MASIVAS',
     icon: 'CSV',
-    description: 'Exporta los resultados actuales de la tabla a formato CSV.',
-    isVisible: (ctx) => !ctx.selectedEntityId 
+    description: 'Exporta los resultados actuales mostrados en pantalla a un CSV.',
+    isVisible: () => true 
+  },
+  
+  // IMPORTACIONES CSV ESPECÍFICAS (visibles cuando no hay entidad seleccionada y estamos en la pestaña correspondiente)
+  {
+    id: 'CMD_BULK_CONTRATAS',
+    label: 'Cargar CSV: Contratas',
+    category: 'MASIVAS',
+    icon: 'Upload',
+    description: 'Wizard de carga masiva específico para Contratas.',
+    isVisible: (ctx) => !ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'CONTRATAS'
+  },
+  {
+    id: 'CMD_BULK_SUBCONTRATAS',
+    label: 'Cargar CSV: Subcontr.',
+    category: 'MASIVAS',
+    icon: 'Upload',
+    description: 'Wizard de carga masiva específico para Subcontratas.',
+    isVisible: (ctx) => !ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'SUBCONTRATAS'
+  },
+  {
+    id: 'CMD_BULK_PROVEEDORES',
+    label: 'Cargar CSV: Proveedores',
+    category: 'MASIVAS',
+    icon: 'Upload',
+    description: 'Wizard de carga masiva específico para Proveedores.',
+    isVisible: (ctx) => !ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'PROVEEDORES'
   },
   {
     id: 'CMD_BULK_CLIENTES',
-    label: 'Carga Masiva de Clientes',
+    label: 'Cargar CSV: Clientes',
     category: 'MASIVAS',
     icon: 'Upload',
-    description: 'Inicializa el wizard de importación masiva de Excel para altas.',
-    isVisible: (ctx) => !ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'CLIENTE'
+    description: 'Wizard de carga masiva específico para Clientes.',
+    isVisible: (ctx) => !ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'CLIENTES'
   },
 
   // --- CRUD BÁSICO DE ENTIDAD (Aparecen solo al SELECCIONAR entidad en su Modulo especifico) ---
   {
-    id: 'CMD_EDIT_CLI',
-    label: 'Editar Ficha Cliente',
+    id: 'CMD_EDIT_CONTRAT',
+    label: 'Editar Contrata',
     category: 'CRUD',
     icon: 'Edit',
-    description: 'Abre la "Superficha" de edición completa para el Cliente.',
-    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'CLIENTE' && ctx.selectedEntityData?.IS_CLIENTE === 1
+    description: 'Abre la ficha de edición para la Contrata.',
+    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.selectedEntityData?.IS_CONTRATISTA === 1
+  },
+  {
+    id: 'CMD_EDIT_SUBCON',
+    label: 'Editar Subcontrata',
+    category: 'CRUD',
+    icon: 'Edit',
+    description: 'Abre la ficha de edición para la Subcontrata.',
+    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.selectedEntityData?.IS_SUBCONTRATISTA === 1
   },
   {
     id: 'CMD_EDIT_PROV',
-    label: 'Editar Ficha Proveedor',
+    label: 'Editar Proveedor',
     category: 'CRUD',
     icon: 'Edit',
-    description: 'Abre la "Superficha" de edición completa para el Proveedor.',
-    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.activeTabFilter === 'PROVEEDOR' && ctx.selectedEntityData?.IS_PROVEEDOR === 1
+    description: 'Abre la ficha de edición para el Proveedor.',
+    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.selectedEntityData?.IS_PROVEEDOR === 1
+  },
+  {
+    id: 'CMD_EDIT_CLI',
+    label: 'Editar Cliente',
+    category: 'CRUD',
+    icon: 'Edit',
+    description: 'Abre la ficha de edición para el Cliente.',
+    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.selectedEntityData?.IS_CLIENTE === 1
   },
   {
     id: 'CMD_EDIT_UTE',
     label: 'Configurar UTE / Socios',
     category: 'CRUD',
     icon: 'Users',
-    description: 'Abre el constructor de consorcios y participaciones.',
-    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP' && ctx.selectedEntityData?.IS_UTE === 1
-  },
-
-  // --- OPERACIONES DE ESTADO (Flujo de Ciclo de Vida: BLOQUEADA, ARCHIVADA...) ---
-  {
-    id: 'CMD_BLOCK_ENTITY',
-    label: 'Bloquear Entidad Lógicamente',
-    category: 'ESTADO',
-    icon: 'Lock',
-    description: 'Impide que esta entidad se use en nuevos proyectos o contratos.',
-    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.selectedEntityData?.IS_ACTIVE === 1
-  },
-  {
-    id: 'CMD_RESTORE_ENTITY',
-    label: 'Restaurar Entidad',
-    category: 'ESTADO',
-    icon: 'Unlock',
-    description: 'Reactiva una entidad inactiva para retornar a Fase de Producción.',
-    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.selectedEntityData?.IS_ACTIVE === 0 && !ctx.selectedEntityData?.DELETED_AT
+    description: 'Abre el constructor de consorcios y participaciones referidas a esta Entidad.',
+    isVisible: (ctx) => !!ctx.selectedEntityId && ctx.activeModuleId === 'EMP'
   },
 
   // --- ACCIONES SECUNDARIAS (L2 / DEPENDENCIES) ---

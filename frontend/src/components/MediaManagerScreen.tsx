@@ -185,6 +185,9 @@ export function MediaManagerScreen() {
                   {l1Modules.map(mod => (
                     <MediaCard key={mod.id_tipo} title={mod.nombre} filename={mod.icono ? (mod.icono.includes('.svg') ? `icons/${mod.icono}` : `icons/${mod.icono}.svg`) : `icons/mod_${mod.id_tipo}.svg`} accept=".svg" />
                   ))}
+                  {!l1Modules.some(m => m.id_tipo === 'AGE') && (
+                    <MediaCard title="Gestión de Agentes" filename="icons/mod_AGE.svg" accept=".svg" />
+                  )}
                </div>
              </div>
 

@@ -71,8 +71,16 @@ export const ActionZonePanel: React.FC<ActionZonePanelProps> = ({ context, onAct
                  placeholder="Buscar comando o acción..."
                  value={searchTerm}
                  onChange={e => setSearchTerm(e.target.value)}
-                 className="w-full pl-9 pr-3 py-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#7f1d1d] focus:ring-1 focus:ring-[#7f1d1d] transition-all"
+                 className="w-full pl-9 pr-8 py-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#7f1d1d] focus:ring-1 focus:ring-[#7f1d1d] transition-all"
              />
+             {searchTerm && (
+                 <button 
+                     onClick={() => setSearchTerm('')} 
+                     className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-[#7f1d1d] transition-colors"
+                 >
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+             )}
           </div>
        </div>
 
@@ -88,22 +96,20 @@ export const ActionZonePanel: React.FC<ActionZonePanelProps> = ({ context, onAct
                    <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2 pl-2">
                        {category}
                    </h4>
-                   <div className="flex flex-col gap-1">
+                   <div className="grid grid-cols-2 gap-2">
                       {actions.map(action => (
                          <button 
                              key={action.id}
                              onClick={() => {
                                  if (onActionExecute) onActionExecute(action.id, context);
                              }}
-                             className="text-left bg-white border border-gray-200 hover:border-[#7f1d1d] hover:shadow-sm rounded group flex items-start gap-3 p-2.5 transition-all w-full cursor-pointer"
+                             title={action.description}
+                             className="text-left bg-white border border-gray-200 hover:border-[#7f1d1d] hover:bg-red-50 hover:shadow-sm rounded group flex items-center justify-start gap-2 px-3 h-9 transition-all w-full cursor-pointer overflow-hidden"
                          >
-                             <div className="pt-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                             <div className="opacity-70 group-hover:opacity-100 transition-opacity shrink-0">
                                {resolveIcon(action.icon)}
                              </div>
-                             <div className="flex flex-col flex-1">
-                                <span className="text-[12px] font-semibold text-gray-700 group-hover:text-[#7f1d1d] transition-colors">{action.label}</span>
-                                <span className="text-[10px] text-gray-400 mt-0.5 leading-tight">{action.description}</span>
-                             </div>
+                             <span className="text-[10px] font-bold text-gray-700 group-hover:text-[#7f1d1d] transition-colors uppercase truncate flex-1 leading-none pt-0.5">{action.label}</span>
                          </button>
                       ))}
                    </div>

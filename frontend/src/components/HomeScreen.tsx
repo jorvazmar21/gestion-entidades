@@ -22,8 +22,7 @@ export const HomeScreen: React.FC = () => {
     { id: 'OBR', label: 'Gestion de Obras', icon: 'mod_OBR' },
     { id: 'SED', label: 'Gestion de Sedes', icon: 'mod_SED' },
     { id: 'PRQ', label: 'Gestion de Parques', icon: 'mod_PAR' },
-    { id: 'PRO', label: 'Gestion de Proveedores', icon: 'mod_PRV' },
-    { id: 'CLI', label: 'Gestion de Clientes', icon: 'mod_CLI' }
+    { id: 'AGE', label: 'Gestion de Agentes', icon: 'mod_AGE' }
   ];
 
   return (

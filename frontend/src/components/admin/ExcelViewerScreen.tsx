@@ -86,7 +86,8 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
        .then(r => r.json())
        .then(res => {
           if (res.success && res.data && res.data.length > 0) {
-             setTables(res.data);
+             const sortedData = [...res.data].sort((a: any, b: any) => a.name.localeCompare(b.name));
+             setTables(sortedData);
           }
        })
        .catch(console.error);
@@ -310,11 +311,12 @@ export const ExcelViewerScreen: React.FC<Props> = ({ onBack }) => {
                value={activeTabIdx}
                onChange={(e) => setActiveTabIdx(Number(e.target.value))}
                disabled={tables.length === 0}
-               className="font-bold text-sm w-64 text-center text-[#7f1d1d] uppercase tracking-wider bg-white border border-[#d0dbec] rounded py-1 px-2 cursor-pointer focus:outline-none focus:border-[#7f1d1d] shadow-sm"
+               className="text-sm w-64 text-center text-[#7f1d1d] uppercase tracking-wider bg-white border border-[#d0dbec] rounded py-1 px-2 cursor-pointer focus:outline-none focus:border-[#7f1d1d] shadow-sm"
+               style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }}
             >
-               {tables.length === 0 && <option value={0}>Cargando tablas...</option>}
+               {tables.length === 0 && <option value={0} style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }} className="text-[#7f1d1d] uppercase tracking-wider">Cargando tablas...</option>}
                {tables.map((t, idx) => (
-                   <option key={t.name} value={idx}>{t.name}</option>
+                   <option key={t.name} value={idx} style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }} className="text-[#7f1d1d] uppercase tracking-wider">{t.name}</option>
                ))}
             </select>
 

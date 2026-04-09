@@ -29,53 +29,15 @@ INSERT OR IGNORE INTO rel_ai_behavior_to_table_bridge (target_table_name, direct
 
 -- L1: CATEGORIES
 INSERT OR IGNORE INTO def_entity_l1_category (id_l1, l1_code, human_readable_name, ui_icon_identifier, ui_order, created_by) VALUES
-(1, 'L1_EMP', 'Empresas y Directorio', 'mod_EMP.svg', 10, 'SEED_SYSTEM'),
-(2, 'L1_OBR', 'Centro de Coste (Obra)', 'mod_OBR.svg', 20, 'SEED_SYSTEM'),
-(3, 'L1_SED', 'Sede Corporativa', 'mod_SED.svg', 30, 'SEED_SYSTEM'),
-(4, 'L1_PRQ', 'Parque de Maquinaria', 'mod_PRQ.svg', 40, 'SEED_SYSTEM'),
-(5, 'L1_EVT', 'Evento Transaccional', 'sys_event.svg', 50, 'SEED_SYSTEM'),
-(6, 'L1_REC', 'Recurso Físico / Humano', 'sys_resource.svg', 60, 'SEED_SYSTEM');
+(1, 'L1_EMP', 'Agentes', 'mod_EMP.svg', 10, 'SEED_SYSTEM');
 
 -- L2: FAMILIES
 INSERT OR IGNORE INTO def_entity_l2_family (id_l2, l2_code, fk_l1, human_readable_name, ui_order, created_by) VALUES
--- Empresas (fk_l1 = 1)
-(1, 'L2_EMP_UTE', 1, 'Uniones Temporales de Empresas (UTE)', 10, 'SEED_SYSTEM'),
-(2, 'L2_EMP_NOUTE', 1, 'Empresas Individuales / Autónomos', 20, 'SEED_SYSTEM'),
--- Obras (fk_l1 = 2)
-(3, 'L2_OBR_GEN', 2, 'Obra General', 10, 'SEED_SYSTEM'),
-(4, 'L2_OBR_UTE', 2, 'Obra UTE', 20, 'SEED_SYSTEM'),
-(5, 'L2_OBR_SOB', 2, 'Subdivisión de Obra (Tramo)', 30, 'SEED_SYSTEM'),
--- Sedes & Parques (fk_l1 = 3, 4)
-(6, 'L2_SED_OFI', 3, 'Oficina Central', 10, 'SEED_SYSTEM'),
-(7, 'L2_PRQ_ALM', 4, 'Almacén / Instalación Logística', 10, 'SEED_SYSTEM'),
--- Eventos Operativos (fk_l1 = 5)
-(8, 'L2_EVT_MANT', 5, 'Mantenimiento (OT / SOT)', 10, 'SEED_SYSTEM'),
-(9, 'L2_EVT_PROD', 5, 'Producción (Tarea / Subtarea)', 20, 'SEED_SYSTEM'),
-(10, 'L2_EVT_LOGI', 5, 'Logística (Pedido / Albarán)', 30, 'SEED_SYSTEM'),
--- Recursos (fk_l1 = 6)
-(11, 'L2_REC_MAQ', 6, 'Máquina Individual', 10, 'SEED_SYSTEM'),
-(12, 'L2_REC_MAT', 6, 'Material Fungible', 20, 'SEED_SYSTEM'),
-(13, 'L2_REC_HUM', 6, 'Trabajador Humano', 30, 'SEED_SYSTEM');
+(1, 'L2_EMP', 1, 'Agentes', 10, 'SEED_SYSTEM');
 
 -- L3: TYPES (The Concrete Molds)
 INSERT OR IGNORE INTO def_entity_l3_type (id_l3, l3_code, fk_l2, human_readable_name, ui_order, created_by) VALUES
--- Empresas
-(1, 'L3_EMP_UTE_STD', 1, 'Molde UTE Estándar', 10, 'SEED_SYSTEM'),
-(2, 'L3_EMP_NOUTE_STD', 2, 'Molde Empresa Individual Estándar', 10, 'SEED_SYSTEM'),
--- Obras
-(3, 'L3_OBR_CIVIL', 3, 'Molde Obra Civil Estándar', 10, 'SEED_SYSTEM'),
-(4, 'L3_OBR_TRAMO', 5, 'Molde Tramo Lineal', 10, 'SEED_SYSTEM'),
--- Sedes
-(5, 'L3_SED_OFI_ADM', 6, 'Molde Oficina Administrativa', 10, 'SEED_SYSTEM'),
--- Eventos Operativos
-(6, 'M_OTR', 8, 'Orden de Trabajo (Cabecera)', 10, 'SEED_SYSTEM'),
-(7, 'M_SOT', 8, 'Suborden de Trabajo (Línea)', 20, 'SEED_SYSTEM'),
-(8, 'M_TAR', 9, 'Tarea de Producción', 10, 'SEED_SYSTEM'),
-(9, 'M_PED', 10, 'Pedido de Suministro', 10, 'SEED_SYSTEM'),
-(10, 'M_ALB', 10, 'Albarán de Recepción', 20, 'SEED_SYSTEM'),
--- Recursos
-(11, 'L3_REC_MAQ_PESADA', 11, 'Máquina Pesada', 10, 'SEED_SYSTEM'),
-(12, 'L3_REC_MAQ_LIGERA', 11, 'Máquina Ligera Portátil', 20, 'SEED_SYSTEM');
+(1, 'EMP', 1, 'Agentes', 10, 'SEED_SYSTEM');
 
 -- =========================================================================
 -- 2. PARAMETRIC PROPERTY SETS (CQRS DICTIONARIES) SEEDING
@@ -109,11 +71,9 @@ INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_
 
 -- ATAQUES (PUENTES) POLIMÓRFICOS
 INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_uuid, attachment_level_enum) VALUES
-(1, 1, '2', 'L1'), -- L1_OBR
 (2, 1, '1', 'L1'), -- L1_EMP
-(4, 3, '1', 'L2'), -- L2_EMP_UTE
-(5, 4, '2', 'L2'), -- L2_EMP_NOUTE
-(6, 5, '1', 'L3'); -- L3_EMP_UTE_STD
+(4, 3, '1', 'L2'), -- L2_EMP
+(6, 5, '1', 'L3'); -- EMP
 
 -- =========================================================================
 -- 3. ABAC MULTIDIMENSIONAL SEEDING
@@ -143,10 +103,10 @@ INSERT OR IGNORE INTO def_company_department (id_department, department_code, hu
 (8, 'DIR', 'DIRECCION', 80, 'SEED_SYSTEM');
 
 -- Asignación Genérica Transaccional de Ejemplo: 
--- El "PSet 1" en L1_OBR (id_bridge = 1) solo lo edita OFT en Fase Ejecucion (id_phase = 6)
+-- El "PSet 1" en L1_EMP (id_bridge = 2) solo lo edita OFT en Fase Ejecucion (id_phase = 6)
 INSERT OR IGNORE INTO rel_abac_matrix_rules (id_rule, fk_bridge, fk_phase, fk_department, can_read, can_write, can_approve) VALUES
-(1, 1, 6, 7, 1, 1, 1),
-(2, 1, 6, 2, 1, 0, 0);
+(1, 2, 6, 7, 1, 1, 1),
+(2, 2, 6, 2, 1, 0, 0);
 
 -- =========================================================================
 -- 4. POBLADO DE EJEMPLOS PARA ARQUITECTURA 3 (DOBLE INSERT POLIMÓRFICO)
@@ -160,54 +120,26 @@ DELETE FROM dat_entity_l4_instance;
 -- -------------------------------------------------------------------------
 -- 1. Bases L4
 INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
-('emp-nortunel', 2, 'EMP-NORTUNEL', 'NORTUNEL S.A.', 'SEED_ARQ3'),
-('emp-adif', 2, 'EMP-ADIF', 'ADIF ALTA VELOCIDAD', 'SEED_ARQ3'),
-('emp-acciona', 2, 'EMP-ACCIONA', 'ACCIONA CONSTRUCCION', 'SEED_ARQ3');
+('emp-nortunel', 1, 'EMP-NORTUNEL', 'NORTUNEL S.A.', 'SEED_ARQ3'),
+('emp-adif', 1, 'EMP-ADIF', 'ADIF ALTA VELOCIDAD', 'SEED_ARQ3'),
+('emp-acciona', 1, 'EMP-ACCIONA', 'ACCIONA CONSTRUCCION', 'SEED_ARQ3'),
+('emp-ferrovial', 1, 'EMP-FERROVIAL', 'FERROVIAL AGROMAN', 'SEED_ARQ3'),
+('emp-sika', 1, 'EMP-SIKA', 'SIKA ESPAÑA S.A.', 'SEED_ARQ3'),
+('emp-hilti', 1, 'EMP-HILTI', 'HILTI ESPAÑOLA S.A.', 'SEED_ARQ3'),
+('emp-ute-tunel', 1, 'EMP-UTE-TUNEL', 'UTE TUNEL PAJARES', 'SEED_ARQ3'),
+('emp-sub-excav', 1, 'EMP-SUB-EXCAV', 'EXCAVACIONES PACO S.L.', 'SEED_ARQ3');
 
 -- 2. Corazones Físicos (dat_emp_company)
 INSERT INTO dat_emp_company (emp_id, emp_fiscalCode, emp_fiscalName, emp_fiscalDirection, emp_fiscalCP, emp_fiscalLocal, emp_fiscalProv, emp_fiscalCountry, is_Proveedor, is_Subcontratista, is_Contratista, is_Cliente) VALUES
 ('emp-nortunel', 'A01310630', 'NORTUNEL S.A.', 'Pol. Ind. Jundiz', '01015', 'Vitoria-Gasteiz', 'Alava', 'España', 0, 0, 1, 0),
 ('emp-adif', 'Q2801660H', 'ADIF ALTA VELOCIDAD', 'C/ Sor Angela', '28020', 'Madrid', 'Madrid', 'España', 0, 0, 0, 1),
-('emp-acciona', 'A08001851', 'ACCIONA CONSTRUCCION', 'Av. Europa', '28108', 'Alcobendas', 'Madrid', 'España', 0, 0, 1, 0);
+('emp-acciona', 'A08001851', 'ACCIONA CONSTRUCCION', 'Av. Europa', '28108', 'Alcobendas', 'Madrid', 'España', 0, 0, 1, 0),
+('emp-ferrovial', 'A81307653', 'FERROVIAL AGROMAN', 'C/ Ribera del Loira', '28042', 'Madrid', 'Madrid', 'España', 0, 0, 1, 1),
+('emp-sika', 'A28078236', 'SIKA ESPAÑA S.A.', 'Carretera de Fuencarral', '28108', 'Alcobendas', 'Madrid', 'España', 1, 0, 0, 0),
+('emp-hilti', 'A28236248', 'HILTI ESPAÑOLA S.A.', 'C/ Fuente de la Mora', '28050', 'Madrid', 'Madrid', 'España', 1, 0, 0, 0),
+('emp-ute-tunel', 'U12345678', 'UTE TUNEL PAJARES', 'Av. de Guipuzcoa', '33001', 'Oviedo', 'Asturias', 'España', 0, 0, 1, 0),
+('emp-sub-excav', 'B98765432', 'EXCAVACIONES PACO S.L.', 'Pol. Ind. Los Arcos', '46014', 'Valencia', 'Valencia', 'España', 0, 1, 0, 0);
 
--- -------------------------------------------------------------------------
--- B) LICITACIONES Y LOTES (Asumimos fk_l3 genérico = 3 para Obra Civil si no hay Molde LCT)
--- -------------------------------------------------------------------------
-INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
-('lct-ave-madrid', 3, 'LCT-AVE-001', 'EXP. MARCO: AVE MADRID NORTE', 'SEED_ARQ3'),
-('lct-lote-1', 3, 'LCT-AVE-L1', 'LOTE 1: TÚNEL GUADARRAMA', 'SEED_ARQ3');
-
-INSERT INTO dat_lct_tender (lct_id, promoter_emp_id, parentTender_lct_id) VALUES
-('lct-ave-madrid', 'emp-adif', NULL),         -- Macro-Expediente
-('lct-lote-1', 'emp-adif', 'lct-ave-madrid'); -- Lote 1 colgando del Macro-Expediente
-
--- -------------------------------------------------------------------------
--- C) PLICAS (Ofertas al Lote 1)
--- -------------------------------------------------------------------------
-INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
-('plk-estudio-nor', 3, 'PLK-NOR-01', 'OFERTA NORTUNEL LOTE 1 (ESTUDIO)', 'SEED_ARQ3'),
-('plk-ajena-acc', 3, 'PLK-ACC-01', 'OFERTA ACCIONA LOTE 1 (AJENA)', 'SEED_ARQ3');
-
-INSERT INTO dat_plk_bid (plk_id, target_lct_id, bidder_emp_id, plk_status, is_plkAwarded) VALUES
-('plk-estudio-nor', 'lct-lote-1', 'emp-nortunel', 'ESTUDIA', 0),
-('plk-ajena-acc', 'lct-lote-1', 'emp-acciona', 'AJENA', 1); -- Acciona nos gana en el Seed
-
--- -------------------------------------------------------------------------
--- D) CONTRATOS (CNT) Y PROYECTOS (PRY)
--- -------------------------------------------------------------------------
--- Acciona ganó, así que hay un Contrato de Adjudicación
-INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
-('cnt-ave-l1', 3, 'CNT-ADIF-25', 'CONTRATO EJECUCIÓN AVE L1', 'SEED_ARQ3'),
-('pry-estudio', 3, 'PRY-BASE-01', 'PRY BASE LICITACIÓN LOTE 1', 'SEED_ARQ3');
-
-INSERT INTO dat_cnt_contract (cnt_id) VALUES ('cnt-ave-l1');
-
--- Enlace del Contrato con la Plica Ganadora
-INSERT INTO rel_cnt_awardedPlk (cnt_id, awardedPlk_id) VALUES ('cnt-ave-l1', 'plk-ajena-acc');
-
--- El proyecto técnico (PRY) del Lote
-INSERT INTO dat_pry_project (pry_id, originTender_lct_id, activeContract_cnt_id, semanticVersion_tag, dateVersion) VALUES
-('pry-estudio', 'lct-lote-1', NULL, 'PROYECTO_BASE_LICITACION', '2026-03-01T00:00:00Z');
 
 -- =========================================================================
 -- 5. REGISTROS DE PLANTILLAS DOCUMENTALES (DATA WIZARD)

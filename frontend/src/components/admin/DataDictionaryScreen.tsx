@@ -17,7 +17,8 @@ export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
        .then(r => r.json())
        .then(res => {
           if (res.success && res.data) {
-             setSchemaTables(res.data);
+             const sortedData = [...res.data].sort((a: any, b: any) => a.name.localeCompare(b.name));
+             setSchemaTables(sortedData);
           }
           setLoading(false);
        })
@@ -84,11 +85,12 @@ export const DataDictionaryScreen: React.FC<Props> = ({ onBack }) => {
                value={activeTabIdx}
                onChange={(e) => setActiveTabIdx(Number(e.target.value))}
                disabled={schemaTables.length === 0}
-               className="font-bold text-sm w-64 text-center text-[#7f1d1d] uppercase tracking-wider bg-white border border-[#d0dbec] rounded py-1 px-2 cursor-pointer focus:outline-none focus:border-[#7f1d1d] shadow-sm"
+               className="text-sm w-64 text-center text-[#7f1d1d] uppercase tracking-wider bg-white border border-[#d0dbec] rounded py-1 px-2 cursor-pointer focus:outline-none focus:border-[#7f1d1d] shadow-sm"
+               style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }}
             >
-               {schemaTables.length === 0 && <option value={0}>Cargando esquema...</option>}
+               {schemaTables.length === 0 && <option value={0} style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }} className="text-[#7f1d1d] uppercase tracking-wider">Cargando esquema...</option>}
                {schemaTables.map((t, idx) => (
-                   <option key={t.name} value={idx}>{t.name.replace(/_/g, ' ')}</option>
+                   <option key={t.name} value={idx} style={{ fontFamily: '"Inter", sans-serif', fontWeight: 'bold' }} className="text-[#7f1d1d] uppercase tracking-wider">{t.name.replace(/_/g, ' ')}</option>
                ))}
             </select>
             <button onClick={handleNext} disabled={schemaTables.length === 0} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[10px] font-bold text-gray-700 transition-colors uppercase cursor-pointer disabled:opacity-50">

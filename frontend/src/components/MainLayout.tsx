@@ -38,8 +38,7 @@ export function MainLayout() {
   // Mapeo dinámico del módulo actual a su Blueprint (si existe)
   const getBlueprintIdForModule = (modId: string | null) => {
       switch (modId) {
-          case 'PRO': return 'VIEW_PROVEDORES_MASTER';
-          case 'CLI': return 'VIEW_CLIENTES_MASTER';
+          case 'AGE': return 'VIEW_AGENTES_MASTER';
           case 'SED': return 'VIEW_SEDES_MASTER';
           case 'OBR': return 'VIEW_OBRAS_MASTER';
           default: return null;
