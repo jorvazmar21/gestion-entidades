@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MasterEntityDataGrid } from './MasterEntityDataGrid';
 import { useUiStore } from '../../store/useUiStore';
 import { useDataStore } from '../../store/useDataStore';
@@ -79,6 +79,118 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
   }, [moduleId, setSelectedEntityId]);
 
+  const filteredData = useMemo(() => {
+      return db.filter((e: any) => {
+         if (e.category !== moduleId) return false;
+         
+         // Filtrado por pestaña lógica
+         if (activeTabFilter && activeTabFilter.toUpperCase() === 'PROVEEDORES') {
+            if (e.IS_PROVEEDOR !== 1) return false;
+         }
+         
+         // Filtrado por estado (Criterios del usuario)
+         const isDeleted = e.DELETED_AT !== undefined && e.DELETED_AT !== null; 
+         const isActive = e.IS_ACTIVE === 1;
+
+         if (isDeleted) {
+            return statusFilter.anuladas;
+         } else {
+            if (isActive) return statusFilter.activas;
+            if (!isActive) return statusFilter.inactivas;
+         }
+
+         return false;
+      });
+  }, [db, moduleId, activeTabFilter, statusFilter]);
+
+  // Si cambia la vista (filtro o pestaña) y la entidad seleccionada ya no es visible, cerramos el panel
+  useEffect(() => {
+     if (selectedEntityId) {
+        const stillExists = filteredData.some((r: any) => r.EMP_ID === selectedEntityId || r.id === selectedEntityId);
+        if (!stillExists) {
+           setSelectedEntityId(null);
+        }
+     }
+  }, [filteredData, selectedEntityId, setSelectedEntityId]);
+
+  const masterColumnDefs = useMemo(() => [
+     { field: 'EMP_ID', headerName: 'ID', cellStyle: { textAlign: 'left' } },
+     { field: 'UNIQUE_HUMAN_CODE', headerName: 'CODIGO', cellStyle: { textAlign: 'left' } },
+     { field: 'INSTANCE_NAME', headerName: 'NOMBRE', flex: 1, sort: 'asc' as const, cellStyle: { textAlign: 'left' }, suppressAutoSize: true },
+     {
+        field: 'IS_ACTIVE',
+        headerName: 'ESTADO',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           const isDeleted = params.data.DELETED_AT || params.data.DELETED_BY || params.data.deletedAt;
+           const isActive = params.data.IS_ACTIVE === 1 || params.data.es_activa;
+           let colorClass = "";
+           let tooltip = "";
+           if (isDeleted) {
+              colorClass = "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.6)]";
+              tooltip = "Archivado / Borrado";
+           } else if (isActive) {
+              colorClass = "bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]";
+              tooltip = "Activa";
+           } else {
+              colorClass = "bg-cyan-500 shadow-[0_0_4px_rgba(6,182,212,0.6)]";
+              tooltip = "Inactiva";
+           }
+           return (
+              <div className="flex items-center justify-center h-full w-full" title={tooltip}>
+                 <div className={`w-[10px] h-[10px] rounded-full ${colorClass}`}></div>
+              </div>
+           );
+        }
+     },
+     {
+        field: 'IS_PROVEEDOR', headerName: 'PROV',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           if (params.value === 1) return <div className="flex items-center justify-center h-full w-full"><div className="w-[10px] h-[10px] rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" title="Sí"></div></div>;
+           return null;
+        }
+     },
+     {
+        field: 'IS_SUBCONTRATA', headerName: 'SUBC',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           if (params.value === 1) return <div className="flex items-center justify-center h-full w-full"><div className="w-[10px] h-[10px] rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" title="Sí"></div></div>;
+           return null;
+        }
+     },
+     {
+        field: 'IS_CLIENTE', headerName: 'CLIE',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           if (params.value === 1) return <div className="flex items-center justify-center h-full w-full"><div className="w-[10px] h-[10px] rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" title="Sí"></div></div>;
+           return null;
+        }
+     },
+     {
+        field: 'IS_CONTRATISTA', headerName: 'CONT',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           if (params.value === 1) return <div className="flex items-center justify-center h-full w-full"><div className="w-[10px] h-[10px] rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" title="Sí"></div></div>;
+           return null;
+        }
+     },
+     {
+        field: 'IS_UTE', headerName: 'UTE',
+        headerClass: 'text-center',
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: any) => {
+           if (params.value === 1) return <div className="flex items-center justify-center h-full w-full"><div className="w-[10px] h-[10px] rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" title="Sí"></div></div>;
+           return null;
+        }
+     }
+  ], []);
+
   return (
     <div className="flex flex-col w-full h-full bg-gray-50 overflow-hidden font-['Inter']">
        
@@ -86,17 +198,17 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
        <div className={`transition-all duration-300 ease-in-out w-full border-b border-gray-300 bg-white shadow-sm z-10 ${selectedEntityId ? 'h-[50%]' : 'h-full flex-1'}`}>
           <div className="w-full h-full flex flex-col p-2">
              
-             {/* ROW 1: TABS OSCURAS SOBRE FONDO TRANSPARENTE EN ANCHO TOTAL */}
+             {/* ROW 1: TABS ESTILO L2 (Hijo) */}
              {customFilters.length > 0 && (
-               <div className="bg-transparent flex pt-2 shrink-0 border-b-4 border-[#1e293b] w-full gap-[2px] px-1 justify-between items-end">
-                 <div className="flex gap-[2px] w-[70%]">
+               <div className="w-full bg-transparent flex items-end justify-start pt-2 border-b border-gray-300 shrink-0 mb-1">
+                 <div className="flex gap-1 overflow-x-auto w-[80%]">
                    {customFilters.map((tab) => {
                       const isActive = activeTabFilter === tab;
                       return (
-                        <button 
+                         <button 
                            key={tab}
                            onClick={() => setActiveTabFilter(tab)}
-                           className={`flex-1 py-1.5 text-[12.5px] text-center uppercase tracking-widest font-bold transition-all relative top-[4px] rounded-t-md ${isActive ? 'text-white bg-[#1e293b] border-t-4 border-t-[#7f1d1d] z-10 shadow-sm' : 'text-gray-400 bg-[#334155] hover:text-white hover:bg-[#475569] border-t-4 border-t-transparent z-0'}`}
+                           className={`w-[18ch] text-center px-2 truncate py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 border-t-[3px] transition-colors rounded-t-md mx-0.5 ${isActive ? 'bg-white border-t-[#7f1d1d] border-b-white text-[#7f1d1d] shadow-[0_-2px_10px_-4px_rgba(0,0,0,0.1)] relative top-[2px] z-10' : 'border-t-transparent border-b-transparent text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
                         >
                            {pluralizeFilter(tab)}
                         </button>
@@ -111,100 +223,12 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                   <MasterEntityDataGrid 
                    moduleId={`MASTER_${moduleId}`}
                    quickFilterText={searchTerm}
-                   rowData={
-                      db.filter((e: any) => {
-                         if (e.category !== moduleId) return false;
-                         
-                         // Filtrado por pestaña lógica
-                         if (activeTabFilter && activeTabFilter.toUpperCase() === 'PROVEEDORES') {
-                            if (e.IS_PROVEEDOR !== 1) return false;
-                         }
-                         
-                         // Filtrado por estado (Criterios del usuario)
-                         const isDeleted = e.DELETED_AT !== undefined && e.DELETED_AT !== null; 
-                         const isActive = e.IS_ACTIVE === 1;
-
-                         if (isDeleted) {
-                            return statusFilter.anuladas;
-                         } else {
-                            if (isActive) return statusFilter.activas;
-                            if (!isActive) return statusFilter.inactivas;
-                         }
-
-                         return false;
-                      })
-                   }
-                   columnDefs={[
-                     { field: 'EMP_ID', headerName: 'EMP_ID', width: 110, cellClass: 'bg-slate-50 text-slate-400 font-mono text-xs' },
-                     { field: 'UNIQUE_HUMAN_CODE', headerName: 'UNIQUE_HUMAN_CODE', width: 170 },
-                     { field: 'INSTANCE_NAME', headerName: 'INSTANCE_NAME', flex: 1, sort: 'asc' },
-                     {
-                        field: 'IS_ACTIVE',
-                        headerName: 'IS_ACTIVE',
-                        width: 100,
-                        cellStyle: { textAlign: 'center' }
-                     },
-                     {
-                        field: 'DELETED_AT',
-                        headerName: 'DELETED_AT',
-                        width: 120,
-                        cellClass: 'bg-slate-50 text-slate-400 font-mono text-xs italic',
-                        valueFormatter: (params: any) => {
-                           if(!params.value) return '';
-                           const d = new Date(params.value);
-                           return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-                        }
-                     },
-                     {
-                        field: 'IS_PROVEEDOR', headerName: 'IS_PROVEEDOR', width: 120,
-                        cellStyle: { textAlign: 'center' }
-                     },
-                     {
-                        field: 'IS_SUBCONTRATA', headerName: 'IS_SUBCONTRATA', width: 130,
-                        cellStyle: { textAlign: 'center' }
-                     },
-                     {
-                        field: 'IS_CONTRATISTA', headerName: 'IS_CONTRATISTA', width: 130,
-                        cellStyle: { textAlign: 'center' }
-                     },
-                     {
-                        field: 'IS_CLIENTE', headerName: 'IS_CLIENTE', width: 100,
-                        cellStyle: { textAlign: 'center' }
-                     },
-                     {
-                        headerName: 'ACCIONES',
-                        width: 140,
-                        sortable: false,
-                        filter: false,
-                        // Fix padding and stop propagation on click
-                        cellRenderer: (params: any) => {
-                           const row = params.data;
-                           return (
-                              <div className="flex gap-1 items-center h-full pt-1">
-                                 {!row.deletedAt && (
-                                   <button
-                                      onClick={(e) => { e.stopPropagation(); console.log('Toggle Activo', row.id); }}
-                                      className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-bold bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-gray-700"
-                                   >
-                                      {row.es_activa ? 'Inactivar' : 'Activar'}
-                                   </button>
-                                 )}
-                                 <button
-                                    onClick={(e) => { e.stopPropagation(); console.log('Toggle Borrar', row.id); }}
-                                    className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-bold bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-700"
-                                 >
-                                    {row.deletedAt ? 'Restaurar' : 'Borrar'}
-                                 </button>
-                              </div>
-                           );
-                        }
-                     }
-                   ]}
+                   rowData={filteredData}
+                   columnDefs={masterColumnDefs}
                    heightClass="flex-1 w-full border-0 rounded-none shadow-none"
-                   toolbarTitle={`Gestión de ${activeTabFilter ? pluralizeFilter(activeTabFilter) : moduleId}`}
-                   toolbarCenterHeader={null}
-                   onAddRow={() => console.log('Añadir Molde')}
-                   onDeleteSelected={(nodes) => console.log('Borrar Moldes', nodes)}
+                   hideToolbar={true}
+                   selectedRowId={selectedEntityId}
+                   onSelectedRowFilteredOut={() => setSelectedEntityId(null)}
                    onRowClicked={(node) => setSelectedEntityId(node.data.EMP_ID || node.data.id)}
                  />
               </div>
@@ -227,7 +251,7 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                      <button 
                        key={child.id}
                        onClick={() => setActiveTab(child.id)}
-                       className={`px-5 py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 transition-colors rounded-t-md mx-0.5 ${activeTab === child.id ? 'bg-white border-[#7f1d1d] text-[#7f1d1d] shadow-[0_-2px_10px_-4px_rgba(0,0,0,0.1)]' : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
+                       className={`w-[18ch] text-center px-2 truncate py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 border-t-[3px] transition-colors rounded-t-md mx-0.5 ${activeTab === child.id ? 'bg-white border-t-[#7f1d1d] border-b-white text-[#7f1d1d] shadow-[0_-2px_10px_-4px_rgba(0,0,0,0.1)] relative top-[2px] z-10' : 'border-t-transparent border-b-transparent text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
                      >
                        {child.label}
                      </button>
@@ -249,8 +273,8 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                         { field: 'codigo', headerName: 'CÓDIGO' },
                         { field: 'descripcion', headerName: 'TÍTULO / DESCRIPCIÓN', flex: 1 }
                       ]}
-                      heightClass="flex-1 w-full"
-                      toolbarTitle={`Gestión de ${allowedChildren.find(c=>c.id===activeTab)?.label} (Padre: ${selectedEntityId})`}
+                      heightClass="flex-1 w-full border-0 rounded-none"
+                      hideToolbar={true}
                     />
                  </div>
                )}

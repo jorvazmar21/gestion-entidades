@@ -17,6 +17,7 @@ interface UiState {
   activeDepartamento: string | null;
   activePSetTab: 'ESTATICO' | 'DINAMICO';
   selectedEntityId: string | null;
+  gridResetSignal: number;
   
   // Acciones
   setScreen: (screen: ScreenType) => void;
@@ -27,6 +28,7 @@ interface UiState {
   setActiveDepartamento: (dept: string | null) => void;
   setActivePSetTab: (tab: 'ESTATICO' | 'DINAMICO') => void;
   setSelectedEntityId: (id: string | null) => void;
+  triggerGridReset: () => void;
 }
 
 // "useUiStore": El GPS / Navegador de la aplicación
@@ -38,6 +40,7 @@ export const useUiStore = create<UiState>((set) => ({
   activeDepartamento: null,
   activePSetTab: 'ESTATICO',
   selectedEntityId: null,
+  gridResetSignal: 0,
 
   setScreen: (screen) => set({ currentScreen: screen, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on screen change
   setModule: (moduleId) => set({ activeModuleId: moduleId, searchTerm: '', activeFase: null, activeDepartamento: null }), // Clear search/filters on module change
@@ -46,5 +49,6 @@ export const useUiStore = create<UiState>((set) => ({
   setActiveFase: (fase) => set({ activeFase: fase }),
   setActiveDepartamento: (dept) => set({ activeDepartamento: dept }),
   setActivePSetTab: (tab) => set({ activePSetTab: tab }),
-  setSelectedEntityId: (id) => set({ selectedEntityId: id })
+  setSelectedEntityId: (id) => set({ selectedEntityId: id }),
+  triggerGridReset: () => set(state => ({ gridResetSignal: state.gridResetSignal + 1 }))
 }));

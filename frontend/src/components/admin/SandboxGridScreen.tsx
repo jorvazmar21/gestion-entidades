@@ -19,6 +19,10 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const LAYOUT = useLayoutStore();
   const setModule = useUiStore(state => state.setModule);
+  const selectedEntityId = useUiStore(state => state.selectedEntityId);
+  const setSelectedEntityId = useUiStore(state => state.setSelectedEntityId);
+  const triggerGridReset = useUiStore(state => state.triggerGridReset);
+  const setSearchTerm = useUiStore(state => state.setSearchTerm);
 
   useEffect(() => {
     setModule(activeMolde);
@@ -113,12 +117,12 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
               <div className="w-full shrink-0 flex flex-col bg-white border-b border-[#d0dbec]" style={{ height: LAYOUT.altoFila2 }}>
                  {/* 25% TOP: Breadcrumbs */}
                  <div className="w-full shrink-0" style={{ height: `${LAYOUT.z5_ratio_top}%` }}>
-                   <SystemBreadcrumbs />
+                   <SystemBreadcrumbs contextTitle={activeMolde === 'EMP' ? 'PROVEEDORES' : undefined} />
                  </div>
                  {/* 75% BOTTOM: Toolbar Modular */}
                  <div className="w-full flex-1 flex items-center">
                     <div className="h-full shrink-0 flex items-center" style={{ width: `${LAYOUT.z5_toolbar_left}%` }}>
-                       <ModuleTitle />
+                       <ModuleTitle contextTitle={activeMolde === 'EMP' ? 'PROVEEDORES' : undefined} />
                     </div>
                     <div className={`h-full shrink-0 flex items-center justify-center ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_mid}%` }}>
                        <ModuleSearch />
@@ -143,6 +147,33 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
                           className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wide rounded-[3px] transition-all ${statusFilter.anuladas ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
                         >
                            Anulados
+                        </button>
+                      </div>
+                      
+                      {/* Mini-wrapper Restaurar / Replegar */}
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded border border-slate-200 shadow-inner ml-2">
+                        <button 
+                          onClick={() => {
+                             triggerGridReset();
+                             setStatusFilter({ activas: true, inactivas: false, anuladas: false });
+                             if (setSearchTerm) setSearchTerm('');
+                          }}
+                          title="Restaurar vista por defecto"
+                          className="px-2 py-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 rounded transition-all flex items-center justify-center cursor-pointer"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => setSelectedEntityId(null)}
+                          disabled={!selectedEntityId}
+                          title="Replegar panel de detalle"
+                          className={`px-2 py-1 rounded transition-all flex items-center justify-center ${selectedEntityId ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 cursor-pointer' : 'text-slate-300 cursor-not-allowed'}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                          </svg>
                         </button>
                       </div>
                     </div>

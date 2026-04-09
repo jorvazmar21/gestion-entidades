@@ -7,9 +7,16 @@
  */
 import React from 'react';
 import { useUiStore } from '../store/useUiStore';
+import { useDataStore } from '../store/useDataStore';
 
-export const ModuleTitle: React.FC = () => {
+interface ModuleTitleProps {
+  contextTitle?: string;
+}
+
+export const ModuleTitle: React.FC<ModuleTitleProps> = ({ contextTitle }) => {
   const activeModuleId = useUiStore(state => state.activeModuleId);
+  const MODULES = useDataStore(state => state.MODULES);
+
   // Diccionario decodificador de raíces a nombres completos limpios (sin tildes)
   const MODULE_NAMES: Record<string, string> = {
     'EMP': 'PROVEEDORES',
@@ -21,8 +28,9 @@ export const ModuleTitle: React.FC = () => {
   };
 
   const getModuleName = () => {
+    if (contextTitle) return contextTitle.toUpperCase();
     if (!activeModuleId) return 'CARGANDO...';
-    return MODULE_NAMES[activeModuleId] || activeModuleId;
+    return MODULES[activeModuleId]?.title || MODULE_NAMES[activeModuleId] || activeModuleId;
   };
 
   return (

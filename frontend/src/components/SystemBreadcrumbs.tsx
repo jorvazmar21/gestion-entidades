@@ -7,17 +7,30 @@
  */
 import React from 'react';
 import { useUiStore } from '../store/useUiStore';
+import { useDataStore } from '../store/useDataStore';
 
-export const SystemBreadcrumbs: React.FC = () => {
+interface SystemBreadcrumbsProps {
+  contextTitle?: string;
+}
+
+export const SystemBreadcrumbs: React.FC<SystemBreadcrumbsProps> = ({ contextTitle }) => {
   const activeModuleId = useUiStore(state => state.activeModuleId);
   const setScreen = useUiStore(state => state.setScreen);
+  const MODULES = useDataStore(state => state.MODULES);
 
   const MODULE_NAMES: Record<string, string> = {
+    'EMP': 'PROVEEDORES',
     'OBR': 'OBRAS',
     'PRV': 'PROVEEDORES',
     'SED': 'SEDES',
     'PAR': 'PARQUES',
     'CLI': 'CLIENTES'
+  };
+
+  const getModuleName = () => {
+    if (contextTitle) return contextTitle.toUpperCase();
+    if (!activeModuleId) return '';
+    return MODULES[activeModuleId]?.title || MODULE_NAMES[activeModuleId] || activeModuleId;
   };
 
   const handleGoHome = () => {
@@ -39,7 +52,7 @@ export const SystemBreadcrumbs: React.FC = () => {
           <>
             <span className="mx-3 text-slate-300 font-light text-[12px] shrink-0">›</span>
             <span className="font-bold tracking-[0.1em] shrink-0" style={{ color: '#8c1d18' }}>
-              GESTION DE {MODULE_NAMES[activeModuleId] || activeModuleId}
+              GESTION DE {getModuleName()}
             </span>
           </>
         )}
