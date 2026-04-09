@@ -11,14 +11,21 @@ interface ChildMold {
 interface HierarchicalEntityGridProps {
   moduleId: string; // The parent Mold ID (e.g. 'EMP', 'OBR')
   customFilters?: string[];
+  statusFilter?: {
+    activas: boolean;
+    inactivas: boolean;
+    anuladas: boolean;
+  };
 }
 
 export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({ 
   moduleId,
-  customFilters = moduleId === 'EMP' ? ['Contrata', 'UTE', 'Proveedor', 'Subcontrata', 'Cliente'] : []
+  customFilters = moduleId === 'EMP' ? ['Todas', 'Proveedores'] : [],
+  statusFilter = { activas: true, inactivas: false, anuladas: false }
 }) => {
   const selectedEntityId = useUiStore(state => state.selectedEntityId);
   const setSelectedEntityId = useUiStore(state => state.setSelectedEntityId);
+  const searchTerm = useUiStore(state => state.searchTerm);
   
   const { db } = useDataStore(); // <--- OBTENEMOS LA BASE DE DATOS L4 REAL EN VIVO
 
@@ -28,15 +35,6 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
   // ESTADOS DEL HEADER MAESTRO
   const [activeTabFilter, setActiveTabFilter] = useState<string | null>(customFilters[0] || null);
-  const [statusFilter, setStatusFilter] = useState({
-     activas: true,
-     inactivas: false,
-     borradas: false
-  });
-
-  const toggleStatus = (key: keyof typeof statusFilter) => {
-     setStatusFilter(prev => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const pluralizeFilter = (filter: string) => {
      const f = filter.toUpperCase();
@@ -86,7 +84,7 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
        
        {/* PANEL SUPERIOR: MASTER LIST (Entidades Padre) */}
        <div className={`transition-all duration-300 ease-in-out w-full border-b border-gray-300 bg-white shadow-sm z-10 ${selectedEntityId ? 'h-[50%]' : 'h-full flex-1'}`}>
-          <div className="w-full h-full flex flex-col">
+          <div className="w-full h-full flex flex-col p-2">
              
              {/* ROW 1: TABS OSCURAS SOBRE FONDO TRANSPARENTE EN ANCHO TOTAL */}
              {customFilters.length > 0 && (
@@ -112,35 +110,66 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
              <div className="flex-1 w-full bg-white relative flex flex-col overflow-hidden">
                   <MasterEntityDataGrid 
                    moduleId={`MASTER_${moduleId}`}
+                   quickFilterText={searchTerm}
                    rowData={
-                      db.filter((e: any) => e.category === moduleId) // <--- OBTENEMOS LAS L4 QUE CUELGAN DE ESTA CATEGORÍA L1
+                      db.filter((e: any) => {
+                         if (e.category !== moduleId) return false;
+                         
+                         // Filtrado por pestaña lógica
+                         if (activeTabFilter && activeTabFilter.toUpperCase() === 'PROVEEDORES') {
+                            if (e.IS_PROVEEDOR !== 1) return false;
+                         }
+                         
+                         // Filtrado por estado (Criterios del usuario)
+                         const isDeleted = e.DELETED_AT !== undefined && e.DELETED_AT !== null; 
+                         const isActive = e.IS_ACTIVE === 1;
+
+                         if (isDeleted) {
+                            return statusFilter.anuladas;
+                         } else {
+                            if (isActive) return statusFilter.activas;
+                            if (!isActive) return statusFilter.inactivas;
+                         }
+
+                         return false;
+                      })
                    }
                    columnDefs={[
-                     { field: 'code', headerName: 'ID FÍSICO (L4)', width: 140 },
-                     { field: 'name', headerName: 'ALIAS / NOMBRE HUMANO', width: 250 },
-                     { field: 'type', headerName: 'TIPO ESTRUCTURAL (L3)', width: 180 },
-                     { field: 'subCategory', headerName: 'FAMILIA (L2)', flex: 1 },
-                     { field: 'canal', headerName: 'FASE / ESTADO', width: 130 },
+                     { field: 'EMP_ID', headerName: 'EMP_ID', width: 110, cellClass: 'bg-slate-50 text-slate-400 font-mono text-xs' },
+                     { field: 'UNIQUE_HUMAN_CODE', headerName: 'UNIQUE_HUMAN_CODE', width: 170 },
+                     { field: 'INSTANCE_NAME', headerName: 'INSTANCE_NAME', flex: 1, sort: 'asc' },
                      {
-                        field: 'isActive',
-                        headerName: 'ACTIVA',
-                        width: 80,
-                        cellRenderer: (params: any) => {
-                           if(params.data.deletedAt) return '';
-                           return params.value 
-                              ? <span className="text-green-600 font-bold text-[10px]">SÍ</span>
-                              : <span className="text-yellow-600 font-bold text-[10px]">NO</span>;
+                        field: 'IS_ACTIVE',
+                        headerName: 'IS_ACTIVE',
+                        width: 100,
+                        cellStyle: { textAlign: 'center' }
+                     },
+                     {
+                        field: 'DELETED_AT',
+                        headerName: 'DELETED_AT',
+                        width: 120,
+                        cellClass: 'bg-slate-50 text-slate-400 font-mono text-xs italic',
+                        valueFormatter: (params: any) => {
+                           if(!params.value) return '';
+                           const d = new Date(params.value);
+                           return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                         }
                      },
                      {
-                        field: 'deletedAt',
-                        headerName: 'BORRADA',
-                        width: 90,
-                        cellRenderer: (params: any) => {
-                           return params.value 
-                              ? <span className="text-red-600 font-bold text-[10px]" title={`Borrada el ${params.value}`}>🗑️ Sí</span>
-                              : '';
-                        }
+                        field: 'IS_PROVEEDOR', headerName: 'IS_PROVEEDOR', width: 120,
+                        cellStyle: { textAlign: 'center' }
+                     },
+                     {
+                        field: 'IS_SUBCONTRATA', headerName: 'IS_SUBCONTRATA', width: 130,
+                        cellStyle: { textAlign: 'center' }
+                     },
+                     {
+                        field: 'IS_CONTRATISTA', headerName: 'IS_CONTRATISTA', width: 130,
+                        cellStyle: { textAlign: 'center' }
+                     },
+                     {
+                        field: 'IS_CLIENTE', headerName: 'IS_CLIENTE', width: 100,
+                        cellStyle: { textAlign: 'center' }
                      },
                      {
                         headerName: 'ACCIONES',
@@ -173,31 +202,10 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                    ]}
                    heightClass="flex-1 w-full border-0 rounded-none shadow-none"
                    toolbarTitle={`Gestión de ${activeTabFilter ? pluralizeFilter(activeTabFilter) : moduleId}`}
-                   toolbarCenterHeader={
-                     <div className="flex items-center gap-2 px-2">
-                        <button 
-                          onClick={() => toggleStatus('activas')}
-                          className={`w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold uppercase tracking-wide transition-colors rounded-sm shadow-sm border ${statusFilter.activas ? 'bg-[#7f1d1d] text-white border-[#7f1d1d]' : 'text-[#7f1d1d] bg-transparent border-[#7f1d1d] hover:bg-gray-50'}`}
-                        >
-                           Activas
-                        </button>
-                        <button 
-                          onClick={() => toggleStatus('inactivas')}
-                          className={`w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold uppercase tracking-wide transition-colors rounded-sm shadow-sm border ${statusFilter.inactivas ? 'bg-[#7f1d1d] text-white border-[#7f1d1d]' : 'text-[#7f1d1d] bg-transparent border-[#7f1d1d] hover:bg-gray-50'}`}
-                        >
-                           Inactivas
-                        </button>
-                        <button 
-                          onClick={() => toggleStatus('borradas')}
-                          className={`w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold uppercase tracking-wide transition-colors rounded-sm shadow-sm border ${statusFilter.borradas ? 'bg-[#7f1d1d] text-white border-[#7f1d1d]' : 'text-[#7f1d1d] bg-transparent border-[#7f1d1d] hover:bg-gray-50'}`}
-                        >
-                           Borradas
-                        </button>
-                     </div>
-                   }
+                   toolbarCenterHeader={null}
                    onAddRow={() => console.log('Añadir Molde')}
                    onDeleteSelected={(nodes) => console.log('Borrar Moldes', nodes)}
-                   onRowClicked={(node) => setSelectedEntityId(node.data.id)}
+                   onRowClicked={(node) => setSelectedEntityId(node.data.EMP_ID || node.data.id)}
                  />
               </div>
            </div>

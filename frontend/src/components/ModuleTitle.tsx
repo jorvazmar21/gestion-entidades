@@ -12,6 +12,7 @@ export const ModuleTitle: React.FC = () => {
   const activeModuleId = useUiStore(state => state.activeModuleId);
   // Diccionario decodificador de raíces a nombres completos limpios (sin tildes)
   const MODULE_NAMES: Record<string, string> = {
+    'EMP': 'PROVEEDORES',
     'OBR': 'OBRAS',
     'PRV': 'PROVEEDORES',
     'SED': 'SEDES',
@@ -26,7 +27,7 @@ export const ModuleTitle: React.FC = () => {
 
   return (
     <div className="w-full h-full flex items-center px-6 font-['Manrope'] select-none">
-      <h1 className="text-[#121c2a] font-[800] text-[24px] tracking-wide uppercase truncate w-full">
+      <h1 className="text-[#121c2a] font-[800] text-[24px] tracking-wide uppercase whitespace-nowrap min-w-max">
         GESTION DE {getModuleName()}
       </h1>
     </div>

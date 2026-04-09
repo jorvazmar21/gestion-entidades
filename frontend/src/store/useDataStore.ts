@@ -131,7 +131,7 @@ export const useDataStore = create<DataState>((set, get) => ({
               code: e.l4_id,
               name: e.instance_name || e.human_readable_name,
               location: '', 
-              canal: e.lifecycle_phase || 'ESTUDIO', 
+              canal: (lifecycle_phases && lifecycle_phases.find((p:any) => p.id_phase === e.fk_phase)?.human_readable_name) || 'NO APLICA', 
               parentId: e.fk_l3, 
               isActive: e.is_active === 1, 
               deletedAt: null,
@@ -143,13 +143,98 @@ export const useDataStore = create<DataState>((set, get) => ({
           };
       });
 
+      // INYECCION MOCK DE USUARIO: 3 Empresas Ejemplo para probar los botones Sandbox
+      const mockEmpresas: any[] = [
+         {
+            category: 'EMP',
+            // --- DAT_PHYSICAL_INSTANCES ---
+            INSTANCE_ID: 'INST-COMP-M1',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'EMP-001',
+            INSTANCE_NAME: 'ACEROS DEL NORTE S.A. (Activa)',
+            LIFECYCLE_PHASE: 'PRODUCCIÓN',
+            IS_ACTIVE: 1,
+            CREATED_AT: new Date().toISOString(),
+
+            // --- DAT_EMP_COMPANY ---
+            EMP_ID: 'INST-COMP-M1',
+            EMP_FISCALCODE: 'A-39123456',
+            EMP_FISCALNAME: 'ACEROS DEL NORTE SOCIEDAD QUIMI-METALURGICA S.A.',
+            EMP_FISCALDIRECTION: 'Poligono Ind. Norte, Nave 4',
+            EMP_FISCALCP: '39011',
+            EMP_FISCALLOCAL: 'Santander',
+            EMP_FISCALPROV: 'Cantabria',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 1,
+            IS_SUBCONTRATA: 0,
+            IS_CONTRATISTA: 0,
+            IS_CLIENTE: 0,
+
+            DELETED_AT: null
+         },
+         {
+            category: 'EMP',
+            // --- DAT_PHYSICAL_INSTANCES ---
+            INSTANCE_ID: 'INST-COMP-M2',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'EMP-002',
+            INSTANCE_NAME: 'SUMINISTROS GÓMEZ S.L. (Inactiva)',
+            LIFECYCLE_PHASE: 'BLOQUEADA',
+            IS_ACTIVE: 0,
+            CREATED_AT: new Date().toISOString(),
+
+            // --- DAT_EMP_COMPANY ---
+            EMP_ID: 'INST-COMP-M2',
+            EMP_FISCALCODE: 'B-88345678',
+            EMP_FISCALNAME: 'SUMINISTROS GLOBALES GOMEZ HERMANOS S.L.',
+            EMP_FISCALDIRECTION: 'Calle Principal 14, Bajo B',
+            EMP_FISCALCP: '28001',
+            EMP_FISCALLOCAL: 'Madrid',
+            EMP_FISCALPROV: 'Madrid',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 1,
+            IS_SUBCONTRATA: 1,
+            IS_CONTRATISTA: 0,
+            IS_CLIENTE: 0,
+
+            DELETED_AT: null
+         },
+         {
+            category: 'EMP',
+            // --- DAT_PHYSICAL_INSTANCES ---
+            INSTANCE_ID: 'INST-COMP-M3',
+            BLUEPRINT_ID: 'COMP',
+            UNIQUE_HUMAN_CODE: 'EMP-003',
+            INSTANCE_NAME: 'EXCAVACIONES OBSOLETAS (Anulada)',
+            LIFECYCLE_PHASE: 'ARCHIVADA',
+            IS_ACTIVE: 0,
+            CREATED_AT: new Date().toISOString(),
+
+            // --- DAT_EMP_COMPANY ---
+            EMP_ID: 'INST-COMP-M3',
+            EMP_FISCALCODE: 'B-33100200',
+            EMP_FISCALNAME: 'EXCAVACIONES Y DERRIBOS NOROESTE S.L. (EXTINTA)',
+            EMP_FISCALDIRECTION: 'Avenida Asturias 99, Poligono Sur',
+            EMP_FISCALCP: '33011',
+            EMP_FISCALLOCAL: 'Oviedo',
+            EMP_FISCALPROV: 'Asturias',
+            EMP_FISCALCOUNTRY: 'ESPAÑA',
+            IS_PROVEEDOR: 0,
+            IS_SUBCONTRATA: 0,
+            IS_CONTRATISTA: 1,
+            IS_CLIENTE: 0,
+
+            DELETED_AT: new Date().toISOString()
+         }
+      ];
+
       set({
         appConfig: appConfig || {},
         // Arrays vacíos para no romper la UI antigua hasta que se purguen
         sysNivelesDb: [],
         tiposEntidadDb: [],
         MODULES,
-        db,
+        db: mockEmpresas, // <--- Solo mock para depurar, la vista es purgada.
         l1_categories: l1_categories || [],
         l2_families: l2_families || [],
         l3_types: l3_types || [],

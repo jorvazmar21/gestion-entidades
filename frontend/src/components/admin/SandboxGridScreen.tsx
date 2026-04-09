@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeImage } from '../SafeImage';
 import { HierarchicalEntityGrid } from '../generics/HierarchicalEntityGrid';
 import { ImportWizardModal } from '../generics/ImportWizardModal';
 import { useLayoutStore } from '../../store/useLayoutStore';
+import { useUiStore } from '../../store/useUiStore';
+import { SystemBreadcrumbs } from '../SystemBreadcrumbs';
+import { ModuleTitle } from '../ModuleTitle';
+import { ModuleSearch } from '../ModuleSearch';
+import { EntityCanvasContainer } from '../generics/EntityCanvasContainer';
 
 interface SandboxGridScreenProps {
   onBack: () => void;
@@ -13,6 +18,21 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
   const [activeMolde, setActiveMolde] = useState<string>('EMP');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const LAYOUT = useLayoutStore();
+  const setModule = useUiStore(state => state.setModule);
+
+  useEffect(() => {
+    setModule(activeMolde);
+  }, [activeMolde, setModule]);
+
+  const [statusFilter, setStatusFilter] = useState({
+     activas: true,
+     inactivas: false,
+     anuladas: false
+  });
+
+  const toggleStatus = (key: keyof typeof statusFilter) => {
+     setStatusFilter(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#f8f9ff] flex flex-col font-['Inter']">
@@ -81,17 +101,61 @@ export const SandboxGridScreen: React.FC<SandboxGridScreenProps> = ({ onBack }) 
           </div>
 
           {/* FAKE CENTER (Zona 4-8) */}
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 relative">
-              {/* Fake Top (Zona 4/5) */}
-              <div className="shrink-0 bg-white border-b border-[#d0dbec] flex items-center justify-center px-4" style={{ height: LAYOUT.altoFilaSuperior + LAYOUT.altoFila2 }}>
-                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center">Zonas 4 y 5 (Cabeceras)<br/>({LAYOUT.altoFilaSuperior + LAYOUT.altoFila2}px)</span>
+          {/* CENTER ZONES (Zona 4-8) */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 relative bg-white">
+              
+              {/* ZONA 4 FAKE (Cabecera Superior) */}
+              <div className="shrink-0 bg-white border-b border-[#d0dbec] flex items-center justify-center px-4" style={{ height: LAYOUT.altoFilaSuperior }}>
+                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center">Zona 4: Fake Fases / Nav</span>
               </div>
 
-              {/* ZONA 6 REAL */}
-              <div className="flex-1 w-full h-full flex flex-col p-2 bg-slate-50 min-w-0 min-h-0">
-                  <div className="w-full h-full flex flex-col shadow-lg relative bg-white border border-[#d0dbec] rounded overflow-hidden min-w-0 min-h-0">
-                    <HierarchicalEntityGrid moduleId={activeMolde} />
-                  </div>
+              {/* ZONA 5: WRAPPER PANEL DE COMANDO */}
+              <div className="w-full shrink-0 flex flex-col bg-white border-b border-[#d0dbec]" style={{ height: LAYOUT.altoFila2 }}>
+                 {/* 25% TOP: Breadcrumbs */}
+                 <div className="w-full shrink-0" style={{ height: `${LAYOUT.z5_ratio_top}%` }}>
+                   <SystemBreadcrumbs />
+                 </div>
+                 {/* 75% BOTTOM: Toolbar Modular */}
+                 <div className="w-full flex-1 flex items-center">
+                    <div className="h-full shrink-0 flex items-center" style={{ width: `${LAYOUT.z5_toolbar_left}%` }}>
+                       <ModuleTitle />
+                    </div>
+                    <div className={`h-full shrink-0 flex items-center justify-center ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_mid}%` }}>
+                       <ModuleSearch />
+                    </div>
+                    <div className={`h-full shrink-0 flex items-center justify-end pr-6 gap-2 ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_right}%` }}>
+                      {/* Botonera de Filtros Z5 */}
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded border border-slate-200 shadow-inner">
+                        <button 
+                          onClick={() => toggleStatus('activas')}
+                          className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wide rounded-[3px] transition-all ${statusFilter.activas ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
+                        >
+                           Activos
+                        </button>
+                        <button 
+                          onClick={() => toggleStatus('inactivas')}
+                          className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wide rounded-[3px] transition-all ${statusFilter.inactivas ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
+                        >
+                           Inactivos
+                        </button>
+                        <button 
+                          onClick={() => toggleStatus('anuladas')}
+                          className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wide rounded-[3px] transition-all ${statusFilter.anuladas ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
+                        >
+                           Anulados
+                        </button>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* ZONA 6 REAL CON ENTITY CANVAS CONTAINER */}
+              <div className="flex-1 w-full bg-[#f8f9ff] relative min-h-0">
+                  <EntityCanvasContainer>
+                      <div className="absolute inset-4 flex flex-col drop-shadow-md rounded-lg overflow-hidden">
+                          <HierarchicalEntityGrid moduleId={activeMolde} statusFilter={statusFilter} />
+                      </div>
+                  </EntityCanvasContainer>
               </div>
 
               {/* Fake Bottom (Zona 7/8) */}

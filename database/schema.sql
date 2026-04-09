@@ -89,14 +89,13 @@ CREATE TABLE IF NOT EXISTS dat_entity_l4_instance (
     l4_id TEXT PRIMARY KEY,
     fk_l3 INTEGER NOT NULL REFERENCES def_entity_l3_type(id_l3) ON DELETE RESTRICT,
     unique_human_code TEXT UNIQUE NOT NULL, 
-    instance_name TEXT NOT NULL,
-    lifecycle_phase TEXT DEFAULT 'ACTIVE',
+    instance_name TEXT NOT NULL UNIQUE,
+    fk_phase INTEGER NOT NULL DEFAULT 1 REFERENCES def_lifecycle_phase(id_phase) ON DELETE RESTRICT,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- =========================================================================
@@ -247,4 +246,100 @@ CREATE TABLE IF NOT EXISTS rel_abac_matrix_rules (
     can_read INTEGER DEFAULT 1,
     can_write INTEGER DEFAULT 0,
     can_approve INTEGER DEFAULT 0
+);
+
+-- =========================================================================
+-- 7. IMPORTACIÓN ASISTIDA / PLANTILLAS DOCUMENTALES (Fase 7 Wizard)
+-- =========================================================================
+
+-- Mapeo Dinámico de Plantillas CSV de Importación 
+CREATE TABLE IF NOT EXISTS sys_csv_templates (
+    id_template INTEGER PRIMARY KEY AUTOINCREMENT,
+    fk_l1 INTEGER NOT NULL REFERENCES def_entity_l1_category(id_l1) ON DELETE CASCADE,
+    file_path TEXT NOT NULL, 
+    template_name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================================
+-- 8. ARCHITECTURE 3 / CORE DOMAINS (AI-Native Relational Engine)
+-- =========================================================================
+
+-- SYSTEM DICTIONARY (Translator for AI & FrontEnd)
+CREATE TABLE IF NOT EXISTS sys_DIC_translationMap (
+    id_record TEXT PRIMARY KEY,                 
+    elementType TEXT NOT NULL,                  -- 'table', 'column'
+    objectNameEn TEXT NOT NULL,                 
+    translationEs TEXT NOT NULL,                
+    CONSTRAINT unique_translation UNIQUE (elementType, objectNameEn)
+);
+
+-- UNIVERSAL AUDIT LOG (Event Sourcing)
+CREATE TABLE IF NOT EXISTS sys_AUDIT_log (
+    audit_id TEXT PRIMARY KEY,
+    instance_id TEXT NOT NULL,         -- Apunta a l4_id o entidad mutada
+    user_id TEXT NOT NULL,             -- Quien ejecuto la accion
+    action_type TEXT NOT NULL,         -- 'CREATE', 'UPDATE', 'SOFT_DELETE'
+    action_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    changes_payload JSON NOT NULL      -- El delta (old, new)
+);
+
+-- CORPORATE DOMAIN (EMP)
+CREATE TABLE IF NOT EXISTS dat_emp_company (
+    emp_id TEXT PRIMARY KEY REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+    emp_fiscalCode TEXT UNIQUE NOT NULL,
+    emp_fiscalName TEXT UNIQUE NOT NULL,
+    emp_fiscalDirection TEXT NOT NULL,
+    emp_fiscalCP TEXT NOT NULL,                 
+    emp_fiscalLocal TEXT NOT NULL,              
+    emp_fiscalProv TEXT NOT NULL,               
+    emp_fiscalCountry TEXT NOT NULL,            
+    is_Proveedor INTEGER DEFAULT 1,
+    is_Subcontratista INTEGER DEFAULT 1,
+    is_Contratista INTEGER DEFAULT 1,           
+    is_Cliente INTEGER DEFAULT 1                
+);
+
+-- UTEs Bridge
+CREATE TABLE IF NOT EXISTS rel_emp_jointVenture (
+    id_rel TEXT PRIMARY KEY,
+    jointVenture_emp_id TEXT NOT NULL REFERENCES dat_emp_company(emp_id) ON DELETE CASCADE,
+    partner_emp_id TEXT REFERENCES dat_emp_company(emp_id) ON DELETE CASCADE,
+    participationShare REAL,
+    CONSTRAINT unique_partner_in_ute UNIQUE (jointVenture_emp_id, partner_emp_id)
+);
+
+-- BIDDING & TENDERS DOMAIN (LCT & PLK)
+CREATE TABLE IF NOT EXISTS dat_lct_tender (
+    lct_id TEXT PRIMARY KEY REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+    promoter_emp_id TEXT NOT NULL REFERENCES dat_emp_company(emp_id),
+    parentTender_lct_id TEXT REFERENCES dat_lct_tender(lct_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS dat_plk_bid (
+    plk_id TEXT PRIMARY KEY REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+    target_lct_id TEXT NOT NULL REFERENCES dat_lct_tender(lct_id) ON DELETE CASCADE,
+    bidder_emp_id TEXT REFERENCES dat_emp_company(emp_id),
+    plk_status TEXT DEFAULT NULL,               -- Fases: NULL(PRE-ESTUDIO), 'ESTUDIA', 'PRESENTADA', 'AJENA'
+    is_plkAwarded INTEGER DEFAULT 0
+);
+
+-- LEGAL PRODUCTION DOMAIN (CNT)
+CREATE TABLE IF NOT EXISTS dat_cnt_contract (
+    cnt_id TEXT PRIMARY KEY REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS rel_cnt_awardedPlk (
+    cnt_id TEXT NOT NULL REFERENCES dat_cnt_contract(cnt_id) ON DELETE CASCADE,
+    awardedPlk_id TEXT NOT NULL REFERENCES dat_plk_bid(plk_id),
+    PRIMARY KEY (cnt_id, awardedPlk_id)
+);
+
+-- ENGINEERING & FINANCIAL MUTATIONS DOMAIN (PRY)
+CREATE TABLE IF NOT EXISTS dat_pry_project (
+    pry_id TEXT PRIMARY KEY REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+    originTender_lct_id TEXT NOT NULL REFERENCES dat_lct_tender(lct_id),
+    activeContract_cnt_id TEXT REFERENCES dat_cnt_contract(cnt_id),
+    semanticVersion_tag TEXT NOT NULL,
+    dateVersion TEXT NOT NULL
 );

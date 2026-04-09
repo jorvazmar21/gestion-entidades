@@ -24,6 +24,7 @@ export interface MasterEntityDataGridProps {
   onRowDoubleClicked?: (node: any) => void;
   onRowClicked?: (node: any) => void;
   readOnly?: boolean;
+  quickFilterText?: string;
 }
 
 export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
@@ -41,7 +42,8 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
   onDeleteSelected,
   onRowDoubleClicked,
   onRowClicked,
-  readOnly = false
+  readOnly = false,
+  quickFilterText
 }) => {
   const gridRef = useRef<AgGridReact>(null);
 
@@ -70,7 +72,7 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
   const btnSty = "w-[85px] h-[28px] flex items-center justify-center text-[10px] leading-[11px] text-center font-bold text-[#7f1d1d] bg-transparent border border-[#7f1d1d] hover:bg-gray-50 rounded-sm uppercase tracking-wide shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
-    <div className={`flex flex-col bg-white overflow-hidden ${heightClass}`}>
+    <div className={`flex flex-col bg-white overflow-hidden rounded-md border border-slate-300 shadow-md ${heightClass}`}>
       {/* TOOLBAR INTRA-GRID */}
       <div className="bg-white border-b border-[#d0dbec] px-4 py-2 flex items-center justify-between shrink-0 shadow-sm z-10 w-full rounded-t-lg">
          
@@ -142,6 +144,7 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
             theme="legacy"
             rowData={rowData}
             columnDefs={columnDefs}
+            quickFilterText={quickFilterText}
             defaultColDef={{ minWidth: 10, resizable: true, filter: AGCheckboxFilter, sortable: true }}
             autoSizeStrategy={{ type: 'fitCellContents' }}
             rowSelection="multiple"

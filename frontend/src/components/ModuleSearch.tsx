@@ -40,6 +40,15 @@ export const ModuleSearch: React.FC = () => {
           placeholder={getPlaceholder()}
           className="w-full bg-transparent text-[11px] font-medium tracking-wide text-[#334155] outline-none placeholder-[#94a3b8]"
         />
+        {searchTerm.length > 0 && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="ml-1 w-[14px] h-[14px] flex items-center justify-center rounded-full text-[#94a3b8] hover:text-[#7f1d1d] hover:bg-red-50 focus:outline-none transition-all"
+            aria-label="Clear search"
+          >
+            <span className="text-xs font-bold leading-none mb-px">×</span>
+          </button>
+        )}
       </div>
     </div>
   );

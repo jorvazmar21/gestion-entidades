@@ -17,7 +17,8 @@ INSERT OR IGNORE INTO sys_ai_ontology_manifest (ai_concept_token, semantic_descr
 
 INSERT OR IGNORE INTO sys_ai_behavioral_directives (directive_id, activation_context, ai_attention_weight, imperative_prompt_instruction) VALUES
 ('DIR_NO_SQL_TRIGGERS', 'When modifying DB schema or adding logic.', 'CRITICAL', 'DO NOT create triggers for math or cascading logic. Defer to Node.js.'),
-('DIR_JSON_OPTIMISTIC', 'When updating dat_pset_live_payloads.', 'HIGH', 'Always require __v parameter in payload. Reject if mismatched to prevent lost updates.');
+('DIR_JSON_OPTIMISTIC', 'When updating dat_pset_live_payloads.', 'HIGH', 'Always require __v parameter in payload. Reject if mismatched to prevent lost updates.'),
+('DIR_CSV_TRANSACTION_LOCK', 'When uploading or modifying CSV mass loaders.', 'DICTATORIAL', 'NEVER create frontend iteration loops for inserts. Future AIs must hit /api/instances/bulk and rely on SQLite ATOMIC TRANSACTIONS. All or Nothing.');
 
 INSERT OR IGNORE INTO rel_ai_behavior_to_table_bridge (target_table_name, directive_id, ai_attention_enforcement_reason) VALUES
 ('dat_pset_live_payloads', 'DIR_JSON_OPTIMISTIC', 'Protects against concurrent editing collisions in generic JSON blobs.');
@@ -91,11 +92,6 @@ INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_
 (1, 'IDENTITY_BASE', 'Identidad Básica', 1, 10, 
 '{"DataSchema": {"cif": {"type": "string"}}, "UISchema": {"cif": {"security:visible_roles": ["CREADOR", "ADMINISTRADOR", "USUARIO"]}}}', 'SEED_SYSTEM');
 
--- PSet: Rol que Desempeñas (Para Entidades Directorio EMP)
-INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
-(2, 'ROLES_DINAMICOS', 'Rol que Desempeñas', 2, 10, 
-'{"DataSchema": {"soyProveedor": {"type": "boolean"}, "soyCliente": {"type": "boolean"}, "soyContrata": {"type": "boolean"}, "soySubcontrata": {"type": "boolean"}}, "UISchema": {"soyProveedor": {"ui:readonly": false}, "soyCliente": {"ui:readonly": false}, "soyContrata": {"ui:readonly": false}, "soySubcontrata": {"ui:readonly": false}}}', 'SEED_SYSTEM');
-
 -- PSet ESTÁTICO DE CREADOR: Soy UTE = TRUE
 INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
 (3, 'STATIC_IS_UTE', 'Atributo Ontológico UTE', 2, 20, 
@@ -115,7 +111,6 @@ INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_
 INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_uuid, attachment_level_enum) VALUES
 (1, 1, '2', 'L1'), -- L1_OBR
 (2, 1, '1', 'L1'), -- L1_EMP
-(3, 2, '1', 'L1'), -- L1_EMP
 (4, 3, '1', 'L2'), -- L2_EMP_UTE
 (5, 4, '2', 'L2'), -- L2_EMP_NOUTE
 (6, 5, '1', 'L3'); -- L3_EMP_UTE_STD
@@ -126,14 +121,15 @@ INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_uuid
 
 -- Fases de Vida del Usuario (CODIGO y ALIAS)
 INSERT OR IGNORE INTO def_lifecycle_phase (id_phase, phase_code, human_readable_name, ui_order, created_by) VALUES
-(1, '00', 'PRE-ESTUDIO', 10, 'SEED_SYSTEM'),
-(2, '10', 'ESTUDIO', 20, 'SEED_SYSTEM'),
-(3, '20', 'LICITACION', 30, 'SEED_SYSTEM'),
-(4, '30', 'ADJUDICACION', 40, 'SEED_SYSTEM'),
-(5, '40', 'EJECUCION', 50, 'SEED_SYSTEM'),
-(6, '80', 'GARANTIA', 60, 'SEED_SYSTEM'),
-(7, '90', 'COMPLETADA', 70, 'SEED_SYSTEM'),
-(8, '99', 'TODAS', 80, 'SEED_SYSTEM');
+(1, '00', 'NO APLICA', 5, 'SEED_SYSTEM'),
+(2, '05', 'PRE-ESTUDIO', 10, 'SEED_SYSTEM'),
+(3, '10', 'ESTUDIO', 20, 'SEED_SYSTEM'),
+(4, '20', 'LICITACION', 30, 'SEED_SYSTEM'),
+(5, '30', 'ADJUDICACION', 40, 'SEED_SYSTEM'),
+(6, '40', 'EJECUCION', 50, 'SEED_SYSTEM'),
+(7, '80', 'GARANTIA', 60, 'SEED_SYSTEM'),
+(8, '90', 'COMPLETADA', 70, 'SEED_SYSTEM'),
+(9, '99', 'TODAS', 80, 'SEED_SYSTEM');
 
 -- Departamentos del Usuario (CODIGO y ALIAS)
 INSERT OR IGNORE INTO def_company_department (id_department, department_code, human_readable_name, ui_order, created_by) VALUES
@@ -147,7 +143,76 @@ INSERT OR IGNORE INTO def_company_department (id_department, department_code, hu
 (8, 'DIR', 'DIRECCION', 80, 'SEED_SYSTEM');
 
 -- Asignación Genérica Transaccional de Ejemplo: 
--- El "PSet 1" en L1_OBR (id_bridge = 1) solo lo edita OFT en Fase Ejecucion (id_phase = 5)
+-- El "PSet 1" en L1_OBR (id_bridge = 1) solo lo edita OFT en Fase Ejecucion (id_phase = 6)
 INSERT OR IGNORE INTO rel_abac_matrix_rules (id_rule, fk_bridge, fk_phase, fk_department, can_read, can_write, can_approve) VALUES
-(1, 1, 5, 7, 1, 1, 1),
-(2, 1, 5, 2, 1, 0, 0);
+(1, 1, 6, 7, 1, 1, 1),
+(2, 1, 6, 2, 1, 0, 0);
+
+-- =========================================================================
+-- 4. POBLADO DE EJEMPLOS PARA ARQUITECTURA 3 (DOBLE INSERT POLIMÓRFICO)
+-- =========================================================================
+
+-- PURGA PREVIA DE L4 (Se lleva por delante PSETS y ARQ3 en cascada)
+DELETE FROM dat_entity_l4_instance;
+
+-- -------------------------------------------------------------------------
+-- A) EMPRESAS (fk_l3 = 1 para UTE, 2 para NO UTE)
+-- -------------------------------------------------------------------------
+-- 1. Bases L4
+INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
+('emp-nortunel', 2, 'EMP-NORTUNEL', 'NORTUNEL S.A.', 'SEED_ARQ3'),
+('emp-adif', 2, 'EMP-ADIF', 'ADIF ALTA VELOCIDAD', 'SEED_ARQ3'),
+('emp-acciona', 2, 'EMP-ACCIONA', 'ACCIONA CONSTRUCCION', 'SEED_ARQ3');
+
+-- 2. Corazones Físicos (dat_emp_company)
+INSERT INTO dat_emp_company (emp_id, emp_fiscalCode, emp_fiscalName, emp_fiscalDirection, emp_fiscalCP, emp_fiscalLocal, emp_fiscalProv, emp_fiscalCountry, is_Proveedor, is_Subcontratista, is_Contratista, is_Cliente) VALUES
+('emp-nortunel', 'A01310630', 'NORTUNEL S.A.', 'Pol. Ind. Jundiz', '01015', 'Vitoria-Gasteiz', 'Alava', 'España', 0, 0, 1, 0),
+('emp-adif', 'Q2801660H', 'ADIF ALTA VELOCIDAD', 'C/ Sor Angela', '28020', 'Madrid', 'Madrid', 'España', 0, 0, 0, 1),
+('emp-acciona', 'A08001851', 'ACCIONA CONSTRUCCION', 'Av. Europa', '28108', 'Alcobendas', 'Madrid', 'España', 0, 0, 1, 0);
+
+-- -------------------------------------------------------------------------
+-- B) LICITACIONES Y LOTES (Asumimos fk_l3 genérico = 3 para Obra Civil si no hay Molde LCT)
+-- -------------------------------------------------------------------------
+INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
+('lct-ave-madrid', 3, 'LCT-AVE-001', 'EXP. MARCO: AVE MADRID NORTE', 'SEED_ARQ3'),
+('lct-lote-1', 3, 'LCT-AVE-L1', 'LOTE 1: TÚNEL GUADARRAMA', 'SEED_ARQ3');
+
+INSERT INTO dat_lct_tender (lct_id, promoter_emp_id, parentTender_lct_id) VALUES
+('lct-ave-madrid', 'emp-adif', NULL),         -- Macro-Expediente
+('lct-lote-1', 'emp-adif', 'lct-ave-madrid'); -- Lote 1 colgando del Macro-Expediente
+
+-- -------------------------------------------------------------------------
+-- C) PLICAS (Ofertas al Lote 1)
+-- -------------------------------------------------------------------------
+INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
+('plk-estudio-nor', 3, 'PLK-NOR-01', 'OFERTA NORTUNEL LOTE 1 (ESTUDIO)', 'SEED_ARQ3'),
+('plk-ajena-acc', 3, 'PLK-ACC-01', 'OFERTA ACCIONA LOTE 1 (AJENA)', 'SEED_ARQ3');
+
+INSERT INTO dat_plk_bid (plk_id, target_lct_id, bidder_emp_id, plk_status, is_plkAwarded) VALUES
+('plk-estudio-nor', 'lct-lote-1', 'emp-nortunel', 'ESTUDIA', 0),
+('plk-ajena-acc', 'lct-lote-1', 'emp-acciona', 'AJENA', 1); -- Acciona nos gana en el Seed
+
+-- -------------------------------------------------------------------------
+-- D) CONTRATOS (CNT) Y PROYECTOS (PRY)
+-- -------------------------------------------------------------------------
+-- Acciona ganó, así que hay un Contrato de Adjudicación
+INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
+('cnt-ave-l1', 3, 'CNT-ADIF-25', 'CONTRATO EJECUCIÓN AVE L1', 'SEED_ARQ3'),
+('pry-estudio', 3, 'PRY-BASE-01', 'PRY BASE LICITACIÓN LOTE 1', 'SEED_ARQ3');
+
+INSERT INTO dat_cnt_contract (cnt_id) VALUES ('cnt-ave-l1');
+
+-- Enlace del Contrato con la Plica Ganadora
+INSERT INTO rel_cnt_awardedPlk (cnt_id, awardedPlk_id) VALUES ('cnt-ave-l1', 'plk-ajena-acc');
+
+-- El proyecto técnico (PRY) del Lote
+INSERT INTO dat_pry_project (pry_id, originTender_lct_id, activeContract_cnt_id, semanticVersion_tag, dateVersion) VALUES
+('pry-estudio', 'lct-lote-1', NULL, 'PROYECTO_BASE_LICITACION', '2026-03-01T00:00:00Z');
+
+-- =========================================================================
+-- 5. REGISTROS DE PLANTILLAS DOCUMENTALES (DATA WIZARD)
+-- =========================================================================
+
+-- fk_l1 = 1 (L1_EMP) -> plantilla_empresas.csv
+INSERT OR IGNORE INTO sys_csv_templates (id_template, fk_l1, file_path, template_name) VALUES
+(1, 1, 'datos_csv/templates/plantilla_empresas.csv', 'Plantilla Oficial de Empresas L-Matrix');

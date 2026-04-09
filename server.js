@@ -119,6 +119,7 @@ const server = http.createServer(async (req, res) => {
             const lifecycle_phases = await db.all('SELECT * FROM def_lifecycle_phase');
             const company_departments = await db.all('SELECT * FROM def_company_department');
             const abac_matrix_rules = await db.all('SELECT * FROM rel_abac_matrix_rules');
+            const sys_csv_templates = await db.all('SELECT * FROM sys_csv_templates');
 
             // TODO: Extraer Rol desde Sesión Segura. Mockeado para demostración inicial.
             const userRole = req.headers['x-user-role'] || 'ADMINISTRADOR'; 
@@ -158,7 +159,7 @@ const server = http.createServer(async (req, res) => {
                     l1_categories, l2_families, l3_types, l4_instances, 
                     topology_graph, psets_template, psets_bridge, psets_payloads, 
                     eventos_l3, desgloses_l4,
-                    lifecycle_phases, company_departments, abac_matrix_rules
+                    lifecycle_phases, company_departments, abac_matrix_rules, sys_csv_templates
                 }
             }));
         } catch (e) {
@@ -258,6 +259,170 @@ const server = http.createServer(async (req, res) => {
                  res.end(JSON.stringify({ success: false, error: e.message }));
              }
         });
+        return;
+    }
+
+    // B3. API: BULK CSV INGESTION (FASE 7 WIZARD)
+    // REGLA: DIR_CSV_TRANSACTION_LOCK - ATOMIC PIPELINE
+    if (req.url === '/api/instances/bulk' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+             try {
+                 const payload = JSON.parse(body);
+                 const { entityType, instances } = payload; // instances = [{l4_id, unique_human_code, instance_name, fk_l3, ...}]
+                 
+                 if (!instances || !Array.isArray(instances) || instances.length === 0) {
+                     throw new Error("El arreglo de entidades de importación está vacío o dañado.");
+                 }
+
+                 await queueWriteTransaction(async () => {
+                     const db = await sqlDbPromise;
+                     
+                     // PRE-COMPUTE: Motor Algorítmico de Inferencia Paramétrica L3
+                     const l3PoolRows = await db.all(`
+                        SELECT t.id_l3, t.l3_code, p.json_shape_definition 
+                        FROM def_entity_l3_type t
+                        JOIN def_entity_l2_family f ON t.fk_l2 = f.id_l2
+                        JOIN def_entity_l1_category c ON f.fk_l1 = c.id_l1
+                        LEFT JOIN rel_pset_to_entity_bridge b ON 
+                             (b.target_uuid = CAST(t.id_l3 AS TEXT) AND b.attachment_level_enum = 'L3') OR
+                             (b.target_uuid = CAST(f.id_l2 AS TEXT) AND b.attachment_level_enum = 'L2')
+                        LEFT JOIN def_pset_template p ON b.fk_pset = p.id_pset
+                        WHERE c.l1_code = ?
+                     `, [entityType]);
+
+                     // Decodificar los diccionarios estáticos
+                     const l3Molds = l3PoolRows.map(r => {
+                         let defaults = {};
+                         if (r.json_shape_definition) {
+                             try {
+                                 const parsed = JSON.parse(r.json_shape_definition);
+                                 if (parsed.DataSchema) {
+                                     Object.keys(parsed.DataSchema).forEach(k => {
+                                         if (parsed.DataSchema[k].default !== undefined) {
+                                             defaults[k] = parsed.DataSchema[k].default;
+                                         }
+                                     });
+                                 }
+                             } catch(e){}
+                         }
+                         return { id_l3: r.id_l3, l3_code: r.l3_code, defaults };
+                     });
+
+                     if (l3Molds.length === 0) throw new Error(`No se ha encontrado ningún Molde L3 activo para la categoría ${entityType}. El árbol L-Matrix está huérfano.`);
+
+                     // INÍCIO PROTEGIDO (TODO O NADA)
+                     await db.exec('BEGIN TRANSACTION');
+                     try {
+                         const stmtL4 = await db.prepare(`
+                             INSERT INTO dat_entity_l4_instance (l4_id, unique_human_code, instance_name, fk_l3, created_by) 
+                             VALUES (?, ?, ?, ?, 'BULK_WIZARD')
+                         `);
+                         
+                         const stmtPayload = await db.prepare(`
+                             INSERT INTO dat_pset_live_payloads (l4_instance_id, fk_pset, json_payload, updated_by)
+                             VALUES (?, ?, ?, 'BULK_WIZARD')
+                         `);
+
+                         for (let instance of instances) {
+                             if (!instance.unique_human_code || !instance.instance_name || instance.esUte === undefined) {
+                                 throw new Error(`Integridad Rechazada: Faltan columnas obligatorias (unique_human_code, instance_name, esUte) -> ${JSON.stringify(instance)}`);
+                             }
+
+                             // Formatear booleano nativo
+                             const isUteBoolean = (instance.esUte === true || String(instance.esUte).trim().toLowerCase() === 'true' || String(instance.esUte).trim().toLowerCase() === 'si');
+                             instance.esUte = isUteBoolean; 
+                             
+                             // Mapear "esUte" a la convención "soyUte" usada internamente en seed.sql (Fallback mapping para robustez)
+                             const searchParamKey = 'soyUte'; 
+                             const searchParamVal = isUteBoolean;
+
+                             // INFERENCIA ALGORÍTMICA: Buscar el molde que coincida.
+                             let assigned_fk_l3 = null;
+                             const matchedMolds = l3Molds.filter(m => m.defaults[searchParamKey] === searchParamVal);
+                             
+                             if (matchedMolds.length === 1) {
+                                 assigned_fk_l3 = matchedMolds[0].id_l3;
+                             } else if (matchedMolds.length > 1) {
+                                 throw new Error(`Ambigüedad L-Matrix (Colisión de Moldes): El parámetro ${searchParamKey}=${searchParamVal} encaja en varios Moldes L3. El sistema no puede deducir la ruta genética a copiar unívocamente.`);
+                             } else {
+                                 throw new Error(`Inferencia Fallida: No existe ningún Molde L3 bajo ${entityType} que posea como requerimiento ${searchParamKey}=${searchParamVal}.`);
+                             }
+                             
+                             instance.assigned_fk_l3 = assigned_fk_l3; // Fianza Arquitectónica para Node->React sync
+
+                             // Si la carga masiva CSV no incluyó ID Relacional, lo auto-generamos
+                             if (!instance.l4_id || instance.l4_id.trim() === '') {
+                                 const crypto = require('crypto');
+                                 instance.l4_id = crypto.randomUUID().replace(/-/g, '');
+                             }
+
+                             // 1. Forjamos la Entidad Vacía
+                             await stmtL4.run([
+                                 instance.l4_id, 
+                                 instance.unique_human_code, 
+                                 instance.instance_name, 
+                                 assigned_fk_l3
+                             ]);
+
+                             // 2. Volcamos los Props Extras en el diccionario
+                             const psetId = 1; 
+                             const dynamicProps = { cif: instance.cif, soyUte: isUteBoolean };
+                             
+                             const payloadJson = JSON.stringify({ ...dynamicProps, __v: 1 });
+                             await stmtPayload.run([instance.l4_id, psetId, payloadJson]);
+                         }
+
+                         await stmtL4.finalize();
+                         await stmtPayload.finalize();
+                         
+                         await db.exec('COMMIT'); 
+                     } catch(txErr) {
+                         await db.exec('ROLLBACK'); 
+                         throw txErr;
+                     }
+                 });
+                 
+                 res.writeHead(200, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: true, count: instances.length, instances }));
+             } catch(e) {
+                 console.error("API Bulk Critical Error:", e);
+                 res.writeHead(500, { 'Content-Type': 'application/json' });
+                 res.end(JSON.stringify({ success: false, error: e.message }));
+             }
+        });
+        return;
+    }
+
+    // K. API TEMPLATES: DOWNLOAD DYNAMIC CSV FILES (FASE 7 WIZARD)
+    if (req.url.startsWith('/api/templates/download') && req.method === 'GET') {
+        try {
+            const urlObj = new URL(req.url, `http://${req.headers.host}`);
+            const schemaCode = urlObj.searchParams.get('schema_code'); // Ej 'L1_EMP'
+            const db = await sqlDbPromise;
+            
+            const row = await db.get(`
+                SELECT t.file_path, t.template_name 
+                FROM sys_csv_templates t 
+                JOIN def_entity_l1_category c ON t.fk_l1 = c.id_l1 
+                WHERE c.l1_code = ?`, [schemaCode]);
+            
+            if (!row || !row.file_path) throw new Error("Plantilla no configurada para este formato L-Matrix.");
+            
+            const targetPath = path.join(__dirname, row.file_path);
+            if (!fs.existsSync(targetPath)) throw new Error("Archivo de plantilla físico no resuelto en el servidor.");
+            
+            res.writeHead(200, {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="${path.basename(row.file_path)}"`
+            });
+            fs.createReadStream(targetPath).pipe(res);
+        } catch(e) {
+            console.error("Error descargando Template Masivo:", e);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: e.message }));
+        }
         return;
     }
 

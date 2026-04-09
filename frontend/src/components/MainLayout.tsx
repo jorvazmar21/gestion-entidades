@@ -17,6 +17,7 @@ import { ModulePhases } from './ModulePhases';
 import { ModuleDepartments } from './ModuleDepartments';
 import { ImportWizardModal } from './generics/ImportWizardModal';
 import { PSetInspector } from './generics/PSetInspector';
+import { EntityCanvasContainer } from './generics/EntityCanvasContainer';
 import { useState } from 'react';
 
 // Separador inteligente que reacciona a la directriz del Administrador
@@ -118,9 +119,7 @@ export function MainLayout() {
            
            {/* ZONA 6: CANVAS MACRO */}
            <div className="flex-1 p-6 relative">
-              <div className="absolute inset-4 bg-white flex items-center justify-center">
-                 <span className="text-lg text-slate-300 font-bold uppercase text-center w-full">ZONA 6: Canvas (Listados Principales)<br/><span className="text-xs text-slate-400 font-normal">Pendiente de Ensamblaje</span></span>
-              </div>
+              <EntityCanvasContainer />
            </div>
            
            <SimpleDivider />

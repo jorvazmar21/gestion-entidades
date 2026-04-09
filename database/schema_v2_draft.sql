@@ -136,3 +136,105 @@ CREATE TABLE IF NOT EXISTS dat_static_schema_values (
     json_payload JSON NOT NULL,          -- The actual user inputs overriding the Blueprint defaults.
     PRIMARY KEY (instance_id, schema_id)
 );
+
+-- =======================================================================================
+-- FRACTAL CORE V2.0 - ARCHITECTURE 3 DDL (SQLITE NATIVE)
+-- AI-Oriented Relational Schema (Zero-JSON, CamelCase, Explicit Foreign Keys)
+-- =======================================================================================
+
+PRAGMA foreign_keys = ON; -- [IA NOTE]: Strict enforcement of relational integrity.
+
+-- ---------------------------------------------------------------------------------------
+-- 1. SYSTEM DICTIONARY (Translator for AI & FrontEnd)
+-- ---------------------------------------------------------------------------------------
+CREATE TABLE sys_DIC_translationMap (
+    id_record TEXT PRIMARY KEY,                 
+    elementType TEXT NOT NULL,                  -- [IA NOTE]: Expected values: 'table', 'column'
+    objectNameEn TEXT NOT NULL,                 -- [IA NOTE]: Physical DB name (e.g. 'dat_lct_tender')
+    translationEs TEXT NOT NULL,                -- [IA NOTE]: Frontend/Business label in Spanish
+    CONSTRAINT unique_translation UNIQUE (elementType, objectNameEn)
+);
+
+-- ---------------------------------------------------------------------------------------
+-- 2. CORPORATE DOMAIN (EMP)
+-- ---------------------------------------------------------------------------------------
+CREATE TABLE dat_emp_company (
+    emp_id TEXT PRIMARY KEY,                    -- UUID
+    emp_fiscalCode TEXT UNIQUE NOT NULL,        -- [IA NOTE]: El C.I.F. de la empresa. Debe ser unico.
+    emp_fiscalName TEXT UNIQUE NOT NULL,        -- [IA NOTE]: Razon social de la empresa. Debe ser unico.
+    emp_fiscalDirection TEXT NOT NULL,          -- Domicilio Fiscal
+    emp_fiscalCP TEXT NOT NULL,                 
+    emp_fiscalLocal TEXT NOT NULL,              
+    emp_fiscalProv TEXT NOT NULL,               
+    emp_fiscalCountry TEXT NOT NULL,            
+    is_Proveedor INTEGER DEFAULT 1,             -- [IA NOTE]: Flag. 1=True, 0=False. Catalogador no excluyente.
+    is_Subcontratista INTEGER DEFAULT 1,        -- [IA NOTE]: P.e. La Aplicacion admite catalogar una Empresa de un solo tipo o de varios simultaneamente.
+    is_Contratista INTEGER DEFAULT 1,           
+    is_Cliente INTEGER DEFAULT 1                
+);
+
+-- [IA NOTE]: Posibilita detallar las Empresas socias de un consorcio de empresas (p.ej. una UTE).
+CREATE TABLE rel_emp_jointVenture (
+    id_rel TEXT PRIMARY KEY,                    -- UUID Interno de la relacion
+    jointVenture_emp_id TEXT NOT NULL,          -- [IA NOTE]: Apunta a dat_emp_company. Resuelve la recursividad de UTEs.
+    partner_emp_id TEXT,                        -- [IA NOTE]: Puede ser NULL. Significa que la empresa es UTE pero ningun socio se ha registrado aun.
+    participationShare REAL,                    -- [IA NOTE]: Ejemplo: 50.00. Si la suma es 100 implica registro completo.
+    FOREIGN KEY (jointVenture_emp_id) REFERENCES dat_emp_company(emp_id) ON DELETE CASCADE,
+    FOREIGN KEY (partner_emp_id) REFERENCES dat_emp_company(emp_id) ON DELETE CASCADE,
+    CONSTRAINT unique_partner_in_ute UNIQUE (jointVenture_emp_id, partner_emp_id)
+);
+
+-- ---------------------------------------------------------------------------------------
+-- 3. BIDDING & TENDERS DOMAIN (LCT & PLK)
+-- ---------------------------------------------------------------------------------------
+-- [IA NOTE]: Registro de las Licitaciones que promueve un CLIENTE. Macro-Lotes o Lotes simples.
+CREATE TABLE dat_lct_tender (
+    lct_id TEXT PRIMARY KEY,                    -- UUID
+    promoter_emp_id TEXT NOT NULL,              -- [IA NOTE]: Entidad Promotora. Logicamente, la empresa apuntada asume is_Cliente=1.
+    parentTender_lct_id TEXT,                   -- [IA NOTE]: Auto-referenciado. Si es NULL, es Mega-Expediente Marco. Si no, es Lote dependiente.
+    FOREIGN KEY (promoter_emp_id) REFERENCES dat_emp_company(emp_id),
+    FOREIGN KEY (parentTender_lct_id) REFERENCES dat_lct_tender(lct_id) ON DELETE CASCADE
+);
+
+-- [IA NOTE]: Entidad historica de ofertas hacia una determinada Licitacion.
+CREATE TABLE dat_plk_bid (
+    plk_id TEXT PRIMARY KEY,                    -- UUID
+    target_lct_id TEXT NOT NULL,                -- [IA NOTE]: ID de la Licitacion a la que se dirige la oferta.
+    bidder_emp_id TEXT,                         -- [IA NOTE]: Si es NULL, no se presento oferta por un competidor conocido. Refiere a empresa unica o UTE.
+    plk_status TEXT DEFAULT NULL,               -- [IA NOTE]: Fases: NULL(PRE-ESTUDIO), 'ESTUDIA', 'PRESENTADA', 'AJENA'.
+    is_plkAwarded INTEGER DEFAULT 0,            -- [IA NOTE]: Solo una plica resultara adjudicataria de la Licitacion (1=True).
+    FOREIGN KEY (target_lct_id) REFERENCES dat_lct_tender(lct_id) ON DELETE CASCADE,
+    FOREIGN KEY (bidder_emp_id) REFERENCES dat_emp_company(emp_id)
+);
+
+-- ---------------------------------------------------------------------------------------
+-- 4. LEGAL PRODUCTION DOMAIN (CNT)
+-- ---------------------------------------------------------------------------------------
+-- [IA NOTE]: Posibilita la creacion de CONTRATOS. Entidad Juridica final; esqueleto para peso tecnico de PRY.
+CREATE TABLE dat_cnt_contract (
+    cnt_id TEXT PRIMARY KEY                     -- UUID
+);
+
+-- [IA NOTE]: Posibilita concretar los Lotes (las plicas ganadoras) que se engloban dentro de un CONTRATO. 
+-- El contrato hereda de aqui su "Titular Ofertante". Los contratos podran abarcar un Lote o multiples Lotes.
+CREATE TABLE rel_cnt_awardedPlk (
+    cnt_id TEXT NOT NULL,                       -- [IA NOTE]: Resuelve la posible asignacion de varios Lotes adjudicados conjuntamente.
+    awardedPlk_id TEXT NOT NULL,                -- [IA NOTE]: Apunta a dat_plk_bid. Logicamente debe cumplir is_plkAwarded=True.
+    PRIMARY KEY (cnt_id, awardedPlk_id),
+    FOREIGN KEY (cnt_id) REFERENCES dat_cnt_contract(cnt_id) ON DELETE CASCADE,
+    FOREIGN KEY (awardedPlk_id) REFERENCES dat_plk_bid(plk_id)
+);
+
+-- ---------------------------------------------------------------------------------------
+-- 5. ENGINEERING & FINANCIAL MUTATIONS DOMAIN (PRY)
+-- ---------------------------------------------------------------------------------------
+-- [IA NOTE]: Registro evolutivo del Proyecto Constructivo. Define tecnica y economicamente el objeto.
+CREATE TABLE dat_pry_project (
+    pry_id TEXT PRIMARY KEY,                    -- UUID
+    originTender_lct_id TEXT NOT NULL,          -- [IA NOTE]: Todo Proyecto nace mapeado 1:1 a un Lote de Licitacion.
+    activeContract_cnt_id TEXT,                 -- [IA NOTE]: Si no existe (NULL), es Proyecto Licitado. Si existe, es evolucion en fase Produccion.
+    semanticVersion_tag TEXT NOT NULL,          -- [IA NOTE]: Identificador (p.ej. Licitacion, Adjudicacion, Modificado N1).
+    dateVersion TEXT NOT NULL,                  -- [IA NOTE]: ISO8601 Date. Su vigencia dura hasta el dia anterior a la fecha de la siguiente version.
+    FOREIGN KEY (originTender_lct_id) REFERENCES dat_lct_tender(lct_id),
+    FOREIGN KEY (activeContract_cnt_id) REFERENCES dat_cnt_contract(cnt_id)
+);

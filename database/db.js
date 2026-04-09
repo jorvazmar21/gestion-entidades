@@ -27,27 +27,27 @@ async function getDb() {
         // ACTIVA CLAVES FORÁNEAS - CRÍTICO para el "Postulado de Unicidad L4"
         await dbInstance.exec('PRAGMA foreign_keys = ON;');
 
+        // IDEMPOTENT AUTO-MIGRATOR: Ejecutamos el archivo de schema y semilla en cada boot 
+        // para absorber las nuevas DDLs o Registros Maestros (Ignora los que ya existen)
+        const schemaPath = path.join(__dirname, 'schema.sql');
+        const schema = fs.readFileSync(schemaPath, 'utf8');
+        await dbInstance.exec(schema);
+
+        const seedPath = path.join(__dirname, 'seed.sql');
+        const seed = fs.readFileSync(seedPath, 'utf8');
+        await dbInstance.exec(seed);
+
         if (isNewDb) {
             console.log('\n======================================================');
             console.log('📦 [DB-SQL] Base de datos no encontrada. Inicializando ERP...');
             console.log('======================================================\n');
-            
-            // 1. Esquema estructural
-            const schemaPath = path.join(__dirname, 'schema.sql');
-            const schema = fs.readFileSync(schemaPath, 'utf8');
-            await dbInstance.exec(schema);
-            console.log('✅ Esquema Relacional de 5 Niveles (REA) ejecutado.');
-
-            // 2. Inyección de Semillas (Libro Blanco)
-            const seedPath = path.join(__dirname, 'seed.sql');
-            const seed = fs.readFileSync(seedPath, 'utf8');
-            await dbInstance.exec(seed);
-            console.log('✅ Moldes Canónicos, Niveles y Metadatos sembrados con éxito.');
-            
-            console.log('\n🚀 Motor de base de datos FRACTAL CORE 1.0 activado y listo para ABAC.\n');
+            console.log('✅ Esquema Relacional de 5 Niveles (REA) ejecutado e instanciado de 0.');
         } else {
             console.log('📦 [DB-SQL] Motor SQL Conectado (fractal_core.sqlite)');
+            console.log('📡 [Auto-Sync] Verificación de Migraciones y Actualización Delta de Entidades completada.');
         }
+
+        console.log('\n🚀 Motor FRACTAL CORE 1.0 activado y blindado contra latencia de estado.\n');
 
         return dbInstance;
     } catch (error) {

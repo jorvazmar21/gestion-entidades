@@ -3,11 +3,13 @@ import { useDataStore } from '../store/useDataStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useUiStore } from '../store/useUiStore';
 import { SafeImage } from './SafeImage';
+import { IngestionWizard } from './admin/IngestionWizard';
 
 export const HomeScreen: React.FC = () => {
   const { loading, error } = useDataStore();
   const { activeUser, userRole, logout } = useAuthStore();
   const { navigateToModule, setScreen } = useUiStore();
+  const [showWizard, setShowWizard] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -140,6 +142,14 @@ export const HomeScreen: React.FC = () => {
                           <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" className="w-full h-full" />
                           <span className="font-semibold text-sm uppercase tracking-wide">Visor Tablas Raw</span>
                        </button>
+
+                       <button 
+                         onClick={() => setShowWizard(true)}
+                         className="flex flex-col items-start justify-center bg-[#27313f] text-white p-5 rounded-lg shadow-sm hover:shadow-md hover:bg-[#1f2937] transition-all group min-h-[110px] border border-emerald-500 w-full"
+                       >
+                          <SafeImage src="/icons/sys_raw.svg" fallbackType="svg" wrapperClassName="w-8 h-8 mb-2 group-hover:scale-110 transition-transform hue-rotate-90" className="w-full h-full" />
+                          <span className="font-semibold text-[13px] uppercase tracking-wide text-emerald-400">Crear Empresas</span>
+                       </button>
                     </div>
 
                     {/* Tema 2: Diseño del Sistema */}
@@ -249,6 +259,12 @@ export const HomeScreen: React.FC = () => {
         }}
       ></div>
 
+      {showWizard && (
+        <IngestionWizard 
+          onClose={() => setShowWizard(false)} 
+          onSuccess={() => setShowWizard(false)} 
+        />
+      )}
     </div>
   );
 };
