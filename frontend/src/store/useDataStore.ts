@@ -38,6 +38,10 @@ interface DataState {
   saveDb: () => Promise<void>;
   updateAppConfig: (key: string, value: any) => Promise<void>;
   addEntities: (newEntities: Entity[]) => void;
+  activePsetTabs: Record<string, 'ESTATICAS' | 'DINAMICAS' | 'HIPERDINAMICAS'>;
+  setActivePsetTab: (screenId: string, tab: 'ESTATICAS' | 'DINAMICAS' | 'HIPERDINAMICAS') => void;
+  activePsetFocus: Record<string, string>;
+  setActivePsetFocus: (screenId: string, focus: string | null) => void;
 }
 
 // "useDataStore": La Biblioteca (Almacén de Entidades y CSVs)
@@ -62,6 +66,21 @@ export const useDataStore = create<DataState>((set, get) => ({
   sortAsc: true,
   loading: false,
   error: null,
+  activePsetTabs: {},
+  activePsetFocus: {},
+
+  setActivePsetTab: (screenId, tab) => 
+     set(state => ({ activePsetTabs: { ...state.activePsetTabs, [screenId]: tab } })),
+
+  setActivePsetFocus: (screenId, focus) =>
+     set(state => {
+         if (focus === null) {
+             const newFocus = { ...state.activePsetFocus };
+             delete newFocus[screenId];
+             return { activePsetFocus: newFocus };
+         }
+         return { activePsetFocus: { ...state.activePsetFocus, [screenId]: focus } };
+     }),
 
   init: async () => {
     set({ loading: true, error: null });

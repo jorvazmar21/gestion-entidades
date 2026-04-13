@@ -1,228 +1,308 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDataStore } from '../../store/useDataStore';
 
-interface PSetInspectorProps {
-  entityId: string | null;
+export interface PSetContextGroup {
+    label: string; 
+    entityIds: string[];
+    isChild: boolean;
 }
 
-export const PSetInspector: React.FC<PSetInspectorProps> = ({ entityId }) => {
-  const [loading, setLoading] = useState(false);
-  const [savingPset, setSavingPset] = useState<string | null>(null);
-  
-  const { psets_def, psetValuesDb, db } = useDataStore();
-  
-  const [formData, setFormData] = useState<Record<string, Record<string, any>>>({});
-  
-  // El acordeón ahora expande grupos lógicos visuales (ui_group_name), no fragmentos aislados de BBDD.
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+export interface PSetInspectorProps {
+  screenId?: string;
+  contextPayload: PSetContextGroup[];
+  phaseIds?: string[];
+  deptIds?: string[];
+  mockPsetsDef?: any[];
+  mockPsetValues?: any[];
+}
+
+// =========================================================================
+// EL CEREBRO COMPARTIDO: usePSetContext
+// Sincroniza la "Lente" entre Zona 9 y Zona 10 usando la red de Zustand
+// =========================================================================
+const usePSetContext = (screenId: string, contextPayload: PSetContextGroup[]) => {
+  const { activePsetFocus, setActivePsetFocus } = useDataStore();
+  const focoActual = activePsetFocus[screenId] || null;
 
   useEffect(() => {
-    if (!entityId) {
-      setFormData({});
-      return;
-    }
-    setLoading(true);
-    
-    // Obtenemos los valores físicos del L4 Instance desde el estado local (psetValuesDb)
-    // psetValuesDb es un array que viene de dat_pset_live_payloads, el backend ya aplicó Poda de Seguridad
-    let entityPayloads: any[] = [];
-    if (Array.isArray(psetValuesDb)) {
-        entityPayloads = psetValuesDb.filter((p: any) => p.l4_instance_id === entityId);
-    }
-    
-    const initialFormData: Record<string, Record<string, any>> = {};
-    entityPayloads.forEach((payload: any) => {
-        initialFormData[payload.fk_pset] = payload.json_payload || {};
-    });
-
-    setFormData(initialFormData);
-
-    // Agrupación y despliegue por defecto
-    const uniqueGroups = Array.from(new Set(psets_def.map((p: any) => p.ui_group_name))).filter(Boolean);
-    if (uniqueGroups.length > 0) {
-        setExpandedGroups({ [(uniqueGroups as string[])[0]]: true });
-    }
-
-    setLoading(false);
-  }, [entityId, psetValuesDb, psets_def]);
-
-  const toggleGroup = (groupName: string) => {
-     setExpandedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
-  };
-
-  const handleFieldChange = (psetId: string, field: string, value: any) => {
-     setFormData(prev => ({
-       ...prev,
-       [psetId]: {
-         ...prev[psetId],
-         [field]: value
-       }
-     }));
-  };
-
-  const handleSavePSet = async (psetId: string) => {
-      setSavingPset(psetId);
-      try {
-          const originalPayloadRow = Array.isArray(psetValuesDb) ? psetValuesDb.find((p:any) => p.fk_pset === psetId && p.l4_instance_id === entityId) : null;
-          const originalVersion = originalPayloadRow?.json_payload?.__v || 0;
-          
-          const payloadToSave = { ...formData[psetId], __v: originalVersion };
-
-          const res = await fetch('/api/instances/put', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  l4_instance_id: entityId,
-                  fk_pset: psetId,
-                  json_payload: payloadToSave,
-                  __v: originalVersion
-              })
-          });
-
-          if (!res.ok) {
-              const err = await res.json();
-              throw new Error(err.error || 'Error de sincronización con SQLite');
+      if (contextPayload.length === 0) {
+          setActivePsetFocus(screenId, null);
+      } else {
+          const stillExists = contextPayload.some(g => g.label === focoActual);
+          if (!stillExists) {
+              const childGroup = contextPayload.find(g => g.isChild);
+              const defaultGroup = childGroup || contextPayload[0];
+              setActivePsetFocus(screenId, defaultGroup.label);
           }
-          
-          alert('Valores CQRS actualizados correctamente en base de datos L-Matrix.');
-      } catch (err: any) {
-          alert('Fallo al guardar: ' + err.message);
-      } finally {
-          setSavingPset(null);
       }
-  };
+  }, [contextPayload, focoActual, screenId, setActivePsetFocus]);
 
-  const currentEntity = db.find(e => e.id === entityId);
+  const activeGroup = contextPayload.find(g => g.label === focoActual) || null;
+  return { focoActual, activeGroup, setActivePsetFocus };
+};
 
-  // AGRUPACIÓN LÓGICA (La Ilusión del Administrador)
-  // Fusionamos los PSets matemáticos basándonos en 'ui_group_name'
-  const groupedPsets: Record<string, any[]> = {};
-  psets_def.forEach((pset: any) => {
-      const group = pset.ui_group_name || 'Otros Atributos';
-      if (!groupedPsets[group]) groupedPsets[group] = [];
-      groupedPsets[group].push(pset);
-  });
+// =========================================================================
+// ZONA 9: CABECERA Y LENTE DE ENFOQUE MULTI-TIPO
+// =========================================================================
+export const PSetZone9: React.FC<PSetInspectorProps> = ({ screenId = 'default', contextPayload = [] }) => {
+    const [comboboxOpen, setComboboxOpen] = useState(false);
+    const { activePsetTabs, setActivePsetTab } = useDataStore();
+    const activePsetTab = activePsetTabs[screenId] || 'ESTATICAS';
+    
+    const { focoActual, activeGroup, setActivePsetFocus } = usePSetContext(screenId, contextPayload);
 
-  if (!entityId) {
+    let titleText = 'No hay selección';
+    if (activeGroup) {
+        titleText = `${activeGroup.label} (${activeGroup.entityIds.length})`;
+    }
+
+    const handleRefineClick = (label: string) => {
+        setActivePsetFocus(screenId, label);
+        setComboboxOpen(false);
+    };
+
+    useEffect(() => {
+        if (!comboboxOpen) return;
+        const handleClick = () => setComboboxOpen(false);
+        document.addEventListener('click', handleClick);
+        return () => document.removeEventListener('click', handleClick);
+    }, [comboboxOpen]);
+
     return (
-      <div className="flex-1 flex flex-col pt-12 items-center h-full text-center p-6 bg-slate-50">
-         <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4 text-slate-400">
-            <span className="text-2xl font-black">?</span>
+      <div className="w-full flex-1 flex flex-col bg-[#f8f9ff] font-['Inter'] relative overflow-hidden">
+         <div className="px-3 pt-3 flex items-stretch gap-3 w-full pb-2 border-b border-gray-100 shrink-0">
+             <div className="flex-1 flex items-center justify-center border border-transparent">
+                 <h3 className="text-[15px] font-bold text-[#7f1d1d] uppercase tracking-widest text-center truncate">
+                     PROPIEDADES
+                 </h3>
+             </div>
+             
+             <div className="flex-1 relative flex" onClick={e => e.stopPropagation()}>
+                 <button 
+                     onClick={() => contextPayload.length > 0 && setComboboxOpen(!comboboxOpen)}
+                     className={`w-full flex items-center justify-between gap-2 text-[10px] font-bold px-3 py-1.5 rounded shadow-sm border transition-all ${
+                         contextPayload.length === 0 ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-default' : 
+                         'bg-red-50 border-red-100 text-[#7f1d1d] hover:bg-[#fffcfd] cursor-pointer'
+                     }`}
+                 >
+                     <span className="truncate mx-auto pl-2">{titleText}</span>
+                     {contextPayload.length > 0 && <span className={`text-[8px] shrink-0 transition-transform ${comboboxOpen ? 'rotate-180' : ''}`}>▼</span>}
+                 </button>
+
+                 {comboboxOpen && contextPayload.length > 0 && (
+                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 shadow-xl rounded overflow-hidden z-50 transform origin-top animate-[fadeIn_0.15s_ease-out]">
+                         <div className="px-3 pt-2 pb-1 bg-gray-50 border-b border-gray-100">
+                             <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Enfocar Propiedades</span>
+                         </div>
+                         <div className="flex flex-col">
+                             {contextPayload.map(group => (
+                                 <button 
+                                     key={group.label}
+                                     onClick={() => handleRefineClick(group.label)}
+                                     className={`px-3 py-2 text-left text-[11px] font-semibold border-l-2 transition-colors ${
+                                        focoActual === group.label ? 'bg-[#fffcfd] text-[#7f1d1d] border-[#7f1d1d]' : 'text-gray-700 border-transparent hover:bg-gray-50 hover:text-gray-900'
+                                     }`}
+                                 >
+                                     {group.label} ({group.entityIds.length})
+                                 </button>
+                             ))}
+                         </div>
+                     </div>
+                 )}
+             </div>
          </div>
-         <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Sin Instancia (L4) Activa</span>
-         <span className="text-xs text-slate-400 mt-2">Seleccione una fila en el datagrid para cargar sus vectores PSet</span>
+
+         <div className="w-full flex flex-1 items-end px-2 pt-2 pb-0">
+           <button 
+             onClick={() => setActivePsetTab(screenId, 'ESTATICAS')}
+             className={`flex-1 py-1.5 text-[9px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePsetTab === 'ESTATICAS' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+           >
+             Estáticas
+           </button>
+           <button 
+             onClick={() => setActivePsetTab(screenId, 'DINAMICAS')}
+             className={`flex-1 py-1.5 text-[9px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePsetTab === 'DINAMICAS' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+           >
+             Dinámicas
+           </button>
+           <button 
+             onClick={() => setActivePsetTab(screenId, 'HIPERDINAMICAS')}
+             className={`flex-1 py-1.5 text-[9px] uppercase tracking-widest font-bold border-b-2 transition-colors ${activePsetTab === 'HIPERDINAMICAS' ? 'border-[#7f1d1d] text-[#7f1d1d]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+           >
+             Hiperdinámicas
+           </button>
+         </div>
       </div>
     );
-  }
+};
+
+// =========================================================================
+// ZONA 10: MOTOR DE INTERSECCIONES Y RENDER DE PROPIEDADES L-MATRIX
+// =========================================================================
+export const PSetZone10: React.FC<PSetInspectorProps> = ({ screenId = 'default', contextPayload = [], mockPsetsDef, mockPsetValues }) => {
+  const [expandedPsets, setExpandedPsets] = useState<Record<string, boolean>>({});
+  const { psets_def, psetValuesDb } = useDataStore();
+  const { activeGroup } = usePSetContext(screenId, contextPayload);
+  
+  const activeDef = mockPsetsDef || psets_def || [];
+  const activeValues = mockPsetValues || psetValuesDb || [];
+
+  useEffect(() => {
+    if (activeDef && activeDef.length > 0) {
+        const defaultExpanded = activeDef.reduce((acc: Record<string, boolean>, pset: any) => {
+            acc[pset.id_pset] = true;
+            return acc;
+        }, {});
+        setExpandedPsets(defaultExpanded);
+    }
+  }, [activeDef]);
+
+  const togglePset = (id: string) => setExpandedPsets(prev => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div className="flex flex-col h-full bg-[#f8f9ff] font-['Inter'] animate-[fadeIn_0.3s_ease-out]">
-      
-      {/* CABECERA INSPECTOR */}
-      <div className="p-4 bg-white border-b border-gray-200 shrink-0">
-         <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-1">
-            INSPECCIONANDO INSTANCIA L4
-         </h3>
-         <div className="font-mono text-[13px] font-bold text-[#7f1d1d] truncate">
-           {entityId}
-         </div>
-         <div className="text-[11px] font-semibold text-gray-600 truncate mt-1">
-           {currentEntity?.name || '---'}
-         </div>
-         {loading && <div className="text-[10px] text-blue-500 uppercase font-bold mt-2 animate-pulse">Deserializando Vectores JSON...</div>}
-      </div>
-
-      {/* CONTENIDO SCROLL (Acordeones por ui_group_name) */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-         
-         {!loading && Object.keys(groupedPsets).length === 0 && (
-            <div className="text-center p-6 bg-white border border-gray-200 rounded shadow-sm">
-               <span className="text-xs text-gray-400 italic">No hay Diccionarios Paramétricos L-Matrix configurados.</span>
-            </div>
-         )}
-
-         {!loading && Object.entries(groupedPsets).map(([groupName, psetsInGroup]) => {
-            const isExpanded = expandedGroups[groupName];
-
-            return (
-              <div key={groupName} className="bg-white border border-gray-200 rounded overflow-hidden shadow-sm transition-all">
-                  
-                  {/* HEADER ACORDEÓN DEL GRUPO VISUAL */}
-                  <div 
-                    onClick={() => toggleGroup(groupName)}
-                    className={`p-3 flex items-center justify-between cursor-pointer border-b transition-colors ${isExpanded ? 'bg-[#fff1fa] border-[#fbcfe8]' : 'bg-gray-50 hover:bg-gray-100 border-transparent'}`}
-                  >
-                     <div className="flex flex-col">
-                       <span className="text-[11px] font-bold text-gray-800 uppercase tracking-wide">{groupName}</span>
-                       <span className="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">
-                          {psetsInGroup.length} PSet{psetsInGroup.length !== 1 ? 's' : ''} Físicos Fusionados
-                       </span>
-                     </div>
-                     <span className={`text-[10px] font-bold text-gray-400 transition-transform ${isExpanded ? 'rotate-180 text-[#7f1d1d]' : ''}`}>▼</span>
-                  </div>
-
-                  {/* BODY ACORDEÓN */}
-                  {isExpanded && (
-                     <div className="p-4 flex flex-col gap-6 bg-white">
-                         {psetsInGroup.map(pset => {
-                            const schema = pset.json_shape_definition?.DataSchema || {};
-                            const values = formData[pset.id_pset] || {};
-
-                            return (
-                                <div key={pset.id_pset} className="flex flex-col gap-3 relative border border-slate-100 rounded p-3 bg-slate-50/50">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <h4 className="text-[9px] uppercase font-bold text-indigo-400 tracking-widest">{pset.schema_alias}</h4>
-                                        <button 
-                                            onClick={() => handleSavePSet(pset.id_pset)}
-                                            disabled={savingPset === pset.id_pset}
-                                            className="px-2 py-1 bg-[#7f1d1d] text-white text-[9px] font-bold uppercase rounded hover:bg-red-800 transition-colors disabled:opacity-50"
-                                        >
-                                            {savingPset === pset.id_pset ? 'Procesando...' : 'Aplicar CQRS Put'}
-                                        </button>
-                                    </div>
-
-                                    {Object.entries(schema).map(([key, propDef]: [string, any]) => {
-                                        const isBool = propDef.type === 'boolean';
-                                        const value = values[key] ?? (isBool ? false : '');
-
-                                        if (isBool) {
-                                            return (
-                                                <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={value}
-                                                        onChange={(e) => handleFieldChange(pset.id_pset, key, e.target.checked)}
-                                                        className="w-3.5 h-3.5 accent-[#7f1d1d] rounded-sm cursor-pointer border-gray-300" 
-                                                    />
-                                                    <span className="text-xs font-semibold text-gray-700 group-hover:text-[#7f1d1d] transition-colors">{key}</span>
-                                                </label>
-                                            );
-                                        }
-
-                                        return (
-                                            <div key={key}>
-                                                <label className="text-[10px] uppercase font-bold text-gray-500 block mb-1 flex justify-between">
-                                                    <span>{key}</span>
-                                                </label>
-                                                <input 
-                                                    type={propDef.format === 'date' ? 'date' : 'text'} 
-                                                    value={value}
-                                                    onChange={(e) => handleFieldChange(pset.id_pset, key, e.target.value)}
-                                                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-[11px] font-medium text-gray-800 focus:outline-none focus:border-[#7f1d1d] focus:ring-1 focus:ring-[#7f1d1d] shadow-sm transition-all" 
-                                                />
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-                     </div>
-                  )}
-
+      <div className="flex-1 w-full bg-white overflow-y-auto p-4 flex flex-col gap-3 font-['Inter'] relative z-0">
+          {contextPayload.length === 0 || !activeGroup ? (
+              <div className="flex-1 flex flex-col items-center justify-center h-full">
+                 <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-3 text-slate-400">
+                    <span className="text-xl font-black">?</span>
+                 </div>
+                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Sin Entidades Seleccionadas en Zona 6</span>
               </div>
-            );
-         })}
+          ) : (
+             <>
+                 {activeDef.map((pset: any) => {
+                    const isExpanded = expandedPsets[pset.id_pset];
+                    const schema = pset.json_shape_definition?.DataSchema || {};
+                    
+                    const intersectedValues: Record<string, string> = {};
+                    
+                    Object.keys(schema).forEach(key => {
+                        const collectedValues = new Set<string>();
+                        
+                        activeGroup.entityIds.forEach(id => {
+                            const rowValue = Array.isArray(activeValues) ? activeValues.find((p:any) => p.fk_pset === pset.id_pset && p.l4_instance_id === id) : null;
+                            const val = rowValue?.json_payload?.[key];
+                            if (val !== undefined && val !== null) {
+                                collectedValues.add(String(val));
+                            } else {
+                                collectedValues.add('-');
+                            }
+                        });
+
+                        if (collectedValues.size === 1) {
+                            intersectedValues[key] = Array.from(collectedValues)[0];
+                        } else if (collectedValues.size > 1) {
+                            intersectedValues[key] = '';
+                        } else {
+                            intersectedValues[key] = '-';
+                        }
+                    });
+
+                    return (
+                      <div key={pset.id_pset} className="bg-white border border-gray-200 shadow flex flex-col rounded overflow-hidden shrink-0">
+                          <div 
+                            onClick={() => togglePset(pset.id_pset)}
+                            className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-[#fffcfd] transition-colors border-l-2 border-transparent hover:border-l-[#7f1d1d]"
+                          >
+                             <span className="text-[11px] font-bold text-[#334155] uppercase tracking-wide">
+                                {pset.schema_alias}
+                             </span>
+                             <span className={`text-[10px] font-bold text-gray-400 transition-transform ${isExpanded ? 'rotate-180 text-[#7f1d1d]' : ''}`}>▼</span>
+                          </div>
+
+                          {isExpanded && (
+                             <div className="w-full flex flex-col border-t border-gray-200 bg-white">
+                                 {Object.keys(schema).length === 0 && (
+                                    <div className="p-3 text-[10px] text-gray-400 italic">No hay propiedades en el esquema.</div>
+                                 )}
+                                 {Object.keys(schema).length > 0 && (
+                                    <ResizablePropertyGrid schema={schema} values={intersectedValues} />
+                                 )}
+                             </div>
+                          )}
+                      </div>
+                    );
+                 })}
+             </>
+          )}
       </div>
-    </div>
   );
+};
+
+// =========================================================================
+// CUSTOM NATIVE CSS-RESIZABLE PROPERTY GRID
+// =========================================================================
+const ResizablePropertyGrid: React.FC<{schema: any, values: any}> = ({ schema, values }) => {
+    const [leftWidth, setLeftWidth] = useState<number | 'auto'>('auto');
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault(); 
+        isDragging.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none'; 
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isDragging.current || !containerRef.current) return;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        let newWidth = e.clientX - containerRect.left;
+        
+        if (newWidth < 60) newWidth = 60;
+        if (newWidth > containerRect.width - 60) newWidth = containerRect.width - 60;
+        
+        setLeftWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+        isDragging.current = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    const isPixels = typeof leftWidth === 'number';
+    const colAutoStyle = { width: '1%', whiteSpace: 'nowrap' as any };
+
+    return (
+        <div ref={containerRef} className="w-full text-[11px] select-text flex flex-col pt-0.5 pb-1">
+            <table className="w-full text-left border-collapse" style={{ tableLayout: isPixels ? 'fixed' : 'auto' }}>
+                {isPixels && (
+                    <colgroup>
+                        <col style={{ width: `${leftWidth}px` }} />
+                        <col style={{ width: 'auto' }} />
+                    </colgroup>
+                )}
+                <tbody>
+                    {Object.entries(schema).map(([key, propDef]: [string, any], index) => {
+                        const val = values[key];
+
+                        return (
+                            <tr key={key} className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
+                                <td 
+                                    className="relative py-1.5 pr-4 pl-3 text-gray-600 font-semibold tracking-wide overflow-hidden text-ellipsis align-middle border-r border-[#e2e8f0]"
+                                    style={isPixels ? {} : colAutoStyle}
+                                >
+                                    {key}
+                                    <div 
+                                        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize z-10 hover:bg-[#7f1d1d] group-hover:bg-[#cbd5e1] opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ transform: 'translateX(50%)' }}
+                                        onMouseDown={handleMouseDown}
+                                    />
+                                </td>
+                                
+                                <td className="py-1.5 px-3 text-gray-800 font-medium overflow-hidden text-ellipsis whitespace-nowrap align-middle" title={val}>
+                                    {val}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
 };

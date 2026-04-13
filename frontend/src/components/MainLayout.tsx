@@ -16,11 +16,14 @@ import { SystemTopRightActions } from './SystemTopRightActions';
 import { ModulePhases } from './ModulePhases';
 import { ModuleDepartments } from './ModuleDepartments';
 import { ImportWizardModal } from './generics/ImportWizardModal';
-import { PSetInspector } from './generics/PSetInspector';
+import { PSetZone9, PSetZone10 } from './generics/PSetInspector';
 import { EntityCanvasContainer } from './generics/EntityCanvasContainer';
 import { EntityWorkspace } from './generics/EntityWorkspace';
+import { ActionZonePanel } from './generics/ActionZonePanel';
+import { useDataStore } from '../store/useDataStore';
+import type { ContextPayload } from '../config/actionRegistry';
 import { BLUEPRINTS } from '../config/viewBlueprints';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 // Separador inteligente que reacciona a la directriz del Administrador
 export const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
@@ -32,7 +35,8 @@ export const SimpleDivider = ({ vertical = false }: { vertical?: boolean }) => {
 
 export function MainLayout() {
   const LAYOUT = useLayoutStore();
-  const { activeModuleId, selectedEntityId } = useUiStore();
+  const { activeModuleId, selectedEntityId, activeTabFilter, activeDetailTab, psetContextPayload } = useUiStore();
+  const { db } = useDataStore();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Mapeo dinámico del módulo actual a su Blueprint (si existe)
@@ -47,6 +51,21 @@ export function MainLayout() {
 
   const blueprintId = getBlueprintIdForModule(activeModuleId);
   const hasBlueprint = blueprintId && BLUEPRINTS[blueprintId];
+
+  // Cálculo en vivo del context payload para alimentar la Z7 Action Engine
+  const contextPayload: ContextPayload = useMemo(() => {
+    let selectedEntityData = null;
+    if (selectedEntityId) {
+       selectedEntityData = db.find((e: any) => e.EMP_ID === selectedEntityId || e.id === selectedEntityId);
+    }
+    return {
+      activeModuleId: hasBlueprint ? BLUEPRINTS[blueprintId].rootModule : (activeModuleId || null),
+      activeTabFilter: activeTabFilter,
+      selectedEntityId: selectedEntityId,
+      selectedEntityData: selectedEntityData,
+      activeDetailTab: activeDetailTab || undefined
+    };
+  }, [activeModuleId, activeTabFilter, selectedEntityId, activeDetailTab, db, blueprintId, hasBlueprint]);
 
   return (
     <div className="flex bg-white font-['Inter'] absolute inset-0 w-full h-full overflow-hidden">
@@ -153,13 +172,16 @@ export function MainLayout() {
            
            {/* SUB ZONAS INFERIORES */}
            <div className="w-full shrink-0 flex items-stretch bg-white" style={{ height: LAYOUT.altoZonasInferiores }}>
-              {/* ZONA 7: BOTONERAS */}
-              <div className="shrink-0 flex items-center justify-center bg-white m-2 mr-0" style={{ width: LAYOUT.anchoBotonera - 8 }}>
-                 <span className="text-xs font-bold text-slate-400">ZONA 7: Botoneras</span>
+              {/* ZONA 7: BOTONERAS (Action Engine) */}
+              <div className="shrink-0 flex items-center justify-center bg-slate-50 m-2 mr-0 shadow-inner rounded-l-md border border-slate-200 overflow-hidden" style={{ width: LAYOUT.anchoBotonera - 8 }}>
+                 <ActionZonePanel 
+                     context={contextPayload}
+                     onActionExecute={(actionId) => console.log('Action Executed Z7:', actionId)}
+                 />
               </div>
 
               {/* Usamos el divider inteligente porque es una zona dinámica y arrastrable */}
-              <div className="px-1"><SimpleDivider vertical /></div>
+              <div className="px-1 py-4 flex items-center justify-center"><SimpleDivider vertical /></div>
 
               {/* ZONA 8: INFORMES */}
               <div className="flex-1 flex items-center justify-center bg-white m-2 ml-0">
@@ -180,15 +202,25 @@ export function MainLayout() {
            <SimpleDivider />
 
            {/* ZONA 9: CABECERA INSPECTOR */}
-           <div className="w-full shrink-0 bg-[#f8f9ff] flex items-center justify-center px-4 pt-4 border-b border-gray-200" style={{ height: LAYOUT.altoFila2 }}>
-             <h3 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-2">Atributos CQRS (PSet L-Matrix)</h3>
+           <div className="w-full shrink-0 flex flex-col" style={{ height: LAYOUT.altoFila2 }}>
+              <PSetZone9 
+                 screenId={activeModuleId || 'main'}
+                 contextPayload={psetContextPayload}
+                 phaseIds={[]}
+                 deptIds={[]}
+              />
            </div>
            
            <SimpleDivider />
-           
+
            {/* ZONA 10: INSPECTOR */}
-           <div className="flex-1 bg-white overflow-hidden flex flex-col">
-              <PSetInspector entityId={selectedEntityId} />
+           <div className="flex-1 bg-white overflow-hidden flex flex-col relative">
+              <PSetZone10 
+                 screenId={activeModuleId || 'main'}
+                 contextPayload={psetContextPayload}
+                 phaseIds={[]}
+                 deptIds={[]}
+              />
            </div>
         </aside>
 

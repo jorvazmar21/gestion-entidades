@@ -25,6 +25,7 @@ export interface MasterEntityDataGridProps {
   onDeleteSelected?: (selectedNodes: any[]) => void;
   onRowDoubleClicked?: (node: any) => void;
   onRowClicked?: (node: any) => void;
+  onSelectionChanged?: (nodes: any[]) => void;
   selectedRowId?: string | null;
   onSelectedRowFilteredOut?: () => void;
   readOnly?: boolean;
@@ -48,6 +49,7 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
   onDeleteSelected,
   onRowDoubleClicked,
   onRowClicked,
+  onSelectionChanged,
   selectedRowId,
   onSelectedRowFilteredOut,
   readOnly = false,
@@ -277,6 +279,11 @@ export const MasterEntityDataGrid: React.FC<MasterEntityDataGridProps> = ({
             suppressFieldDotNotation={true}
             onRowDoubleClicked={onRowDoubleClicked}
             onRowClicked={onRowClicked}
+            onSelectionChanged={(params: any) => {
+                if (onSelectionChanged) {
+                    onSelectionChanged(params.api.getSelectedNodes());
+                }
+            }}
             onCellValueChanged={async (params: any) => {
                 if (params.oldValue !== params.newValue && primaryKeyField && onCellEdit) {
                     const pkValue = params.data[primaryKeyField];

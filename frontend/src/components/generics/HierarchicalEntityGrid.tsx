@@ -20,15 +20,18 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 }) => {
   const selectedEntityId = useUiStore(state => state.selectedEntityId);
   const setSelectedEntityId = useUiStore(state => state.setSelectedEntityId);
+  const setPSetContextPayload = useUiStore(state => state.setPSetContextPayload);
   const searchTerm = useUiStore(state => state.searchTerm);
   
   const { db } = useDataStore(); // Mock DB L4
 
-  const [activeTab, setActiveTab] = useState<string>('');
+  const activeDetailTab = useUiStore(state => state.activeDetailTab);
+  const setActiveDetailTab = useUiStore(state => state.setActiveDetailTab);
   
   // Array de pestañas maestro
   const masterTabs = blueprint?.masterConfig?.tabs || [];
-  const [activeTabFilter, setActiveTabFilter] = useState<string | null>(masterTabs.length > 0 ? masterTabs[0].id : null);
+  const activeTabFilter = useUiStore(state => state.activeTabFilter);
+  const setActiveTabFilter = useUiStore(state => state.setActiveTabFilter);
 
   // Cada vez que cambia el blueprint, reseteamos a la primera pestaña
   useEffect(() => {
@@ -77,9 +80,11 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
   useEffect(() => {
      if (allowedChildren.length > 0) {
-        setActiveTab(detailViewDef?.defaultOpenTabId || allowedChildren[0].id);
+        if (!activeDetailTab) {
+           setActiveDetailTab(detailViewDef?.defaultOpenTabId || allowedChildren[0].id);
+        }
      } else {
-        setActiveTab('');
+        setActiveDetailTab(null);
      }
   }, [activeTabFilter, blueprint?.viewId, detailViewDef]);
 
@@ -168,6 +173,21 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                    selectedRowId={selectedEntityId}
                    onSelectedRowFilteredOut={() => setSelectedEntityId(null)}
                    onRowClicked={(node) => setSelectedEntityId(node.data.EMP_ID || node.data.id)}
+                   onSelectionChanged={(nodes) => {
+                       const currentTab = masterTabs.find(t => t.id === activeTabFilter);
+                       const label = currentTab?.label || blueprint.rootModule;
+                       const selectedIds = nodes.map(n => n.data.EMP_ID || n.data.id);
+                       
+                       if (selectedIds.length > 0) {
+                           setPSetContextPayload([{
+                               label: label,
+                               entityIds: selectedIds,
+                               isChild: false
+                           }]);
+                       } else {
+                           setPSetContextPayload([]);
+                       }
+                   }}
                  />
               </div>
            </div>
@@ -186,8 +206,8 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
                    {allowedChildren.map(child => (
                      <button 
                        key={child.id}
-                       onClick={() => setActiveTab(child.id)}
-                       className={`w-[18ch] text-center px-2 truncate py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 border-t-[3px] transition-colors rounded-t-md mx-0.5 ${activeTab === child.id ? 'bg-white border-t-[#7f1d1d] border-b-white text-[#7f1d1d] shadow-[0_-2px_10px_-4px_rgba(0,0,0,0.1)] relative top-[2px] z-10' : 'border-t-transparent border-b-transparent text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
+                       onClick={() => setActiveDetailTab(child.id)}
+                       className={`w-[18ch] text-center px-2 truncate py-2 text-[11px] uppercase tracking-widest font-bold border-b-2 border-t-[3px] transition-colors rounded-t-md mx-0.5 ${activeDetailTab === child.id ? 'bg-white border-t-[#7f1d1d] border-b-white text-[#7f1d1d] shadow-[0_-2px_10px_-4px_rgba(0,0,0,0.1)] relative top-[2px] z-10' : 'border-t-transparent border-b-transparent text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
                      >
                        {child.label}
                      </button>
@@ -198,11 +218,11 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
             {/* TABS BODY */}
             <div className="flex-1 w-full p-4 overflow-hidden relative">
-               {allowedChildren.length > 0 && activeTab && (
+               {allowedChildren.length > 0 && activeDetailTab && (
                  <div className="w-full h-full bg-white border border-[#d0dbec] rounded-md shadow-sm overflow-hidden flex flex-col">
                     {/* EN EL FUTURO: Aquí se inyectaría otro HierarchicalEntityGrid pasando the sub-blueprint */}
                     <MasterEntityDataGrid 
-                      moduleId={`DETAIL_${activeTab}`}
+                      moduleId={`DETAIL_${activeDetailTab}`}
                       rowData={[]} // Mock vacío para L2
                       columnDefs={(detailViewDef?.columns as any) || [
                         { field: 'codigo', headerName: 'CÓDIGO' },
