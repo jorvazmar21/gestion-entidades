@@ -48,14 +48,9 @@ export const ActionZonePanel: React.FC<ActionZonePanelProps> = ({ context, onAct
      );
   }, [allowedActions, searchTerm]);
 
-  // Agrpación Dinámica por Categorías
-  const groupedActions = useMemo(() => {
-     const groups: Record<string, SystemAction[]> = {};
-     visibleActions.forEach(a => {
-         if (!groups[a.category]) groups[a.category] = [];
-         groups[a.category].push(a);
-     });
-     return groups;
+  // Ordenación Alfabética Plana
+  const alphabeticalActions = useMemo(() => {
+     return [...visibleActions].sort((a, b) => a.label.localeCompare(b.label));
   }, [visibleActions]);
 
   return (
@@ -86,35 +81,28 @@ export const ActionZonePanel: React.FC<ActionZonePanelProps> = ({ context, onAct
 
        {/* Z7 Listado de Comandos */}
        <div className="flex-1 overflow-y-auto px-2 space-y-4 py-3">
-          {Object.keys(groupedActions).length === 0 ? (
+          {alphabeticalActions.length === 0 ? (
              <div className="text-center p-4">
                 <span className="text-xs text-gray-400 italic">No hay comandos disponibles para el contexto actual.</span>
              </div>
           ) : (
-             Object.entries(groupedActions).map(([category, actions]) => (
-                <div key={category} className="mb-4">
-                   <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-2 pl-2">
-                       {category}
-                   </h4>
-                   <div className="grid grid-cols-2 gap-2">
-                      {actions.map(action => (
-                         <button 
-                             key={action.id}
-                             onClick={() => {
-                                 if (onActionExecute) onActionExecute(action.id, context);
-                             }}
-                             title={action.description}
-                             className="text-left bg-white border border-gray-200 hover:border-[#7f1d1d] hover:bg-red-50 hover:shadow-sm rounded group flex items-center justify-start gap-2 px-3 h-9 transition-all w-full cursor-pointer overflow-hidden"
-                         >
-                             <div className="opacity-70 group-hover:opacity-100 transition-opacity shrink-0">
-                               {resolveIcon(action.icon)}
-                             </div>
-                             <span className="text-[10px] font-bold text-gray-700 group-hover:text-[#7f1d1d] transition-colors uppercase truncate flex-1 leading-none pt-0.5">{action.label}</span>
-                         </button>
-                      ))}
-                   </div>
-                </div>
-             ))
+             <div className="grid grid-cols-2 gap-2">
+                {alphabeticalActions.map(action => (
+                   <button 
+                       key={action.id}
+                       onClick={() => {
+                           if (onActionExecute) onActionExecute(action.id, context);
+                       }}
+                       title={action.description}
+                       className="text-left bg-white border border-gray-200 hover:border-[#7f1d1d] hover:bg-red-50 hover:shadow-sm rounded group flex items-center justify-start gap-2 px-3 h-9 transition-all w-full cursor-pointer overflow-hidden"
+                   >
+                       <div className="opacity-70 group-hover:opacity-100 transition-opacity shrink-0">
+                         {resolveIcon(action.icon)}
+                       </div>
+                       <span className="text-[10px] font-bold text-gray-700 group-hover:text-[#7f1d1d] transition-colors uppercase truncate flex-1 leading-none pt-0.5">{action.label}</span>
+                   </button>
+                ))}
+             </div>
           )}
        </div>
     </div>

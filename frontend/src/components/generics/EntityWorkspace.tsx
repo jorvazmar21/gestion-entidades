@@ -18,8 +18,7 @@ export interface EntityWorkspaceProps {
 
 export const EntityWorkspace: React.FC<EntityWorkspaceProps> = ({ blueprintId }) => {
   const blueprint = BLUEPRINTS[blueprintId];
-  const moduleId = blueprint ? blueprint.rootModule : 'UNKNOWN';
-  const LAYOUT = useLayoutStore();
+  const { altoFila2, z5_ratio_top, z5_ratio_bottom, z5_toolbar_left, z5_toolbar_mid, z5_toolbar_right, mostrarTabiques } = useLayoutStore();
   const selectedEntityId = useUiStore(state => state.selectedEntityId);
   const setSelectedEntityId = useUiStore(state => state.setSelectedEntityId);
   const triggerGridReset = useUiStore(state => state.triggerGridReset);
@@ -38,20 +37,20 @@ export const EntityWorkspace: React.FC<EntityWorkspaceProps> = ({ blueprintId })
   return (
     <div className="flex-1 flex flex-col min-w-0 min-h-0 relative bg-white w-full">
       {/* ZONA 5: WRAPPER PANEL DE COMANDO */}
-      <div className="w-full shrink-0 flex flex-col bg-white border-b border-[#d0dbec]" style={{ height: LAYOUT.altoFila2 }}>
+      <div className="w-full shrink-0 flex flex-col bg-white border-b border-[#d0dbec]" style={{ height: altoFila2 }}>
          {/* 25% TOP: Breadcrumbs */}
-         <div className="w-full shrink-0" style={{ height: `${LAYOUT.z5_ratio_top}%` }}>
+         <div className="w-full shrink-0" style={{ height: `${z5_ratio_top}%` }}>
            <SystemBreadcrumbs contextTitle={blueprint?.title?.toUpperCase()} />
          </div>
          {/* 75% BOTTOM: Toolbar Modular */}
          <div className="w-full flex-1 flex items-center">
-            <div className="h-full shrink-0 flex items-center" style={{ width: `${LAYOUT.z5_toolbar_left}%` }}>
+            <div className="h-full shrink-0 flex items-center" style={{ width: `${z5_toolbar_left}%` }}>
                <ModuleTitle contextTitle={blueprint?.title?.toUpperCase()} />
             </div>
-            <div className={`h-full shrink-0 flex items-center justify-center ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_mid}%` }}>
+            <div className={`h-full shrink-0 flex items-center justify-center ${mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${z5_toolbar_mid}%` }}>
                <ModuleSearch />
             </div>
-            <div className={`h-full shrink-0 flex items-center justify-end pr-6 gap-2 ${LAYOUT.mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${LAYOUT.z5_toolbar_right}%` }}>
+            <div className={`h-full shrink-0 flex items-center justify-end pr-6 gap-2 ${mostrarTabiques ? 'border border-dashed border-slate-300 bg-slate-50' : ''}`} style={{ width: `${z5_toolbar_right}%` }}>
               {/* Botonera de Filtros Z5 */}
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded border border-slate-200 shadow-inner">
                 <button 

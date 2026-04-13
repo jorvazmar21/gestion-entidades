@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS def_pset_template (
     id_pset INTEGER PRIMARY KEY AUTOINCREMENT,
     schema_code TEXT UNIQUE NOT NULL,      
     schema_alias TEXT UNIQUE NOT NULL,
+    pset_behavior_type TEXT NOT NULL DEFAULT 'STATIC', -- 'STATIC', 'DYNAMIC', 'HYPERDYNAMIC'
     fk_ui_group INTEGER NOT NULL REFERENCES def_ui_groups(id_ui_group) ON DELETE RESTRICT,
     ui_order INTEGER DEFAULT 0,            
     json_shape_definition JSON NOT NULL,   
@@ -138,13 +139,13 @@ CREATE TABLE IF NOT EXISTS def_pset_template (
     deleted_at DATETIME
 );
 
--- The Polymorphic Transversal Bridge (Attaching PSets to L1, L2, L3, or L4)
+-- The Polymorphic Transversal Bridge (Attaching PSets to L1, L2, L3)
 CREATE TABLE IF NOT EXISTS rel_pset_to_entity_bridge (
     id_bridge INTEGER PRIMARY KEY AUTOINCREMENT,
     fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE CASCADE,
-    target_uuid TEXT NOT NULL,             
-    attachment_level_enum TEXT NOT NULL,   -- 'L1', 'L2', 'L3', 'L4'
-    UNIQUE (fk_pset, target_uuid)
+    target_definition_uuid TEXT NOT NULL,       
+    definition_level_enum TEXT NOT NULL,        -- 'L1', 'L2', 'L3'
+    UNIQUE (fk_pset, target_definition_uuid)
 );
 
 -- =========================================================================
@@ -152,24 +153,38 @@ CREATE TABLE IF NOT EXISTS rel_pset_to_entity_bridge (
 -- =========================================================================
 
 CREATE TABLE IF NOT EXISTS dat_pset_live_payloads (
-    l4_instance_id TEXT NOT NULL REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+    id_payload_record TEXT PRIMARY KEY,
+    
+    target_value_uuid TEXT NOT NULL,            -- UUID of the physical container (L4, L3, or L2)
+    value_level_enum TEXT NOT NULL,             -- 'L4', 'L3', 'L2' (Enforces the hierarchical cascade)
+    
     fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE RESTRICT,
     json_payload JSON NOT NULL,    
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_by TEXT,
-    PRIMARY KEY (l4_instance_id, fk_pset)
+    
+    generation_date DATETIME,                   -- For DYNAMIC reports (Physical signature date)
+    validity_start_date DATETIME,               -- Multiple contexts
+    validity_end_date DATETIME,                 -- Multiple contexts
+    
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- Audit Trail for Live Payloads
-CREATE TABLE IF NOT EXISTS sys_psets_audit_log (
-    id_audit INTEGER PRIMARY KEY AUTOINCREMENT,
-    l4_instance_id TEXT NOT NULL REFERENCES dat_entity_l4_instance(l4_id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS sys_pset_audit_log (
+    id_audit_record INTEGER PRIMARY KEY AUTOINCREMENT,
+    
     fk_pset INTEGER NOT NULL REFERENCES def_pset_template(id_pset) ON DELETE RESTRICT,
-    valor_anterior JSON,
-    valor_nuevo JSON NOT NULL,
-    motivo_cambio TEXT,
-    modificado_por TEXT NOT NULL,
-    modificado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    payload_record_id TEXT REFERENCES dat_pset_live_payloads(id_payload_record) ON DELETE CASCADE, 
+    
+    target_value_uuid TEXT NOT NULL, 
+    value_level_enum TEXT NOT NULL,  
+    
+    previous_value JSON,
+    new_value JSON NOT NULL,
+    change_reason TEXT,
+    
+    modified_by TEXT NOT NULL,
+    modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================================================================
