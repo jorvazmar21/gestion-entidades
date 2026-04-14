@@ -43,8 +43,8 @@ INSERT OR IGNORE INTO def_entity_l3_type (id_l3, l3_code, fk_l2, human_readable_
 -- 2. PARAMETRIC PROPERTY SETS (CQRS DICTIONARIES) SEEDING
 -- =========================================================================
 
--- UI GROUPS (The centralized visual containers for React Property Sidebar)
-INSERT OR IGNORE INTO def_ui_groups (id_ui_group, ui_group_code, ui_group_name, ui_order, created_by) VALUES
+-- UI GROUPS (The centralized visual containers for React-- Grupos de PSet (Semillas)
+INSERT OR IGNORE INTO def_pset_groups (id_pset_group, pset_group_code, pset_group_name, ui_order, created_by) VALUES
 (1, 'G01_GENERAL', 'Datos Generales', 10, 'SEED_SYSTEM'),
 (2, 'G02_NATURE', 'Naturaleza de Entidad', 20, 'SEED_SYSTEM'),
 (3, 'G03_PHYSICAL', 'Composición Física', 30, 'SEED_SYSTEM');
@@ -70,7 +70,7 @@ INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_
 '{"DataSchema": {"socios": {"type": "array", "items": {"type": "object", "properties": {"fk_empresa": {"type": "string"}, "porcentaje": {"type": "number"}}}}, "avisoUte": {"type": "boolean", "default": true}}, "UISchema": {"avisoUte": {"ui:readonly": true, "security:visible_roles": ["USUARIO", "ADMINISTRADOR"]}}}', 'SEED_SYSTEM');
 
 -- ATAQUES (PUENTES) POLIMÓRFICOS
-INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_uuid, attachment_level_enum) VALUES
+INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_definition_uuid, definition_level_enum) VALUES
 (2, 1, '1', 'L1'), -- L1_EMP
 (4, 3, '1', 'L2'), -- L2_EMP
 (6, 5, '1', 'L3'); -- EMP
@@ -114,31 +114,139 @@ INSERT OR IGNORE INTO rel_abac_matrix_rules (id_rule, fk_bridge, fk_phase, fk_de
 
 -- PURGA PREVIA DE L4 (Se lleva por delante PSETS y ARQ3 en cascada)
 DELETE FROM dat_entity_l4_instance;
+DELETE FROM dat_emp_company;
+DELETE FROM rel_emp_jointventure;
 
 -- -------------------------------------------------------------------------
--- A) EMPRESAS (fk_l3 = 1 para UTE, 2 para NO UTE)
+-- A) EMPRESAS (L4, FISCAL, JOINT_VENTURE)
 -- -------------------------------------------------------------------------
 -- 1. Bases L4
-INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, created_by) VALUES
-('emp-nortunel', 1, 'EMP-NORTUNEL', 'NORTUNEL S.A.', 'SEED_ARQ3'),
-('emp-adif', 1, 'EMP-ADIF', 'ADIF ALTA VELOCIDAD', 'SEED_ARQ3'),
-('emp-acciona', 1, 'EMP-ACCIONA', 'ACCIONA CONSTRUCCION', 'SEED_ARQ3'),
-('emp-ferrovial', 1, 'EMP-FERROVIAL', 'FERROVIAL AGROMAN', 'SEED_ARQ3'),
-('emp-sika', 1, 'EMP-SIKA', 'SIKA ESPAÑA S.A.', 'SEED_ARQ3'),
-('emp-hilti', 1, 'EMP-HILTI', 'HILTI ESPAÑOLA S.A.', 'SEED_ARQ3'),
-('emp-ute-tunel', 1, 'EMP-UTE-TUNEL', 'UTE TUNEL PAJARES', 'SEED_ARQ3'),
-('emp-sub-excav', 1, 'EMP-SUB-EXCAV', 'EXCAVACIONES PACO S.L.', 'SEED_ARQ3');
+INSERT INTO dat_entity_l4_instance (l4_id, fk_l3, unique_human_code, instance_name, fk_phase, is_active, created_at, created_by, deleted_at, deleted_by) VALUES
+('1', 1, 'EMP-0001', 'AURTENETXEA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('2', 1, 'EMP-0002', 'VERKOL', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('3', 1, 'EMP-0003', 'BASF', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('4', 1, 'EMP-0004', 'MAXMEN', NULL, 0, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('5', 1, 'EMP-0005', 'ARBERE', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('6', 1, 'EMP-0006', 'MIRAMAR', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('7', 1, 'EMP-0007', 'SAIGO', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('8', 1, 'EMP-0008', 'TRAT. DEL PIRINEO', NULL, 0, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('9', 1, 'EMP-0009', 'OLARRA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('10', 1, 'EMP-0010', 'COBRA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('11', 1, 'EMP-0011', 'M.ELECT. SAN IGNACIO', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('12', 1, 'EMP-0012', 'LA MOLINA', NULL, 0, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('13', 1, 'EMP-0013', 'VIVANCO HERNANDEZ, S.A.', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('14', 1, 'EMP-0014', 'COBILAN, S.C.', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('15', 1, 'EMP-0015', 'HERCAL', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('16', 1, 'EMP-0016', 'COMSA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('17', 1, 'EMP-0017', 'COMSA INSTALACIONES', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('18', 1, 'EMP-0018', 'NORTUNEL', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('19', 1, 'EMP-0019', 'SANDO', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('20', 1, 'EMP-0020', 'ROVER', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('21', 1, 'EMP-0021', 'CYCASA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('22', 1, 'EMP-0022', 'CAMPEZO', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('23', 1, 'EMP-0023', 'GEOTUNEL', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('24', 1, 'EMP-0024', 'IZA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('25', 1, 'EMP-0025', 'ZUBIEDER', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('26', 1, 'EMP-0026', 'MARIEZCURRENA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('27', 1, 'EMP-0027', 'FERROVIAL', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('28', 1, 'EMP-0028', 'MINA DE SANTA MARTA', NULL, 0, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('29', 1, 'ADM-0001', 'GOBIERNO DE NAVARRA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('30', 1, 'ADM-0002', 'ETS', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('31', 1, 'ADM-0003', 'D.F.G.', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('32', 1, 'ADM-0004', 'CONSELL DE MALLORCA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('33', 1, 'ADM-0005', 'AYTO. CASTRILLON', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('34', 1, 'ADM-0006', 'ADIF', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('35', 1, 'UTE-0001', 'PEGUERA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('36', 1, 'UTE-0002', 'RANTE', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('37', 1, 'UTE-0003', 'MARKIJANA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('38', 1, 'UTE-0004', 'SECTOR 3', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('39', 1, 'UTE-0005', 'GALERIAS', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('40', 1, 'UTE-0006', 'LINEA 5', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('41', 1, 'UTE-0007', 'UTE IRAETA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('42', 1, 'UTE-0008', 'UTE GOROSMENDI', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('43', 1, 'UTE-0009', 'ALTZA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('44', 1, 'UTE-0010', 'UTE ADIANTE', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL),
+('45', 1, 'EMP-0029', 'BALZOLA', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', '30/06/2020 0:00', 'SEED_SYSTEM'),
+('46', 1, 'EMP-0030', 'AZVI', NULL, 1, '02/04/1975 0:00', 'SEED_SYSTEM', NULL, NULL);
 
 -- 2. Corazones Físicos (dat_emp_company)
-INSERT INTO dat_emp_company (emp_id, emp_fiscalCode, emp_fiscalName, emp_fiscalDirection, emp_fiscalCP, emp_fiscalLocal, emp_fiscalProv, emp_fiscalCountry, is_Proveedor, is_Subcontratista, is_Contratista, is_Cliente) VALUES
-('emp-nortunel', 'A01310630', 'NORTUNEL S.A.', 'Pol. Ind. Jundiz', '01015', 'Vitoria-Gasteiz', 'Alava', 'España', 0, 0, 1, 0),
-('emp-adif', 'Q2801660H', 'ADIF ALTA VELOCIDAD', 'C/ Sor Angela', '28020', 'Madrid', 'Madrid', 'España', 0, 0, 0, 1),
-('emp-acciona', 'A08001851', 'ACCIONA CONSTRUCCION', 'Av. Europa', '28108', 'Alcobendas', 'Madrid', 'España', 0, 0, 1, 0),
-('emp-ferrovial', 'A81307653', 'FERROVIAL AGROMAN', 'C/ Ribera del Loira', '28042', 'Madrid', 'Madrid', 'España', 0, 0, 1, 1),
-('emp-sika', 'A28078236', 'SIKA ESPAÑA S.A.', 'Carretera de Fuencarral', '28108', 'Alcobendas', 'Madrid', 'España', 1, 0, 0, 0),
-('emp-hilti', 'A28236248', 'HILTI ESPAÑOLA S.A.', 'C/ Fuente de la Mora', '28050', 'Madrid', 'Madrid', 'España', 1, 0, 0, 0),
-('emp-ute-tunel', 'U12345678', 'UTE TUNEL PAJARES', 'Av. de Guipuzcoa', '33001', 'Oviedo', 'Asturias', 'España', 0, 0, 1, 0),
-('emp-sub-excav', 'B98765432', 'EXCAVACIONES PACO S.L.', 'Pol. Ind. Los Arcos', '46014', 'Valencia', 'Valencia', 'España', 0, 1, 0, 0);
+INSERT INTO dat_emp_company (emp_id, emp_fiscalName, emp_fiscalCode, emp_fiscalDirection, emp_fiscalCP, emp_fiscalLocal, emp_fiscalProv, emp_fiscalCountry, is_Proveedor, is_Subcontratista, is_Contratista, is_Cliente) VALUES
+('1', 'AURTENETXEA, S.A.', 'A48245849', 'Avenida de la Constitucion, 46, Bajo B', '48115', 'SONDIKA', 'BIZKAIA', 'ESPAÑA', 1, 0, 0, 0),
+('2', 'VERKOL, S.A.', 'A20020510', 'Avenida de los Chopos, 103, Esc. B, 5º1º', '31700', 'VERA DE BIDASOA', 'NAVARRA', 'ESPAÑA', 1, 0, 0, 0),
+('3', 'MASTER BUILDERS SOLUTIONS ESPAÑA, S.L.U.', 'B31721541', 'Avenida Diagonal, 480, 2º2º', '08940', 'CORNELLA DE LLOBREGAT', 'BARCELONA', 'ESPAÑA', 1, 0, 0, 0),
+('4', 'MAXMEN, S.L.', 'B33762311', 'Calle Corazon de Maria, 22, 4ºD', '33510', 'SIERO', 'ASTURIAS', 'ESPAÑA', 1, 0, 0, 0),
+('5', 'COMERCIAL ARBERE, S.L.', 'B48597139', 'Calle de la Esperanza, 9, Bajo Izquierda', '48213', 'IZURZA', 'BIZKAIA', 'ESPAÑA', 1, 0, 0, 0),
+('6', 'MIRAMAR GUNITADOS, S.A.', 'A48126458', 'Calle de la Luna, 7, 3ºB', '48510', 'SAN SALVADOR DEL VALLE', 'BIZKAIA', 'ESPAÑA', 0, 1, 0, 0),
+('7', 'SAIGO S.L.', 'B48149535', 'Calle de los Herreros, 4, 3ºC', '48001', 'BILBAO', 'VIZCAYA', 'ESPAÑA', 0, 1, 0, 0),
+('8', 'TRACTAMENTS AMBIENTALS DELS PIRINEUS SLU', 'B17423971', 'Calle del Pez, 12, 2ºA', '17520', 'PUIGCERDA', 'GIRONA', 'ESPAÑA', 0, 1, 0, 0),
+('9', 'ASFALTADOS OLARRA, S.A.', 'A48020455', 'Calle Jorge Juan, 55, 1º Exterior', '48001', 'BILBAO', 'VIZCAYA', 'ESPAÑA', 0, 1, 0, 0),
+('10', 'COBRA INSTALACIONES Y SERVICIOS, S.A.', 'A46146387', 'Calle Mayor, 3, 1º Izquierda', '28001', 'MADRID', 'MADRID', 'ESPAÑA', 0, 1, 0, 0),
+('11', 'MONTAJES ELECTRICOS SAN IGNACIO, S.L.', 'B48162663', 'Paseo de la Castellana, 120, 7ºC', '48215', 'IURRETA', 'VIZCAYA', 'ESPAÑA', 0, 1, 0, 0),
+('12', 'MANTENIMIENTO E INSTALACIONES LA MOLINA, S.L.', 'B17788078', 'Paseo del Prado, 26, 5º', '17537', 'LA MOLINA', 'GIRONA', 'ESPAÑA', 0, 1, 0, 0),
+('13', 'VIVANCO HERNANDEZ, S.A.', 'A43123819', 'Plaza de España, 15, Ático', '43201', 'REUS', 'TARRAGONA', 'ESPAÑA', 0, 1, 0, 0),
+('14', 'COBILAN, S.C.', 'J01304943', 'Ronda de Valencia, 14, 6º Derecha', '1001', 'VITORIA-GASTEIZ', 'ALAVA', 'ESPAÑA', 0, 1, 0, 0),
+('15', 'HERCAL DIGGERS, S.L.', 'B64143639', 'Travesia del Sol, 8, Duplex 4', '0221', 'TERRASSA', 'BARCELONA', 'ESPAÑA', 0, 1, 0, 0),
+('16', 'COMSA, S.A.', 'A08002071', 'Calle Viriato, 47', '08014', 'Barcelona', 'Barcelona', 'ESPAÑA', 0, 1, 1, 1),
+('17', 'COMSA INSTALACIONES Y SISTEMAS, S.A.U.', 'A08304956', 'Calle Julian Camarillo, 6', '28037', 'Madrid', 'Madrid', 'ESPAÑA', 0, 1, 1, 1),
+('18', 'NORTUNEL, S.A.', 'A48425217', 'Poligono Ind. Sangroniz, Calle Ibaibarte, 19', '48150', 'Sondika', 'Bizkaia', 'ESPAÑA', 0, 1, 1, 0),
+('19', 'CONSTRUCCIONES SANCHEZ DOMINGUEZ-SANDO, S.A.', 'A29011788', 'Avenida de Manoteras, 46', '28050', 'Madrid', 'Madrid', 'ESPAÑA', 0, 1, 1, 0),
+('20', 'ROVER INFRAESTRUCTURAS, S.A.', 'A46141360', 'Calle de Jose Abascal, 45', '28003', 'Madrid', 'Madrid', 'ESPAÑA', 0, 1, 1, 0),
+('21', 'CYCASA CANTERAS Y CONSTRUCCIONES, S.A.', 'A48020771', 'Calle Maximo Aguirre, 18', '48011', 'Bilbao', 'Bizkaia', 'ESPAÑA', 1, 1, 1, 1),
+('22', 'CAMPEZO OBRAS Y SERVICIOS, S.A.', 'A20014294', 'Lugar Barrio de Añorga, s/n', '20010', 'San Sebastian', 'Gipuzkoa', 'ESPAÑA', 0, 1, 1, 0),
+('23', 'GEOTUNEL, S.L.', 'B81260174', 'Calle de los Manzanares, 1', '28005', 'Madrid', 'Madrid', 'ESPAÑA', 0, 1, 1, 0),
+('24', 'CONSTRUCCIONES IZA, S.A.', 'A48143281', 'Barrio de Iurreta, s/n', '48215', 'Iurreta', 'Bizkaia', 'ESPAÑA', 0, 1, 1, 0),
+('25', 'ZUBIEDER, S.A.', 'A48135899', 'Calle del Horno, 14', '48008', 'Bilbao', 'Bizkaia', 'ESPAÑA', 0, 1, 1, 0),
+('26', 'CONSTRUCCIONES MARIEZCURRENA, S.L.', 'B31034448', 'Carretera de Irurita, s/n', '31740', 'Santesteban', 'Navarra', 'ESPAÑA', 0, 1, 1, 1),
+('27', 'FERROVIAL CONSTRUCCION, S.A.', 'A81250506', 'Calle de la Ribera del Loira, 42', '28042', 'Madrid', 'Madrid', 'ESPAÑA', 0, 1, 1, 1),
+('28', 'MINERA SANTA MARTA, S.A.', 'A20014066', 'Calle de Serrano, 45', '28001', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 0, 1),
+('29', 'COMUNIDAD FORAL DE NAVARRA', 'S3100001I', 'Avenida de Carlos III el Noble, 2', '31002', 'Pamplona', 'Navarra', 'ESPAÑA', 0, 0, 0, 1),
+('30', 'EUSKAL TRENBIDE SAREA', 'Q4800643J', 'Calle de San Vicente, 8', '48001', 'Bilbao', 'Bizkaia', 'ESPAÑA', 0, 0, 0, 1),
+('31', 'DIPUTACION FORAL DE GIPUZKOA', 'P2000000F', 'Plaza de Gipuzkoa, s/n', '20004', 'San Sebastian', 'Gipuzkoa', 'ESPAÑA', 0, 0, 0, 1),
+('32', 'CONSELL INSULAR DE MALLORCA', 'P0700002J', 'Calle del Palau Reial, 1', '07001', 'Palma', 'Illes Balears', 'ESPAÑA', 0, 0, 0, 1),
+('33', 'AYUNTAMIENTO DE CASTRILLON', 'P3301600G', 'Plaza de la Constitucion, 1', '33450', 'Piedras Blancas', 'Asturias', 'ESPAÑA', 0, 0, 0, 1),
+('34', 'ADMINISTRADOR DE INFRAESTRUCTURAS FERROVIARIAS', 'Q2801660H', 'Calle de la Sor Angela de la Cruz, 3', '28020', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 0, 1),
+('35', 'UTE TUNEL PEGUERA', 'U57210677', 'Calle de la Sor Angela de la Cruz, 3', '28020', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 1, 1),
+('36', 'UTE TUNEL DE RANTE', 'U88220023', 'Calle de la Ribera del Loira, 42', '28042', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 1, 1),
+('37', 'UTE SISTEMA MARKIJANA', 'U01509650', 'Poligono Ind. Sangroniz, Calle Ibaibarte, 19', '48150', 'Sondika', 'Bizkaia', 'ESPAÑA', 0, 0, 1, 1),
+('38', 'UTE SECTOR 3', 'U87613583', 'Calle Julian Camarillo, 6', '28037', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 1, 1),
+('39', 'UTE SALIDAS DE EMERGENCIA', 'U48464323', 'Calle Maximo Aguirre, 18', '48011', 'Bilbao', 'Bizkaia', 'ESPAÑA', 0, 0, 1, 1),
+('40', 'UTE L5 GALDAKAO HOSPITAL', 'U95914659', 'Calle San Vicente, 8, Planta 13', '48001', 'Bilbao', 'Bizkaia', 'ESPAÑA', 0, 0, 1, 1),
+('41', 'UTE IRAETA', 'U20036522', 'Barrio de Añorga, s/n', '20010', 'San Sebastian', 'Gipuzkoa', 'ESPAÑA', 0, 0, 1, 1),
+('42', 'UTE GOROSMENDI BI', 'U95655435', 'Calle Gran Via, 17', '48001', 'Bilbao', 'Bizkaia', 'ESPAÑA', 0, 0, 1, 1),
+('43', 'UTE ALTZA GALTZARABORDA', 'U48123456', 'Paseo de la Castellana, 120', '28046', 'Madrid', 'Madrid', 'ESPAÑA', 0, 0, 1, 1),
+('44', 'UTE ADIANTE', 'U15982125', 'Calle Marie Curie, 7', '15008', 'A Coruña', 'A Coruña', 'ESPAÑA', 0, 0, 1, 1),
+('45', 'Construcciones y Promociones Balzola, S.A.', 'A48763148', 'Sabino Arana Etorbidea, 20', '48013', 'BILBAO', 'BIZKAIA', 'ESPAÑA', 0, 0, 1, 0),
+('46', 'AZVI, S.A.U.', 'A41017088', 'Calle Almendralejo, 5', '41019', 'Sevilla', 'Sevilla', 'ESPAÑA', 0, 0, 1, 0);
+
+-- 3. Composicion de UTEs (rel_emp_jointventure)
+INSERT INTO rel_emp_jointventure (jointVenture_emp_id, partner_emp_id, participationShare) VALUES
+('35', '16', 33.34),
+('35', '17', 33.33),
+('35', '18', 33.33),
+('36', '19', 50.0),
+('36', '20', 50.0),
+('37', '16', 70.0),
+('37', '18', 30.0),
+('38', '16', 40.0),
+('38', '21', 20.0),
+('38', '22', 20.0),
+('38', '18', 20.0),
+('39', '18', 50.0),
+('39', '23', 50.0),
+('40', '18', 30.0),
+('40', '16', 35.0),
+('40', '24', 35.0),
+('41', '16', 70.0),
+('41', '25', 30.0),
+('42', '16', 50.0),
+('42', '25', 25.0),
+('42', '26', 25.0),
+('43', '16', 30.0),
+('43', '46', 30.0),
+('43', '22', 30.0),
+('43', '18', 10.0),
+('44', '18', 50.0),
+('44', '26', 50.0);
 
 
 -- =========================================================================

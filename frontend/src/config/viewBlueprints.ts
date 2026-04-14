@@ -13,7 +13,7 @@ export const BLUEPRINTS: Record<string, ViewBlueprint> = {
         { field: 'EMP_ID', headerName: 'ID', cellStyle: { textAlign: 'left' } },
         { field: 'UNIQUE_HUMAN_CODE', headerName: 'CODIGO', cellStyle: { textAlign: 'left' } },
         { field: 'INSTANCE_NAME', headerName: 'NOMBRE_OBRA', flex: 1, cellStyle: { textAlign: 'left' }, suppressAutoSize: true },
-        { field: 'IS_ACTIVE', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' }
+        { field: 'ESTADO_TXT', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' }
       ]
     },
     detailConfig: {
@@ -34,18 +34,18 @@ export const BLUEPRINTS: Record<string, ViewBlueprint> = {
     title: 'Agentes',
     masterConfig: {
       tabs: [
-        { id: 'todos', label: 'TODAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master' } },
-        { id: 'CONTRATISTA', label: 'CONTRATAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master', whereClause: 'IS_CONTRATISTA = 1' } },
-        { id: 'UTE', label: 'UTES', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master', whereClause: 'IS_UTE = 1' } },
-        { id: 'PROVEEDOR', label: 'PROVEEDORES', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master', whereClause: 'IS_PROVEEDOR = 1' } },
-        { id: 'SUBCONTRATA', label: 'SUBCONTRATAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master', whereClause: 'IS_SUBCONTRATA = 1' } },
-        { id: 'CLIENTE', label: 'CLIENTES', queryConfig: { endpoint: '/api/raw-db/read', table: 'entidades_master', whereClause: 'IS_CLIENTE = 1' } }
+        { id: 'todos', label: 'TODAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master' } },
+        { id: 'CONTRATISTA', label: 'CONTRATAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master', whereClause: 'IS_CONTRATISTA = 1' } },
+        { id: 'UTE', label: 'UTES', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master', whereClause: 'IS_UTE = 1' } },
+        { id: 'PROVEEDOR', label: 'PROVEEDORES', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master', whereClause: 'IS_PROVEEDOR = 1' } },
+        { id: 'SUBCONTRATA', label: 'SUBCONTRATAS', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master', whereClause: 'IS_SUBCONTRATA = 1' } },
+        { id: 'CLIENTE', label: 'CLIENTES', queryConfig: { endpoint: '/api/raw-db/read', table: 'vw_entidades_master', whereClause: 'IS_CLIENTE = 1' } }
       ],
       columns: [
         { field: 'EMP_ID', headerName: 'ID', cellStyle: { textAlign: 'left' } },
         { field: 'UNIQUE_HUMAN_CODE', headerName: 'CODIGO', cellStyle: { textAlign: 'left' } },
         { field: 'INSTANCE_NAME', headerName: 'NOMBRE', flex: 1, cellStyle: { textAlign: 'left' }, suppressAutoSize: true },
-        { field: 'IS_ACTIVE', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' },
+        { field: 'ESTADO_TXT', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' },
         { field: 'IS_PROVEEDOR', headerName: 'PROV', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'BOOLEAN_LED' },
         { field: 'IS_SUBCONTRATA', headerName: 'SUBC', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'BOOLEAN_LED' },
         { field: 'IS_CLIENTE', headerName: 'CLIE', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'BOOLEAN_LED' },
@@ -77,7 +77,7 @@ export const BLUEPRINTS: Record<string, ViewBlueprint> = {
         { field: 'EMP_ID', headerName: 'ID', cellStyle: { textAlign: 'left' } },
         { field: 'UNIQUE_HUMAN_CODE', headerName: 'CODIGO', cellStyle: { textAlign: 'left' } },
         { field: 'INSTANCE_NAME', headerName: 'NOMBRE', flex: 1, cellStyle: { textAlign: 'left' }, suppressAutoSize: true },
-        { field: 'IS_ACTIVE', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' },
+        { field: 'ESTADO_TXT', headerName: 'ESTADO', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'STATUS_BADGE' },
         { field: 'IS_SEDE', headerName: 'SEDE', headerClass: 'text-center', cellStyle: { textAlign: 'center' }, rendererMode: 'BOOLEAN_LED' }
       ]
     },

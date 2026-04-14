@@ -108,18 +108,17 @@ CREATE TABLE IF NOT EXISTS rel_entity_topology_graph (
 -- 3. PARAMETRIC PROPERTY SETS (CQRS DICTIONARIES)
 -- =========================================================================
 
--- Tabla Centralizada de Grupos de UI (Evita desnormalización alfabética)
-CREATE TABLE IF NOT EXISTS def_ui_groups (
-    id_ui_group INTEGER PRIMARY KEY AUTOINCREMENT,
-    ui_group_code TEXT UNIQUE NOT NULL,
-    ui_group_name TEXT NOT NULL UNIQUE,
+-- Tabla Centralizada de Grupos de PSet (Evita desnormalización alfabética)
+CREATE TABLE IF NOT EXISTS def_pset_groups (
+    id_pset_group INTEGER PRIMARY KEY AUTOINCREMENT,
+    pset_group_code TEXT UNIQUE NOT NULL,
+    pset_group_name TEXT NOT NULL UNIQUE,
     ui_order INTEGER DEFAULT 0,            
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT,
-    updated_at DATETIME,
-    updated_by TEXT,
-    deleted_at DATETIME
+    deleted_at DATETIME,
+    deleted_by TEXT
 );
 
 -- The PSet Dictionary (DataSchema + UISchema locked in JSON)
@@ -128,7 +127,7 @@ CREATE TABLE IF NOT EXISTS def_pset_template (
     schema_code TEXT UNIQUE NOT NULL,      
     schema_alias TEXT UNIQUE NOT NULL,
     pset_behavior_type TEXT NOT NULL DEFAULT 'STATIC', -- 'STATIC', 'DYNAMIC', 'HYPERDYNAMIC'
-    fk_ui_group INTEGER NOT NULL REFERENCES def_ui_groups(id_ui_group) ON DELETE RESTRICT,
+    fk_pset_group INTEGER NOT NULL REFERENCES def_pset_groups(id_pset_group) ON DELETE RESTRICT,
     ui_order INTEGER DEFAULT 0,            
     json_shape_definition JSON NOT NULL,   
     is_active INTEGER DEFAULT 1,
@@ -351,3 +350,46 @@ CREATE TABLE IF NOT EXISTS dat_pry_project (
     semanticVersion_tag TEXT NOT NULL,
     dateVersion TEXT NOT NULL
 );
+-- ========================================================================
+-- VISTAS MODO DIOS (BFF) PARA DATAGRIDS FRONTEND
+-- ========================================================================
+CREATE VIEW IF NOT EXISTS vw_entidades_master AS
+SELECT 
+    L4.l4_id AS EMP_ID,
+    L4.l4_id AS id,
+    L4.unique_human_code AS UNIQUE_HUMAN_CODE,
+    L4.instance_name AS INSTANCE_NAME,
+    L4.is_active AS IS_ACTIVE,
+    L4.deleted_at AS DELETED_AT,
+    IFNULL(COMP.is_Proveedor, 0) AS IS_PROVEEDOR,
+    IFNULL(COMP.is_Subcontratista, 0) AS IS_SUBCONTRATA,
+    IFNULL(COMP.is_Contratista, 0) AS IS_CONTRATISTA,
+    IFNULL(COMP.is_Cliente, 0) AS IS_CLIENTE,
+    CASE WHEN UTE.jointVenture_emp_id IS NOT NULL THEN 1 ELSE 0 END AS IS_UTE
+FROM dat_entity_l4_instance L4
+LEFT JOIN dat_emp_company COMP ON L4.l4_id = COMP.emp_id
+LEFT JOIN rel_emp_jointventure UTE ON L4.l4_id = UTE.jointVenture_emp_id;
+
+-- ========================================================================
+-- VISTAS MODO DIOS (BFF) PARA DATAGRIDS FRONTEND
+-- ========================================================================
+CREATE VIEW IF NOT EXISTS vw_entidades_master AS
+SELECT 
+    L4.l4_id AS EMP_ID,
+    L4.l4_id AS id,
+    L4.unique_human_code AS UNIQUE_HUMAN_CODE,
+    L4.instance_name AS INSTANCE_NAME,
+    L4.is_active AS IS_ACTIVE,
+    L4.deleted_at AS DELETED_AT,
+    CASE 
+        WHEN L4.deleted_at IS NOT NULL THEN 'ANULADA'
+        WHEN L4.is_active = 1 THEN 'ACTIVA'
+        ELSE 'INACTIVA'
+    END AS ESTADO_TXT,
+    IFNULL(COMP.is_Proveedor, 0) AS IS_PROVEEDOR,
+    IFNULL(COMP.is_Subcontratista, 0) AS IS_SUBCONTRATA,
+    IFNULL(COMP.is_Contratista, 0) AS IS_CONTRATISTA,
+    IFNULL(COMP.is_Cliente, 0) AS IS_CLIENTE,
+    CASE WHEN EXISTS (SELECT 1 FROM rel_emp_jointventure WHERE jointVenture_emp_id = L4.l4_id) THEN 1 ELSE 0 END AS IS_UTE
+FROM dat_entity_l4_instance L4
+LEFT JOIN dat_emp_company COMP ON L4.l4_id = COMP.emp_id;

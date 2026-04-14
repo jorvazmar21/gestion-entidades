@@ -14,21 +14,19 @@ export const renderBooleanLed = (params: any) => {
 
 // Renderizador para el badge de Estado (Activo, Inactivo, Borrado)
 export const renderStatusBadge = (params: any) => {
-   const isDeleted = params.data?.DELETED_AT || params.data?.DELETED_BY || params.data?.deletedAt;
-   const isActive = params.data?.IS_ACTIVE === 1 || params.data?.es_activa || false;
+   const estado = params.value; // Lee directamente ACTIVA, INACTIVA o ANULADA
    
    let colorClass = "";
-   let tooltip = "";
+   let tooltip = estado || "Desconocido";
    
-   if (isDeleted) {
+   if (estado === 'ANULADA') {
       colorClass = "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.6)]";
-      tooltip = "Archivado / Borrado";
-   } else if (isActive) {
+   } else if (estado === 'ACTIVA') {
       colorClass = "bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]";
-      tooltip = "Activa";
-   } else {
+   } else if (estado === 'INACTIVA') {
       colorClass = "bg-cyan-500 shadow-[0_0_4px_rgba(6,182,212,0.6)]";
-      tooltip = "Inactiva";
+   } else {
+      colorClass = "bg-gray-400";
    }
    
    return (

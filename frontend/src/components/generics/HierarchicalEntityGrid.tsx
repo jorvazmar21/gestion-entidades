@@ -23,47 +23,34 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
   const setPSetContextPayload = useUiStore(state => state.setPSetContextPayload);
   const searchTerm = useUiStore(state => state.searchTerm);
   
-  const { db } = useDataStore(); // Mock DB L4
-
   const activeDetailTab = useUiStore(state => state.activeDetailTab);
   const setActiveDetailTab = useUiStore(state => state.setActiveDetailTab);
   
-  // Array de pestañas maestro
-  const masterTabs = blueprint?.masterConfig?.tabs || [];
   const activeTabFilter = useUiStore(state => state.activeTabFilter);
   const setActiveTabFilter = useUiStore(state => state.setActiveTabFilter);
 
-  // Cada vez que cambia el blueprint, reseteamos a la primera pestaña
-  useEffect(() => {
-     if (masterTabs.length > 0) {
-        setActiveTabFilter(masterTabs[0].id);
-     }
-  }, [blueprint?.viewId]);
-
-  // Construcción dinámica de columnas maestro
+  const masterTabs = blueprint?.masterConfig.tabs || [];
+  
   const masterColumnDefs = useMemo(() => {
      if (!blueprint) return [];
-     
-     // 1. Tomamos las columnas base
-     let columns = [...blueprint.masterConfig.columns];
-     
-     // 2. Si la pestaña actual tiene overrideColumns, las aplicamos
-     const currentTab = masterTabs.find(t => t.id === activeTabFilter);
-     if (currentTab?.overrideColumns) {
-         // Lógica simplificada de override: Reemplazo completo (podría ser merge en un futuro)
-         columns = currentTab.overrideColumns;
-     }
-
-     // 3. Mapeamos las columnas al formato AG Grid, inyectando el CellRenderer dinámico
-     return columns.map(col => {
-         const agGridCol: any = { ...col };
-         if (col.rendererMode) {
-             const renderer = getCellRenderer(col.rendererMode);
-             if (renderer) {
-                 agGridCol.cellRenderer = renderer;
-             }
-         }
-         return agGridCol;
+     return blueprint.masterConfig.columns.map((col: any) => {
+        const enhancedCol = { ...col };
+        
+        if (col.rendererMode) {
+            enhancedCol.cellRenderer = getCellRenderer(col.rendererMode);
+        }
+        
+        // Custom Sort Comparator para la columna calculada ESTADO_TXT en SQLite
+        if (col.rendererMode === 'STATUS_BADGE') {
+            enhancedCol.comparator = (valueA: string, valueB: string) => {
+                const weights: Record<string, number> = { 'ACTIVA': 0, 'INACTIVA': 1, 'ANULADA': 2 };
+                const weightA = weights[valueA] ?? 3;
+                const weightB = weights[valueB] ?? 3;
+                return weightA - weightB;
+            };
+        }
+        
+        return enhancedCol;
      });
   }, [blueprint]);
 
@@ -78,6 +65,37 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
 
   const allowedChildren = detailViewDef?.tabs || [];
 
+  const [serverData, setServerData] = useState<any[]>([]);
+
+  // BFF Fetch en la inicialización del Módulo
+  useEffect(() => {
+     if (!blueprint) return;
+     const baseConfig = masterTabs[0]?.queryConfig;
+     if (baseConfig && baseConfig.endpoint) {
+         fetch(baseConfig.endpoint, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ table: baseConfig.table, conditions: {} })
+         })
+         .then(res => res.json())
+         .then(json => {
+             if (json.success) {
+                 setServerData(json.data);
+             } else {
+                 console.error("Error en BFF fetch:", json.error);
+             }
+         })
+         .catch(err => console.error("Error red BFF fetch:", err));
+     }
+  }, [blueprint?.viewId]);
+
+  useEffect(() => {
+     if (masterTabs.length > 0 && !activeTabFilter) {
+        setActiveTabFilter(masterTabs[0].id);
+     }
+  }, [masterTabs, activeTabFilter, setActiveTabFilter]);
+
+  // Si estamos en un L2 o L3 sin hijos L4, forzamos cerrar panel
   useEffect(() => {
      if (allowedChildren.length > 0) {
         if (!activeDetailTab) {
@@ -88,36 +106,45 @@ export const HierarchicalEntityGrid: React.FC<HierarchicalEntityGridProps> = ({
      }
   }, [activeTabFilter, blueprint?.viewId, detailViewDef]);
 
-  // Filtrado de Datos
+  // Filtrado Frontend (Pestañas, Texto, Semáforos)
   const filteredData = useMemo(() => {
-      if (!blueprint) return [];
+      if (!serverData) return [];
       
-      return db.filter((e: any) => {
-         if (e.category !== blueprint.rootModule) return false;
+      return serverData.filter((e: any) => {
          
-         // Filtrado por pestaña lógica (Data-Driven 'whereClause')
+         // Filtrado por pestaña lógica (Data-Driven 'whereClause') local
          const currentTab = masterTabs.find(t => t.id === activeTabFilter);
          if (currentTab?.queryConfig?.whereClause) {
              const [field, operation, value] = currentTab.queryConfig.whereClause.split(' ');
              if (field && operation === '=' && value === '1') {
                  if (e[field] !== 1) return false;
              }
+             if (field && operation === '=' && value === '0') {
+                 if (e[field] !== 0) return false;
+             }
          }
          
-         // Filtrado por estado (Semáforos de Zona 5)
-         const isDeleted = e.DELETED_AT !== undefined && e.DELETED_AT !== null; 
-         const isActive = e.IS_ACTIVE === 1;
+         // Filtrado por búsqueda de texto
+         if (searchTerm) {
+             const term = searchTerm.toLowerCase();
+             const codeMatch = e.UNIQUE_HUMAN_CODE && String(e.UNIQUE_HUMAN_CODE).toLowerCase().includes(term);
+             const nameMatch = e.INSTANCE_NAME && String(e.INSTANCE_NAME).toLowerCase().includes(term);
+             if (!codeMatch && !nameMatch) return false;
+         }
 
-         if (isDeleted) {
+         // Filtrado por estado (Semáforos de Zona 5), enganchado al nuevo ESTADO_TXT
+         const estadoBase = e.ESTADO_TXT;
+
+         if (estadoBase === 'ANULADA') {
             return statusFilter.anuladas;
          } else {
-            if (isActive) return statusFilter.activas;
-            if (!isActive) return statusFilter.inactivas;
+            if (estadoBase === 'ACTIVA') return statusFilter.activas;
+            if (estadoBase === 'INACTIVA') return statusFilter.inactivas;
          }
 
          return false;
       });
-  }, [db, blueprint, activeTabFilter, statusFilter, masterTabs]);
+  }, [serverData, activeTabFilter, statusFilter, masterTabs, searchTerm]);
 
   // Si la visibilidad desaparece, cerramos el panel
   useEffect(() => {

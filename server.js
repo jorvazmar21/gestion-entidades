@@ -121,6 +121,10 @@ const server = http.createServer(async (req, res) => {
             const abac_matrix_rules = await db.all('SELECT * FROM rel_abac_matrix_rules');
             const sys_csv_templates = await db.all('SELECT * FROM sys_csv_templates');
 
+            // Huerfanos L4 extensions para Mapeos (UI Data Grid Legacy)
+            const dat_emp_company = await db.all('SELECT * FROM dat_emp_company');
+            const rel_emp_jointventure = await db.all('SELECT * FROM rel_emp_jointventure');
+
             // TODO: Extraer Rol desde Sesión Segura. Mockeado para demostración inicial.
             const userRole = req.headers['x-user-role'] || 'ADMINISTRADOR'; 
 
@@ -159,7 +163,8 @@ const server = http.createServer(async (req, res) => {
                     l1_categories, l2_families, l3_types, l4_instances, 
                     topology_graph, psets_template, psets_bridge, psets_payloads, 
                     eventos_l3, desgloses_l4,
-                    lifecycle_phases, company_departments, abac_matrix_rules, sys_csv_templates
+                    lifecycle_phases, company_departments, abac_matrix_rules, sys_csv_templates,
+                    dat_emp_company, rel_emp_jointventure
                 }
             }));
         } catch (e) {
@@ -439,49 +444,6 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             } catch (err) {
-                console.error("Config save error:", err);
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-        });
-        return;
-    }
-
-    // D. API: UPLOAD BASE64 MEDIA
-    if (req.url === '/api/upload-media' && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => body += chunk);
-        req.on('end', () => {
-            try {
-                const payload = JSON.parse(body);
-                const { filename, base64Data } = payload;
-                if (!filename || !base64Data || filename.includes('..') || filename.includes('server.js')) {
-                    throw new Error("Datos de subida inválidos o inseguros");
-                }
-
-                // Determinar la carpeta destino absoluta bajo datos_csv/
-                // (el filename que viene es 'media/xxx.ext')
-                const targetPath = path.join(DATA_DIR, filename);
-                const dirPath = path.dirname(targetPath);
-                
-                if (!fs.existsSync(dirPath)) {
-                    fs.mkdirSync(dirPath, { recursive: true });
-                }
-
-                // Parsear el base64
-                const matches = base64Data.match(/^data:(.*?);base64,(.+)$/);
-                if (!matches || matches.length !== 3) {
-                    throw new Error("String base64 inválida");
-                }
-                const imageBuffer = Buffer.from(matches[2], 'base64');
-
-                // Sobrescribir el archivo brutalmente
-                fs.writeFileSync(targetPath, imageBuffer);
-                
-                console.log(`✅ Archivo Media actualizado: ${targetPath}`);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: 'Archivo actualizado' }));
-            } catch (err) {
                 console.error("❌ Error subiendo media:", err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
@@ -498,7 +460,7 @@ const server = http.createServer(async (req, res) => {
             if (!table || table.includes(';') || table.includes(' ')) throw new Error("Tabla inválida");
             
             const db = await sqlDbPromise;
-            const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table"');
+            const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table" OR type="view"');
             if (!tables.some(t => t.name === table)) throw new Error("Tabla no encontrada");
             
             const rows = await db.all(`SELECT * FROM ${table}`);
@@ -522,7 +484,7 @@ const server = http.createServer(async (req, res) => {
                  if (!table || table.includes(';') || table.includes(' ')) throw new Error("Tabla inválida");
                  
                  const db = await sqlDbPromise;
-                 const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table"');
+                 const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table" OR type="view"');
                  if (!tables.some(t => t.name === table)) throw new Error("Tabla no encontrada");
                  
                  let query = `SELECT * FROM ${table}`;
@@ -552,7 +514,6 @@ const server = http.createServer(async (req, res) => {
         try {
             const db = await sqlDbPromise;
             const tables = await db.all('SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"');
-            
             const schemaData = [];
             for (const t of tables) {
                 const info = await db.all(`PRAGMA table_info(${t.name})`);
