@@ -1,0 +1,47 @@
+id_payload_record	target_value_uuid	value_level_enum	fk_pset	json_payload (EMP_FISCALLOCAL)	generation_date	validity_start_date	validity_end_date	created_at	created_by	deleted_at	deleted_by
+1		L4	2	SONDIKA							
+2		L4	2	VERA DE BIDASOA							
+3		L4	2	CORNELLA DE LLOBREGAT							
+4		L4	2	SIERO							
+5		L4	2	IZURZA							
+6		L4	2	SAN SALVADOR DEL VALLE							
+7		L4	2	BILBAO							
+8		L4	2	PUIGCERDA							
+9		L4	2	BILBAO							
+10		L4	2	MADRID							
+11		L4	2	IURRETA							
+12		L4	2	LA MOLINA							
+13		L4	2	REUS							
+14		L4	2	VITORIA-GASTEIZ							
+15		L4	2	TERRASSA							
+16		L4	2	BARCELONA							
+17		L4	2	MADRID							
+18		L4	2	SONDIKA							
+19		L4	2	MADRID							
+20		L4	2	MADRID							
+21		L4	2	BILBAO							
+22		L4	2	SAN SEBASTIÁN							
+23		L4	2	MADRID							
+24		L4	2	IURRETA							
+25		L4	2	BILBAO							
+26		L4	2	SANTESTEBAN							
+27		L4	2	MADRID							
+28		L4	2	MADRID							
+29		L4	2	PAMPLONA							
+30		L4	2	BILBAO							
+31		L4	2	SAN SEBASTIÁN							
+32		L4	2	PALMA							
+33		L4	2	PIEDRAS BLANCAS							
+34		L4	2	MADRID							
+35		L4	2	MADRID							
+36		L4	2	MADRID							
+37		L4	2	SONDIKA							
+38		L4	2	MADRID							
+39		L4	2	BILBAO							
+40		L4	2	BILBAO							
+41		L4	2	SAN SEBASTIÁN							
+42		L4	2	BILBAO							
+43		L4	2	MADRID							
+44		L4	2	A CORUÑA							
+45		L4	2	BILBAO							
+46		L4	2	SEVILLA							

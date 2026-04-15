@@ -109,9 +109,13 @@ const server = http.createServer(async (req, res) => {
             const l3_types = await db.all('SELECT * FROM def_entity_l3_type');
             const l4_instances = await db.all('SELECT * FROM dat_entity_l4_instance');
             const topology_graph = await db.all('SELECT * FROM rel_entity_topology_graph');
-            const psets_template_raw = await db.all('SELECT * FROM def_pset_template');
+            const psets_template_raw = await db.all('SELECT * FROM def_pset_template WHERE deleted_at IS NULL');
             const psets_bridge = await db.all('SELECT * FROM rel_pset_to_entity_bridge');
-            const psets_payloads_raw = await db.all('SELECT * FROM dat_pset_live_payloads');
+            // Aplicamos un alias en vuelo (target_value_uuid AS l4_instance_id) para acoplar la BD con el Frontend sin tocar React
+            const psets_payloads_raw = await db.all(`
+                SELECT id_payload_record, target_value_uuid AS l4_instance_id, value_level_enum, fk_pset, json_payload, generation_date, generation_name 
+                FROM dat_pset_live_payloads WHERE deleted_at IS NULL
+            `);
             const eventos_l3 = await db.all('SELECT * FROM eventos_l3');
             const desgloses_l4 = await db.all('SELECT * FROM desgloses_l4');
             
@@ -236,7 +240,7 @@ const server = http.createServer(async (req, res) => {
                  await queueWriteTransaction(async () => {
                      const db = await sqlDbPromise;
                      // Implement Optimistic Concurrency Control
-                     const current = await db.get('SELECT json_payload FROM dat_pset_live_payloads WHERE l4_instance_id = ? AND fk_pset = ?', [l4_instance_id, fk_pset]);
+                     const current = await db.get('SELECT json_payload FROM dat_pset_live_payloads WHERE target_value_uuid = ? AND fk_pset = ? AND deleted_at IS NULL', [l4_instance_id, fk_pset]);
                      
                      if (current) {
                          const currentData = JSON.parse(current.json_payload);
@@ -248,13 +252,20 @@ const server = http.createServer(async (req, res) => {
                      // Inject new version
                      const newPayload = { ...json_payload, __v: (__v || 0) + 1 };
                      
-                     await db.run(`
-                         INSERT INTO dat_pset_live_payloads (l4_instance_id, fk_pset, json_payload, updated_at, updated_by)
-                         VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'SYSTEM')
-                         ON CONFLICT(l4_instance_id, fk_pset) DO UPDATE SET 
-                         json_payload = excluded.json_payload, 
-                         updated_at = excluded.updated_at
-                     `, [l4_instance_id, fk_pset, JSON.stringify(newPayload)]);
+                     if (current) {
+                         await db.run(`
+                             UPDATE dat_pset_live_payloads 
+                             SET json_payload = ?
+                             WHERE target_value_uuid = ? AND fk_pset = ?
+                         `, [JSON.stringify(newPayload), l4_instance_id, fk_pset]);
+                     } else {
+                         const crypto = require('crypto');
+                         const newId = 'PAY-DYNAMIC-' + crypto.randomUUID().replace(/-/g, '').substring(0, 8);
+                         await db.run(`
+                             INSERT INTO dat_pset_live_payloads (id_payload_record, target_value_uuid, value_level_enum, fk_pset, json_payload, created_by)
+                             VALUES (?, ?, 'L4', ?, ?, 'SYSTEM')
+                         `, [newId, l4_instance_id, fk_pset, JSON.stringify(newPayload)]);
+                     }
                  });
                  res.writeHead(200, { 'Content-Type': 'application/json' });
                  res.end(JSON.stringify({ success: true }));
@@ -326,8 +337,8 @@ const server = http.createServer(async (req, res) => {
                          `);
                          
                          const stmtPayload = await db.prepare(`
-                             INSERT INTO dat_pset_live_payloads (l4_instance_id, fk_pset, json_payload, updated_by)
-                             VALUES (?, ?, ?, 'BULK_WIZARD')
+                             INSERT INTO dat_pset_live_payloads (id_payload_record, target_value_uuid, value_level_enum, fk_pset, json_payload, created_by)
+                             VALUES (?, ?, 'L4', ?, ?, 'BULK_WIZARD')
                          `);
 
                          for (let instance of instances) {
@@ -376,7 +387,9 @@ const server = http.createServer(async (req, res) => {
                              const dynamicProps = { cif: instance.cif, soyUte: isUteBoolean };
                              
                              const payloadJson = JSON.stringify({ ...dynamicProps, __v: 1 });
-                             await stmtPayload.run([instance.l4_id, psetId, payloadJson]);
+                             const crypto = require('crypto');
+                             const newId = 'PAY-BULK-' + crypto.randomUUID().replace(/-/g, '').substring(0, 8);
+                             await stmtPayload.run([newId, instance.l4_id, psetId, payloadJson]);
                          }
 
                          await stmtL4.finalize();

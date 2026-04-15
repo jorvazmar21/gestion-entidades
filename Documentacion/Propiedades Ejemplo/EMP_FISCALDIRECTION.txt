@@ -1,0 +1,47 @@
+id_payload_record	target_value_uuid	value_level_enum	fk_pset	json_payload (EMP_FISCALDIRECTION)	generation_date	validity_start_date	validity_end_date	created_at	created_by	deleted_at	deleted_by
+1		L4	2	Avenida de la Constitución, 45, Bajo B							
+2		L4	2	Avenida de los Chopos, 103, Esc. B, 5º1ª							
+3		L4	2	Avenida Diagonal, 450, 2º2ª							
+4		L4	2	Calle Corazón de María, 22, 4ºD							
+5		L4	2	Calle de la Esperanza, 9, Bajo Izquierda							
+6		L4	2	Calle de la Luna, 7, 3ºB							
+7		L4	2	Calle de los Herreros, 4, 3ºC							
+8		L4	2	Calle del Pez, 12, 2ºA							
+9		L4	2	Calle Jorge Juan, 55, 1º Exterior							
+10		L4	2	Calle Mayor, 3, 1º Izquierda							
+11		L4	2	Paseo de la Castellana, 120, 7ºC							
+12		L4	2	Paseo del Prado, 28, 5ºF							
+13		L4	2	Plaza de España, 15, Ático							
+14		L4	2	Ronda de Valencia, 14, 6º Derecha							
+15		L4	2	Travesía del Sol, 8, Duplex 4							
+16		L4	2	Calle Viriato, 47							
+17		L4	2	Calle Julián Camarillo, 6							
+18		L4	2	Polígono Ind. Sangroniz, Calle Ibaitarte, 19							
+19		L4	2	Avenida de Manoteras, 46							
+20		L4	2	Calle de José Abascal, 45							
+21		L4	2	Calle Máximo Aguirre, 18							
+22		L4	2	Lugar Barrio de Añorga, s/n							
+23		L4	2	Calle de los Manzanares, 1							
+24		L4	2	Barrio de Iurreta, s/n							
+25		L4	2	Calle de Elcano, 14							
+26		L4	2	Carretera de Ituren, s/n							
+27		L4	2	Calle de la Ribera del Loira, 42							
+28		L4	2	Calle de Serrano, 45							
+29		L4	2	Avenida de Carlos III el Noble, 2							
+30		L4	2	Calle de San Vicente, 8							
+31		L4	2	Plaza de Gipuzkoa, s/n							
+32		L4	2	Calle del Palau Reial, 1							
+33		L4	2	Plaza de la Constitución, 1							
+34		L4	2	Calle de la Sor Ángela de la Cruz, 3							
+35		L4	2	Calle de la Sor Ángela de la Cruz, 3							
+36		L4	2	Calle de la Ribera del Loira, 42							
+37		L4	2	Polígono Ind. Sangroniz, Calle Ibaitarte, 19							
+38		L4	2	Calle Julián Camarillo, 6							
+39		L4	2	Calle Máximo Aguirre, 18							
+40		L4	2	Calle San Vicente, 8, Planta 13							
+41		L4	2	Barrio de Añorga, s/n							
+42		L4	2	Calle Gran Vía, 17							
+43		L4	2	Paseo de la Castellana, 120							
+44		L4	2	Calle Marie Curie, 7							
+45		L4	2	Sabino Arana Etorbidea, 20							
+46		L4	2	Calle Almendralejo, 5							

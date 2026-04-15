@@ -161,8 +161,12 @@ CREATE TABLE IF NOT EXISTS dat_pset_live_payloads (
     json_payload JSON NOT NULL,    
     
     generation_date DATETIME,                   -- For DYNAMIC reports (Physical signature date)
+    generation_name TEXT,
     validity_start_date DATETIME,               -- Multiple contexts
     validity_end_date DATETIME,                 -- Multiple contexts
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
     
     deleted_at DATETIME,
     deleted_by TEXT
@@ -350,25 +354,6 @@ CREATE TABLE IF NOT EXISTS dat_pry_project (
     semanticVersion_tag TEXT NOT NULL,
     dateVersion TEXT NOT NULL
 );
--- ========================================================================
--- VISTAS MODO DIOS (BFF) PARA DATAGRIDS FRONTEND
--- ========================================================================
-CREATE VIEW IF NOT EXISTS vw_entidades_master AS
-SELECT 
-    L4.l4_id AS EMP_ID,
-    L4.l4_id AS id,
-    L4.unique_human_code AS UNIQUE_HUMAN_CODE,
-    L4.instance_name AS INSTANCE_NAME,
-    L4.is_active AS IS_ACTIVE,
-    L4.deleted_at AS DELETED_AT,
-    IFNULL(COMP.is_Proveedor, 0) AS IS_PROVEEDOR,
-    IFNULL(COMP.is_Subcontratista, 0) AS IS_SUBCONTRATA,
-    IFNULL(COMP.is_Contratista, 0) AS IS_CONTRATISTA,
-    IFNULL(COMP.is_Cliente, 0) AS IS_CLIENTE,
-    CASE WHEN UTE.jointVenture_emp_id IS NOT NULL THEN 1 ELSE 0 END AS IS_UTE
-FROM dat_entity_l4_instance L4
-LEFT JOIN dat_emp_company COMP ON L4.l4_id = COMP.emp_id
-LEFT JOIN rel_emp_jointventure UTE ON L4.l4_id = UTE.jointVenture_emp_id;
 
 -- ========================================================================
 -- VISTAS MODO DIOS (BFF) PARA DATAGRIDS FRONTEND

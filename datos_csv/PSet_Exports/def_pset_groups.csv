@@ -1,0 +1,4 @@
+id_pset_group,pset_group_code,pset_group_name,ui_order,is_active,created_at,created_by,deleted_at,deleted_by
+"1","G01_GENERAL","Datos Generales","10","1","2026-04-14 09:50:12","SEED_SYSTEM",,
+"2","G02_NATURE","Naturaleza de Entidad","20","1","2026-04-14 09:50:12","SEED_SYSTEM",,
+"3","G03_PHYSICAL","Composición Física","30","1","2026-04-14 09:50:12","SEED_SYSTEM",,

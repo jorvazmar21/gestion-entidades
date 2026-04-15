@@ -69,7 +69,7 @@ export const PSetZone9: React.FC<PSetInspectorProps> = ({ screenId = 'default', 
     }, [comboboxOpen]);
 
     return (
-      <div className="w-full flex-1 flex flex-col bg-[#f8f9ff] font-['Inter'] relative overflow-hidden">
+      <div className="w-full flex-1 flex flex-col bg-[#f8f9ff] font-['Inter'] relative z-10">
          <div className="px-3 pt-3 flex items-stretch gap-3 w-full pb-2 border-b border-gray-100 shrink-0">
              <div className="flex-1 flex items-center justify-center border border-transparent">
                  <h3 className="text-[15px] font-bold text-[#7f1d1d] uppercase tracking-widest text-center truncate">

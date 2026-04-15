@@ -13,7 +13,7 @@ INSERT OR IGNORE INTO sys_ai_ontology_manifest (ai_concept_token, semantic_descr
 ('L-MATRIX-HIERARCHY', 'Strict 4-tier generic directed tree using integer surrogate keys for DDL stability.', 'id_l1=200 -> id_l2=201 -> id_l3=2001 -> l4_id=uuid()', 'L4 MUST have fk_l3. L3 MUST have fk_l2. L2 MUST have fk_l1. Never rely on l1_code for JOINs.', 'If querying instances, you MUST traverse via fk_lX foreign integer keys, not string codes.'),
 ('CQRS-PSET-ATTACHMENT', 'Polymorphic JSON Schema attachment system.', '{pset_id: "ID_BASE", target_uuid: "L1_OBR", level: "L1"}', 'A PSet mapped to an L1 category applies to ALL descendant L4 instances.', 'Never mutate schema.sql to add entity columns. Always create a PSet and attach it via rel_pset_to_entity_bridge.'),
 ('NODEJS-SECURITY-PRUNING', 'REST API response JSON trimming based on UISchema roles.', '{"esUte": {"type": "boolean", "ui:visible_roles": ["ADMIN"]}}', 'Only Node.js executes this. SQLite stores full JSON.', 'Never trust the frontend to hide data. Assume the browser is compromised.'),
-('UI-ABSTRACTION-RULE', 'Frontend must merge fragmented data visually resolving def_ui_groups.', 'fk_ui_group: 1', 'Never map SQLite tables 1:1 to React components.', 'Always group Property Sets dynamically using def_ui_groups so the admin sees a monolithic form, hiding the CQRS fragmentation.');
+('UI-ABSTRACTION-RULE', 'Frontend must merge fragmented data visually resolving def_pset_groups.', 'fk_pset_group: 1', 'Never map SQLite tables 1:1 to React components.', 'Always group Property Sets dynamically using def_pset_groups so the admin sees a monolithic form, hiding the CQRS fragmentation.');
 
 INSERT OR IGNORE INTO sys_ai_behavioral_directives (directive_id, activation_context, ai_attention_weight, imperative_prompt_instruction) VALUES
 ('DIR_NO_SQL_TRIGGERS', 'When modifying DB schema or adding logic.', 'CRITICAL', 'DO NOT create triggers for math or cascading logic. Defer to Node.js.'),
@@ -29,15 +29,59 @@ INSERT OR IGNORE INTO rel_ai_behavior_to_table_bridge (target_table_name, direct
 
 -- L1: CATEGORIES
 INSERT OR IGNORE INTO def_entity_l1_category (id_l1, l1_code, human_readable_name, ui_icon_identifier, ui_order, created_by) VALUES
-(1, 'L1_EMP', 'Agentes', 'mod_EMP.svg', 10, 'SEED_SYSTEM');
+(1, 'L1_EMP', 'Agentes', 'mod_EMP.svg', 10, 'SEED_SYSTEM'),
+(2, 'L1_LCT', 'Licitaciones', 'mod_LCT.svg', 20, 'SEED_SYSTEM'),
+(3, 'L1_PLK', 'Plicas', 'mod_PLK.svg', 30, 'SEED_SYSTEM'),
+(4, 'L1_PRY', 'Proyectos', 'mod_PRY.svg', 40, 'SEED_SYSTEM'),
+(5, 'L1_CNT', 'Contratos', 'mod_CNT.svg', 50, 'SEED_SYSTEM'),
+(6, 'CDC', 'Centro de Coste', 'mod_CDC.svg', 60, 'SEED_SYSTEM'),
+(7, 'L1_OBR', 'Obras', 'mod_OBR.svg', 70, 'SEED_SYSTEM');
 
 -- L2: FAMILIES
 INSERT OR IGNORE INTO def_entity_l2_family (id_l2, l2_code, fk_l1, human_readable_name, ui_order, created_by) VALUES
-(1, 'L2_EMP', 1, 'Agentes', 10, 'SEED_SYSTEM');
+(1, 'L2_EMP', 1, 'Agentes', 10, 'SEED_SYSTEM'),
+(2, 'L2_LCT', 2, 'Licitaciones', 20, 'SEED_SYSTEM'),
+(3, 'L2_PLK', 3, 'Plicas', 30, 'SEED_SYSTEM'),
+(4, 'L2_PRY', 4, 'Proyectos', 40, 'SEED_SYSTEM'),
+(5, 'L2_CNT', 5, 'Contratos', 50, 'SEED_SYSTEM'),
+(6, 'ALM', 6, 'Almacén', 60, 'SEED_SYSTEM'),
+(7, 'MQP', 6, 'Maq. Propia', 70, 'SEED_SYSTEM'),
+(8, 'L2_OBR', 7, 'Obras', 80, 'SEED_SYSTEM');
 
 -- L3: TYPES (The Concrete Molds)
 INSERT OR IGNORE INTO def_entity_l3_type (id_l3, l3_code, fk_l2, human_readable_name, ui_order, created_by) VALUES
-(1, 'EMP', 1, 'Agentes', 10, 'SEED_SYSTEM');
+(1, 'EMP', 1, 'Agentes', 10, 'SEED_SYSTEM'),
+(2, 'LCT', 2, 'Licitaciones', 20, 'SEED_SYSTEM'),
+(3, 'PLK', 3, 'Plicas', 30, 'SEED_SYSTEM'),
+(4, 'PRY', 4, 'Proyectos', 40, 'SEED_SYSTEM'),
+(5, 'CNT', 5, 'Contratos', 50, 'SEED_SYSTEM'),
+(6, 'CTR', 6, 'Almacén Central', 60, 'SEED_SYSTEM'),
+(7, 'OTR', 6, 'Almacén Adicional', 70, 'SEED_SYSTEM'),
+(8, 'BHO', 7, 'Bomba de Hormigón', 80, 'SEED_SYSTEM'),
+(9, 'BIN', 7, 'Bomba Inyectadora', 90, 'SEED_SYSTEM'),
+(10, 'BPM', 7, 'Bomba Proy. Membr.', 100, 'SEED_SYSTEM'),
+(11, 'CRZ', 7, 'Cabeza Rozadora', 110, 'SEED_SYSTEM'),
+(12, 'CEL', 7, 'Carretilla Elevadora', 120, 'SEED_SYSTEM'),
+(13, 'CPH', 7, 'Carro Perf. Hidráulico', 130, 'SEED_SYSTEM'),
+(14, 'CPN', 7, 'Carro Perf. Neumático', 140, 'SEED_SYSTEM'),
+(15, 'CDI', 7, 'Compresor Diesel', 150, 'SEED_SYSTEM'),
+(16, 'DAR', 7, 'Dúmper Articulado', 160, 'SEED_SYSTEM'),
+(17, 'RET', 7, 'Retroexcavadora', 170, 'SEED_SYSTEM'),
+(18, 'GDI', 7, 'Generador Diesel', 180, 'SEED_SYSTEM'),
+(19, 'J2B', 7, 'Jumbo (2 brazos)', 190, 'SEED_SYSTEM'),
+(20, 'J3B', 7, 'Jumbo (3 brazos)', 200, 'SEED_SYSTEM'),
+(21, 'MTE', 7, 'Manip. Telescópica', 210, 'SEED_SYSTEM'),
+(22, 'MPI', 7, 'Máquina de Pintar', 220, 'SEED_SYSTEM'),
+(23, 'MHI', 7, 'Martillo Hidráulico', 230, 'SEED_SYSTEM'),
+(24, 'NAG', 7, 'Nagolifera', 240, 'SEED_SYSTEM'),
+(25, 'CCO', 7, 'Carg. Convencional', 250, 'SEED_SYSTEM'),
+(26, 'CPB', 7, 'Carg. de Perfil Bajo', 260, 'SEED_SYSTEM'),
+(27, 'PIL', 7, 'Planta Inyec. Lechada', 270, 'SEED_SYSTEM'),
+(28, 'PEL', 7, 'Plataforma Elevadora', 280, 'SEED_SYSTEM'),
+(29, 'RGU', 7, 'Robot de Gunitado', 290, 'SEED_SYSTEM'),
+(30, 'TIL', 7, 'Torre de Iluminación', 300, 'SEED_SYSTEM'),
+(31, 'VEN', 7, 'Ventilador', 310, 'SEED_SYSTEM'),
+(32, 'OBR', 8, 'Obras', 320, 'SEED_SYSTEM');
 
 -- =========================================================================
 -- 2. PARAMETRIC PROPERTY SETS (CQRS DICTIONARIES) SEEDING
@@ -49,31 +93,15 @@ INSERT OR IGNORE INTO def_pset_groups (id_pset_group, pset_group_code, pset_grou
 (2, 'G02_NATURE', 'Naturaleza de Entidad', 20, 'SEED_SYSTEM'),
 (3, 'G03_PHYSICAL', 'Composición Física', 30, 'SEED_SYSTEM');
 
--- PSet: Datos Generales (Aplica a todo Obras y Empresas)
-INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
-(1, 'IDENTITY_BASE', 'Identidad Básica', 1, 10, 
-'{"DataSchema": {"cif": {"type": "string"}}, "UISchema": {"cif": {"security:visible_roles": ["CREADOR", "ADMINISTRADOR", "USUARIO"]}}}', 'SEED_SYSTEM');
-
--- PSet ESTÁTICO DE CREADOR: Soy UTE = TRUE
-INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
-(3, 'STATIC_IS_UTE', 'Atributo Ontológico UTE', 2, 20, 
-'{"DataSchema": {"soyUte": {"type": "boolean", "default": true}}, "UISchema": {"soyUte": {"ui:readonly": true}}}', 'SEED_SYSTEM');
-
--- PSet ESTÁTICO DE CREADOR: Soy UTE = FALSE
-INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
-(4, 'STATIC_NOT_UTE', 'Atributo Ontológico NO UTE', 2, 20, 
-'{"DataSchema": {"soyUte": {"type": "boolean", "default": false}}, "UISchema": {"soyUte": {"ui:readonly": true}}}', 'SEED_SYSTEM');
-
--- PSet COMPOSICIÓN L3 (Atado solo al Molde L3 de UTEs)
-INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_ui_group, ui_order, json_shape_definition, created_by) VALUES
-(5, 'UTE_COMPOSITION', 'Socios de la UTE', 3, 10, 
-'{"DataSchema": {"socios": {"type": "array", "items": {"type": "object", "properties": {"fk_empresa": {"type": "string"}, "porcentaje": {"type": "number"}}}}, "avisoUte": {"type": "boolean", "default": true}}, "UISchema": {"avisoUte": {"ui:readonly": true, "security:visible_roles": ["USUARIO", "ADMINISTRADOR"]}}}', 'SEED_SYSTEM');
+-- PSets Definición
+INSERT OR IGNORE INTO def_pset_template (id_pset, schema_code, schema_alias, fk_pset_group, pset_behavior_type, ui_order, json_shape_definition, created_by) VALUES
+(1, 'EMP_001', 'Datos Fiscales', 1, 'STATIC', 10, '{"DataSchema": {"EMP_FISCALNAME": {"type": "string"}, "EMP_FISCALCODE": {"type": "string"}, "EMP_FISCALDIRECTION": {"type": "string"}, "EMP_FISCALCP": {"type": "string"}, "EMP_FISCALLOCAL": {"type": "string"}, "EMP_FISCALPROV": {"type": "string"}, "EMP_FISCALCOUNTRY": {"type": "string"}}, "UISchema": {"EMP_FISCALNAME": {}, "EMP_FISCALCODE": {}, "EMP_FISCALDIRECTION": {}, "EMP_FISCALCP": {}, "EMP_FISCALLOCAL": {}, "EMP_FISCALPROV": {}, "EMP_FISCALCOUNTRY": {}}}', 'SEED_SYSTEM'),
+(2, 'EMP_002', 'Enlace SAGE', 1, 'STATIC', 20, '{"DataSchema": {"SAGE_ID": {"type": "string"}}, "UISchema": {"SAGE_ID": {}}}', 'SEED_SYSTEM');
 
 -- ATAQUES (PUENTES) POLIMÓRFICOS
 INSERT OR IGNORE INTO rel_pset_to_entity_bridge (id_bridge, fk_pset, target_definition_uuid, definition_level_enum) VALUES
-(2, 1, '1', 'L1'), -- L1_EMP
-(4, 3, '1', 'L2'), -- L2_EMP
-(6, 5, '1', 'L3'); -- EMP
+(1, 1, '1', 'L3'), -- EMP -> EMP_001 Datos Fiscales
+(2, 2, '1', 'L3'); -- EMP -> EMP_002 Enlace SAGE
 
 -- =========================================================================
 -- 3. ABAC MULTIDIMENSIONAL SEEDING
@@ -256,3 +284,72 @@ INSERT INTO rel_emp_jointventure (jointVenture_emp_id, partner_emp_id, participa
 -- fk_l1 = 1 (L1_EMP) -> plantilla_empresas.csv
 INSERT OR IGNORE INTO sys_csv_templates (id_template, fk_l1, file_path, template_name) VALUES
 (1, 1, 'datos_csv/templates/plantilla_empresas.csv', 'Plantilla Oficial de Empresas L-Matrix');
+
+
+-- =========================================================================
+-- PAYLOADS GENERADOS AUTOMÁTICAMENTE DESDE TABLAS
+-- =========================================================================
+
+INSERT OR IGNORE INTO dat_pset_live_payloads (id_payload_record, target_value_uuid, value_level_enum, fk_pset, json_payload, created_by) VALUES
+('PAY-FISC-0001', '1', 'L4', 1, '{"EMP_FISCALNAME":"AURTENETXEA, S.A.","EMP_FISCALCODE":"A48245849","EMP_FISCALDIRECTION":"Avenida de la Constitución, 45, Bajo B","EMP_FISCALCP":"48115","EMP_FISCALLOCAL":"SONDIKA","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0001', '1', 'L4', 2, '{"SAGE_ID":"4000001"}', 'SEED_SYSTEM'),
+('PAY-FISC-0002', '2', 'L4', 1, '{"EMP_FISCALNAME":"VERKOL S.A.","EMP_FISCALCODE":"A20028510","EMP_FISCALDIRECTION":"Avenida de los Chopos, 103, Esc. B, 5º1ª","EMP_FISCALCP":"31780","EMP_FISCALLOCAL":"VERA DE BIDASOA","EMP_FISCALPROV":"NAVARRA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0002', '2', 'L4', 2, '{"SAGE_ID":"4000002"}', 'SEED_SYSTEM'),
+('PAY-FISC-0003', '3', 'L4', 1, '{"EMP_FISCALNAME":"MASTER BUILDERS SOLUTIONS ESPAÑA, S.L.U.","EMP_FISCALCODE":"B31721541","EMP_FISCALDIRECTION":"Avenida Diagonal, 450, 2º2ª","EMP_FISCALCP":"8940","EMP_FISCALLOCAL":"CORNELLA DE LLOBREGAT","EMP_FISCALPROV":"BARCELONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0003', '3', 'L4', 2, '{"SAGE_ID":"4000003"}', 'SEED_SYSTEM'),
+('PAY-FISC-0004', '4', 'L4', 1, '{"EMP_FISCALNAME":"MAXMEN, S.L.","EMP_FISCALCODE":"B33762311","EMP_FISCALDIRECTION":"Calle Corazón de María, 22, 4ºD","EMP_FISCALCP":"33510","EMP_FISCALLOCAL":"SIERO","EMP_FISCALPROV":"ASTURIAS","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0004', '4', 'L4', 2, '{"SAGE_ID":"4000004"}', 'SEED_SYSTEM'),
+('PAY-FISC-0005', '5', 'L4', 1, '{"EMP_FISCALNAME":"COMERCIAL ARBERE, S.L.","EMP_FISCALCODE":"B48527139","EMP_FISCALDIRECTION":"Calle de la Esperanza, 9, Bajo Izquierda","EMP_FISCALCP":"48213","EMP_FISCALLOCAL":"IZURZA","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0005', '5', 'L4', 2, '{"SAGE_ID":"4000005"}', 'SEED_SYSTEM'),
+('PAY-FISC-0006', '6', 'L4', 1, '{"EMP_FISCALNAME":"MIRAMAR GUNITADOS, S.A.","EMP_FISCALCODE":"A48125488","EMP_FISCALDIRECTION":"Calle de la Luna, 7, 3ºB","EMP_FISCALCP":"48510","EMP_FISCALLOCAL":"SAN SALVADOR DEL VALLE","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0006', '6', 'L4', 2, '{"SAGE_ID":"4110031"}', 'SEED_SYSTEM'),
+('PAY-FISC-0007', '7', 'L4', 1, '{"EMP_FISCALNAME":"SAIGO S.L.","EMP_FISCALCODE":"B48149538","EMP_FISCALDIRECTION":"Calle de los Herreros, 4, 3ºC","EMP_FISCALCP":"48001","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"VIZCAYA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0007', '7', 'L4', 2, '{"SAGE_ID":"4110032"}', 'SEED_SYSTEM'),
+('PAY-FISC-0008', '8', 'L4', 1, '{"EMP_FISCALNAME":"TRACTAMENTS AMBIENTALS DELS PIRINEUS SLU","EMP_FISCALCODE":"B17423971","EMP_FISCALDIRECTION":"Calle del Pez, 12, 2ºA","EMP_FISCALCP":"17520","EMP_FISCALLOCAL":"PUIGCERDA","EMP_FISCALPROV":"GIRONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0008', '8', 'L4', 2, '{"SAGE_ID":"4110033"}', 'SEED_SYSTEM'),
+('PAY-FISC-0009', '9', 'L4', 1, '{"EMP_FISCALNAME":"ASFALTADOS OLARRA, S.A.","EMP_FISCALCODE":"A48028435","EMP_FISCALDIRECTION":"Calle Jorge Juan, 55, 1º Exterior","EMP_FISCALCP":"48001","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"VIZCAYA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0009', '9', 'L4', 2, '{"SAGE_ID":"4110034"}', 'SEED_SYSTEM'),
+('PAY-FISC-0010', '10', 'L4', 1, '{"EMP_FISCALNAME":"COBRA INSTALACIONES Y SERVICIOS, S.A.","EMP_FISCALCODE":"A46146387","EMP_FISCALDIRECTION":"Calle Mayor, 3, 1º Izquierda","EMP_FISCALCP":"28001","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0010', '10', 'L4', 2, '{"SAGE_ID":"4110035"}', 'SEED_SYSTEM'),
+('PAY-FISC-0011', '11', 'L4', 1, '{"EMP_FISCALNAME":"MONTAJES ELECTRICOS SAN IGNACIO, S.L.","EMP_FISCALCODE":"B48162663","EMP_FISCALDIRECTION":"Paseo de la Castellana, 120, 7ºC","EMP_FISCALCP":"48215","EMP_FISCALLOCAL":"IURRETA","EMP_FISCALPROV":"VIZCAYA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0011', '11', 'L4', 2, '{"SAGE_ID":"4110036"}', 'SEED_SYSTEM'),
+('PAY-FISC-0012', '12', 'L4', 1, '{"EMP_FISCALNAME":"MANTENIMENT I SERVEIS LA MOLINA, S.C.","EMP_FISCALCODE":"J17768078","EMP_FISCALDIRECTION":"Paseo del Prado, 28, 5ºF","EMP_FISCALCP":"17537","EMP_FISCALLOCAL":"LA MOLINA","EMP_FISCALPROV":"GIRONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0012', '12', 'L4', 2, '{"SAGE_ID":"4110037"}', 'SEED_SYSTEM'),
+('PAY-FISC-0013', '13', 'L4', 1, '{"EMP_FISCALNAME":"VIVANCO HERNANDEZ, S.A.","EMP_FISCALCODE":"A43123819","EMP_FISCALDIRECTION":"Plaza de España, 15, Ático","EMP_FISCALCP":"43201","EMP_FISCALLOCAL":"REUS","EMP_FISCALPROV":"TARRAGONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0013', '13', 'L4', 2, '{"SAGE_ID":"4110038"}', 'SEED_SYSTEM'),
+('PAY-FISC-0014', '14', 'L4', 1, '{"EMP_FISCALNAME":"COBILAN, S.C.","EMP_FISCALCODE":"J01504943","EMP_FISCALDIRECTION":"Ronda de Valencia, 14, 6º Derecha","EMP_FISCALCP":"1001","EMP_FISCALLOCAL":"VITORIA-GASTEIZ","EMP_FISCALPROV":"ALAVA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0014', '14', 'L4', 2, '{"SAGE_ID":"4110039"}', 'SEED_SYSTEM'),
+('PAY-FISC-0015', '15', 'L4', 1, '{"EMP_FISCALNAME":"HERCAL DIGGERS, S.L.","EMP_FISCALCODE":"B64143639","EMP_FISCALDIRECTION":"Travesía del Sol, 8, Duplex 4","EMP_FISCALCP":"8221","EMP_FISCALLOCAL":"TERRASSA","EMP_FISCALPROV":"BARCELONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0015', '15', 'L4', 2, '{"SAGE_ID":"4110040"}', 'SEED_SYSTEM'),
+('PAY-FISC-0016', '16', 'L4', 1, '{"EMP_FISCALNAME":"COMSA, S.A.","EMP_FISCALCODE":"A08002071","EMP_FISCALDIRECTION":"Calle Viriato, 47","EMP_FISCALCP":"8014","EMP_FISCALLOCAL":"BARCELONA","EMP_FISCALPROV":"BARCELONA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0017', '17', 'L4', 1, '{"EMP_FISCALNAME":"COMSA INSTALACIONES Y SISTEMAS, S.A.U.","EMP_FISCALCODE":"A08304956","EMP_FISCALDIRECTION":"Calle Julián Camarillo, 6","EMP_FISCALCP":"28037","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0018', '18', 'L4', 1, '{"EMP_FISCALNAME":"NORTUNEL, S.A.","EMP_FISCALCODE":"A48425217","EMP_FISCALDIRECTION":"Polígono Ind. Sangroniz, Calle Ibaitarte, 19","EMP_FISCALCP":"48150","EMP_FISCALLOCAL":"SONDIKA","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0019', '19', 'L4', 1, '{"EMP_FISCALNAME":"CONSTRUCCIONES SÁNCHEZ DOMÍNGUEZ-SANDO, S.A.","EMP_FISCALCODE":"A29011788","EMP_FISCALDIRECTION":"Avenida de Manoteras, 46","EMP_FISCALCP":"28050","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0020', '20', 'L4', 1, '{"EMP_FISCALNAME":"ROVER INFRAESTRUCTURAS, S.A.","EMP_FISCALCODE":"A46141360","EMP_FISCALDIRECTION":"Calle de José Abascal, 45","EMP_FISCALCP":"28003","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0021', '21', 'L4', 1, '{"EMP_FISCALNAME":"CYCASA CANTERAS Y CONSTRUCCIONES, S.A.","EMP_FISCALCODE":"A48028771","EMP_FISCALDIRECTION":"Calle Máximo Aguirre, 18","EMP_FISCALCP":"48011","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0022', '22', 'L4', 1, '{"EMP_FISCALNAME":"CAMPEZO OBRAS Y SERVICIOS, S.A.","EMP_FISCALCODE":"A20014294","EMP_FISCALDIRECTION":"Lugar Barrio de Añorga, s/n","EMP_FISCALCP":"20018","EMP_FISCALLOCAL":"SAN SEBASTIÁN","EMP_FISCALPROV":"GIPUZKOA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0023', '23', 'L4', 1, '{"EMP_FISCALNAME":"GEOTUNEL, S.L.","EMP_FISCALCODE":"A81260174","EMP_FISCALDIRECTION":"Calle de los Manzanares, 1","EMP_FISCALCP":"28005","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0024', '24', 'L4', 1, '{"EMP_FISCALNAME":"CONSTRUCCIONES IZA, S.A.","EMP_FISCALCODE":"A48143281","EMP_FISCALDIRECTION":"Barrio de Iurreta, s/n","EMP_FISCALCP":"48215","EMP_FISCALLOCAL":"IURRETA","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0025', '25', 'L4', 1, '{"EMP_FISCALNAME":"ZUBIEDER, S.A.","EMP_FISCALCODE":"A48135899","EMP_FISCALDIRECTION":"Calle de Elcano, 14","EMP_FISCALCP":"48008","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0026', '26', 'L4', 1, '{"EMP_FISCALNAME":"CONSTRUCCIONES MARIEZCURRENA, S.L.","EMP_FISCALCODE":"A31034448","EMP_FISCALDIRECTION":"Carretera de Ituren, s/n","EMP_FISCALCP":"31740","EMP_FISCALLOCAL":"SANTESTEBAN","EMP_FISCALPROV":"NAVARRA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0027', '27', 'L4', 1, '{"EMP_FISCALNAME":"FERROVIAL CONSTRUCCIÓN, S.A.","EMP_FISCALCODE":"A81250506","EMP_FISCALDIRECTION":"Calle de la Ribera del Loira, 42","EMP_FISCALCP":"28042","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0028', '28', 'L4', 1, '{"EMP_FISCALNAME":"MINERA SANTA MARTA, S.A.","EMP_FISCALCODE":"A28014866","EMP_FISCALDIRECTION":"Calle de Serrano, 45","EMP_FISCALCP":"28001","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0029', '29', 'L4', 1, '{"EMP_FISCALNAME":"COMUNIDAD FORAL DE NAVARRA","EMP_FISCALCODE":"S3100001I","EMP_FISCALDIRECTION":"Avenida de Carlos III el Noble, 2","EMP_FISCALCP":"31002","EMP_FISCALLOCAL":"PAMPLONA","EMP_FISCALPROV":"NAVARRA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0030', '30', 'L4', 1, '{"EMP_FISCALNAME":"EUSKAL TRENBIDE SAREA","EMP_FISCALCODE":"Q4800643J","EMP_FISCALDIRECTION":"Calle de San Vicente, 8","EMP_FISCALCP":"48001","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0031', '31', 'L4', 1, '{"EMP_FISCALNAME":"DIPUTACIÓN FORAL DE GIPUZKOA","EMP_FISCALCODE":"P2000000F","EMP_FISCALDIRECTION":"Plaza de Gipuzkoa, s/n","EMP_FISCALCP":"20004","EMP_FISCALLOCAL":"SAN SEBASTIÁN","EMP_FISCALPROV":"GIPUZKOA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0032', '32', 'L4', 1, '{"EMP_FISCALNAME":"CONSELL INSULAR DE MALLORCA","EMP_FISCALCODE":"P0700002J","EMP_FISCALDIRECTION":"Calle del Palau Reial, 1","EMP_FISCALCP":"7001","EMP_FISCALLOCAL":"PALMA","EMP_FISCALPROV":"ILLES BALEARS","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0033', '33', 'L4', 1, '{"EMP_FISCALNAME":"AYUNTAMIENTO DE CASTRILLÓN","EMP_FISCALCODE":"P3301600G","EMP_FISCALDIRECTION":"Plaza de la Constitución, 1","EMP_FISCALCP":"33450","EMP_FISCALLOCAL":"PIEDRAS BLANCAS","EMP_FISCALPROV":"ASTURIAS","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0034', '34', 'L4', 1, '{"EMP_FISCALNAME":"ADMINISTRADOR DE INFRAESTRUCTURAS FERROVIARIAS","EMP_FISCALCODE":"Q2801660H","EMP_FISCALDIRECTION":"Calle de la Sor Ángela de la Cruz, 3","EMP_FISCALCP":"28020","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0035', '35', 'L4', 1, '{"EMP_FISCALNAME":"UTE TÚNEL PEGUERA","EMP_FISCALCODE":"U57218677","EMP_FISCALDIRECTION":"Calle de la Sor Ángela de la Cruz, 3","EMP_FISCALCP":"28020","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0036', '36', 'L4', 1, '{"EMP_FISCALNAME":"UTE TÚNEL DE RANTE","EMP_FISCALCODE":"U88220023","EMP_FISCALDIRECTION":"Calle de la Ribera del Loira, 42","EMP_FISCALCP":"28042","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0037', '37', 'L4', 1, '{"EMP_FISCALNAME":"UTE SISTEMA MARKIJANA","EMP_FISCALCODE":"U01509650","EMP_FISCALDIRECTION":"Polígono Ind. Sangroniz, Calle Ibaitarte, 19","EMP_FISCALCP":"48150","EMP_FISCALLOCAL":"SONDIKA","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0038', '38', 'L4', 1, '{"EMP_FISCALNAME":"UTE SECTOR 3","EMP_FISCALCODE":"U82813583","EMP_FISCALDIRECTION":"Calle Julián Camarillo, 6","EMP_FISCALCP":"28037","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0039', '39', 'L4', 1, '{"EMP_FISCALNAME":"UTE SALIDAS DE EMERGENCIA","EMP_FISCALCODE":"U48464323","EMP_FISCALDIRECTION":"Calle Máximo Aguirre, 18","EMP_FISCALCP":"48011","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0040', '40', 'L4', 1, '{"EMP_FISCALNAME":"UTE L5 GALDAKAO HOSPITAL","EMP_FISCALCODE":"U95914659","EMP_FISCALDIRECTION":"Calle San Vicente, 8, Planta 13","EMP_FISCALCP":"48001","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0041', '41', 'L4', 1, '{"EMP_FISCALNAME":"UTE IRAETA","EMP_FISCALCODE":"U20836522","EMP_FISCALDIRECTION":"Barrio de Añorga, s/n","EMP_FISCALCP":"20018","EMP_FISCALLOCAL":"SAN SEBASTIÁN","EMP_FISCALPROV":"GIPUZKOA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0042', '42', 'L4', 1, '{"EMP_FISCALNAME":"UTE GOROSMENDI BI","EMP_FISCALCODE":"U95655435","EMP_FISCALDIRECTION":"Calle Gran Vía, 17","EMP_FISCALCP":"48001","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0043', '43', 'L4', 1, '{"EMP_FISCALNAME":"UTE ALTZA GALTZARABORDA","EMP_FISCALCODE":"U48123456*","EMP_FISCALDIRECTION":"Paseo de la Castellana, 120","EMP_FISCALCP":"28046","EMP_FISCALLOCAL":"MADRID","EMP_FISCALPROV":"MADRID","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0044', '44', 'L4', 1, '{"EMP_FISCALNAME":"UTE ADIANTE","EMP_FISCALCODE":"U15982125","EMP_FISCALDIRECTION":"Calle Marie Curie, 7","EMP_FISCALCP":"15008","EMP_FISCALLOCAL":"A CORUÑA","EMP_FISCALPROV":"A CORUÑA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-FISC-0045', '45', 'L4', 1, '{"EMP_FISCALNAME":"Construcciones y Promociones Balzola, S.A.","EMP_FISCALCODE":"A48763148","EMP_FISCALDIRECTION":"Sabino Arana Etorbidea, 20","EMP_FISCALCP":"48013","EMP_FISCALLOCAL":"BILBAO","EMP_FISCALPROV":"BIZKAIA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM'),
+('PAY-SAGE-0045', '45', 'L4', 2, '{"SAGE_ID":"4100585"}', 'SEED_SYSTEM'),
+('PAY-FISC-0046', '46', 'L4', 1, '{"EMP_FISCALNAME":"AZVI, S.A.U.","EMP_FISCALCODE":"A41017088","EMP_FISCALDIRECTION":"Calle Almendralejo, 5","EMP_FISCALCP":"41019","EMP_FISCALLOCAL":"SEVILLA","EMP_FISCALPROV":"SEVILLA","EMP_FISCALCOUNTRY":"ESPAÑA"}', 'SEED_SYSTEM');

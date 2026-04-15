@@ -1,0 +1,47 @@
+id_payload_record	target_value_uuid	value_level_enum	fk_pset	json_payload (SAGE_ID)	generation_date	validity_start_date	validity_end_date	created_at	created_by	deleted_at	deleted_by
+1		L4	2	4000001							
+2		L4	2	4000002							
+3		L4	2	4000003							
+4		L4	2	4000004							
+5		L4	2	4000005							
+6		L4	2	4110031							
+7		L4	2	4110032							
+8		L4	2	4110033							
+9		L4	2	4110034							
+10		L4	2	4110035							
+11		L4	2	4110036							
+12		L4	2	4110037							
+13		L4	2	4110038							
+14		L4	2	4110039							
+15		L4	2	4110040							
+16		L4	2								
+17		L4	2								
+18		L4	2								
+19		L4	2								
+20		L4	2								
+21		L4	2								
+22		L4	2								
+23		L4	2								
+24		L4	2								
+25		L4	2								
+26		L4	2								
+27		L4	2								
+28		L4	2								
+29		L4	2								
+30		L4	2								
+31		L4	2								
+32		L4	2								
+33		L4	2								
+34		L4	2								
+35		L4	2								
+36		L4	2								
+37		L4	2								
+38		L4	2								
+39		L4	2								
+40		L4	2								
+41		L4	2								
+42		L4	2								
+43		L4	2								
+44		L4	2								
+45		L4	2	4100585							
+46		L4	2								

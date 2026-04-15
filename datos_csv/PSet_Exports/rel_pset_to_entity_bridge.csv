@@ -1,0 +1,4 @@
+id_bridge,fk_pset,target_definition_uuid,definition_level_enum
+"2","1","1","L1"
+"4","3","1","L2"
+"6","5","1","L3"
